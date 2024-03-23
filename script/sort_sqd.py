@@ -43,9 +43,15 @@ for mol_idx in range(N_mol):
                             e_sqd_cluster[cluster_idx] = np.vstack((e_sqd_cluster[cluster_idx],
                                                                     np.array([np.hstack(([mol_idx, quat_idx, shift_idx],
                                                                                          e_sqd_log[mol_idx, quat_idx, shift_idx, -1]))])))
+                            break
+
+                if hit_flag:
+                    break
 
             if not hit_flag:
                 e_sqd_cluster.append(np.array([np.hstack(([mol_idx, quat_idx, shift_idx],
                                                           e_sqd_log[mol_idx, quat_idx, shift_idx, -1]))]))
 
 
+
+e_sqd_cluster_len = [len(cluster) for cluster in e_sqd_cluster]
