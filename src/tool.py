@@ -172,20 +172,21 @@ class TutorialTool(ToolInstance):
          print("setting position {0} and quat {1}".format(position, quat))
 
          structures = self.session.models.list(type=AtomicStructure)
-                 
-         if len(structures) > 0:         
-             s = structures[0]
-                          
-             #print(dir(s))
-             #o = s.scene_position.translation()
-             #print(o)
-             #s.scene_position.translation()
-             
-             print(position)
-             
-             from chimerax.core.commands import run
-             #view matrix models #1,0.40692,0.60876,0.68104,1.26,0.29794,0.79324,-0.53104,1.11,-0.56351,0.013184,0.50416,2.549
-             run(self.session, "view matrix models #1,0.40692,0.60876,0.68104,{0},0.29794,0.79324,-0.53104,{1},-0.56351,0.013184,0.50416,{2}".format(position[0], position[1], position[2]))
+         structures[0].scene_position = transformation
+
+         # if len(structures) > 0:
+         #     s = structures[0]
+         #
+         #     #print(dir(s))
+         #     #o = s.scene_position.translation()
+         #     #print(o)
+         #     #s.scene_position.translation()
+         #
+         #     print(position)
+         #
+         #     from chimerax.core.commands import run
+         #     #view matrix models #1,0.40692,0.60876,0.68104,1.26,0.29794,0.79324,-0.53104,1.11,-0.56351,0.013184,0.50416,2.549
+         #     run(self.session, "view matrix models #1,0.40692,0.60876,0.68104,{0},0.29794,0.79324,-0.53104,{1},-0.56351,0.013184,0.50416,{2}".format(position[0], position[1], position[2]))
             
             # -----------------------------------------------------------------------------
     
