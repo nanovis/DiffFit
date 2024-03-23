@@ -14,6 +14,9 @@
 from .tablemodel import TableModel
 
 from chimerax.core.tools import ToolInstance
+from chimerax.core.commands import run
+from chimerax.atomic import AtomicStructure
+from chimerax.geometry import Place
 
 class TutorialTool(ToolInstance):
 
@@ -90,25 +93,25 @@ class TutorialTool(ToolInstance):
         rows = 4
         
         col = []
-        col.append("Id")
+        col.append("ID")
         col.append("Position")
         col.append("Rotation")
         data.append(col)
         
         for i in range(rows):
             col = []
-            col.append(i + 1)
-            col.append([i, i, i])
-            col.append(i)
+            col.append(i + 1)  # ID
+            col.append([i, i, i])  # shift
+            col.append(i)  # placeholder for quaternion
             data.append(col)
-        
-        data[1][2] = [1, 0, 0, 0]
+
+        data[1][2] = [1, 0, 0, 0]  # real quaternion
         data[2][2] = [0, 1, 0, 0]
         data[3][2] = [0, 0, 1, 0]
         data[4][2] = [0, 0, 0, 1]
-        
-        self._data = data;
-        
+
+        self._data = data
+
         model = TableModel(data)
         view.setModel(model)
         view.show()  
@@ -123,7 +126,7 @@ class TutorialTool(ToolInstance):
 
     def return_pressed(self):
         # The use has pressed the Return key; log the current text as HTML
-        from chimerax.core.commands import run
+
         # ToolInstance has a 'session' attribute...
         run(self.session, "log html %s" % self.line_edit.text())
         
@@ -160,12 +163,14 @@ class TutorialTool(ToolInstance):
         menu.addAction(clear_action)
         
     def table_row_clicked(self, item):
-         position = self._data[item.row() + 1][1];
-         rotation = self._data[item.row() + 1][2];
-         
-         print("setting position {0} and rotation {1}".format(position, rotation))
-         
-         from chimerax.atomic import AtomicStructure
+         position = self._data[item.row() + 1][1]
+         quat = self._data[item.row() + 1][2]
+
+         # Create a transformation matrix from quaternion and position
+         transformation = Place(origin=position)
+
+         print("setting position {0} and quat {1}".format(position, quat))
+
          structures = self.session.models.list(type=AtomicStructure)
                  
          if len(structures) > 0:         
