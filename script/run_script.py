@@ -24,7 +24,7 @@ animate_MQS(e_sqd_log, mol_folder, [1, 87, 2], session)
 animate_cluster(e_sqd_clusters_ordered, mol_folder, cluster_idx, session)
 
 
-diff_atom_comp("D:\Research\IPM\PoseEstimation\DiffFitViewer\dev_data\input\domain_fit_demo_3domains\density2.mrc", 0.7, 100, "D:\Research\IPM\PoseEstimation\DiffFitViewer\dev_data\input\domain_fit_demo_3domains\subunits_cif", "D:\Research\IPM\PoseEstimation\DiffFitViewer\dev_data\input\domain_fit_demo_3domains\subunits_mrc", out_dir="D:\Research\IPM\PoseEstimation\DiffFitViewer\dev_data\output", negative_space_value=-0.5, N_shifts=10, N_quaternions=20, out_dir_exist_ok=True)
+e_sqd_log = diff_atom_comp("D:\Research\IPM\PoseEstimation\DiffFitViewer\dev_data\input\domain_fit_demo_3domains\density2.mrc", 0.7, 100, "D:\Research\IPM\PoseEstimation\DiffFitViewer\dev_data\input\domain_fit_demo_3domains\subunits_cif", "D:\Research\IPM\PoseEstimation\DiffFitViewer\dev_data\input\domain_fit_demo_3domains\subunits_mrc", out_dir="D:\Research\IPM\PoseEstimation\DiffFitViewer\dev_data\output", negative_space_value=-0.5, N_shifts=10, N_quaternions=20, out_dir_exist_ok=True)
 
 # playground draft code ========
 
