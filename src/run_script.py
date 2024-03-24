@@ -1,6 +1,6 @@
 import sys
 sys.path.append('D:\\Research\\IPM\\PoseEstimation\\DiffFitViewer\\script')
-from parse_log import cluster_and_sort_sqd, look_at_cluster, look_at_MQS_idx
+from parse_log import cluster_and_sort_sqd, look_at_cluster, look_at_MQS_idx, animate_MQS, animate_cluster
 import numpy as np
 from chimerax.core.commands import run
 import os
@@ -16,6 +16,11 @@ mol_folder = "D:\Research\IPM\PoseEstimation\DiffFitViewer\dev_data\input\domain
 cluster_idx = 0
 look_at_cluster(e_sqd_clusters_ordered, mol_folder, cluster_idx, session)
 
+look_at_MQS_idx(e_sqd_log, mol_folder, [0,0,0], session)
+
+
+animate_MQS(e_sqd_log, mol_folder, [1, 87, 2], session)
+animate_cluster(e_sqd_clusters_ordered, mol_folder, cluster_idx, session)
 
 
 
