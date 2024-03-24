@@ -70,7 +70,7 @@ class TutorialTool(ToolInstance):
         # We will use an editable single-line text input field (QLineEdit)
         # with a descriptive text label to the left of it (QLabel).  To
         # arrange them horizontally side by side we use QHBoxLayout
-        from Qt.QtWidgets import QLabel, QPushButton, QLineEdit, QVBoxLayout, QTableView        
+        from Qt.QtWidgets import QLabel, QPushButton, QLineEdit, QVBoxLayout, QHBoxLayout, QTableView        
 
         layout = QVBoxLayout()        
 
@@ -108,6 +108,20 @@ class TutorialTool(ToolInstance):
         stats.setText("stats: ")
         layout.addWidget(stats)
         self.stats = stats
+
+        buttons_layout = QHBoxLayout()        
+        copy_button = QPushButton()
+        copy_button.setText("Place Copy")
+        copy_button.clicked.connect(self.copy_button_clicked)
+        
+        save_button = QPushButton()
+        save_button.setText("Save")
+        save_button.clicked.connect(self.save_button_clicked)
+        
+        buttons_layout.addWidget(copy_button)
+        buttons_layout.addWidget(save_button)
+        
+        layout.addLayout(buttons_layout)
         
         # Set the layout as the contents of our window
         self.tool_window.ui_area.setLayout(layout)
@@ -163,6 +177,8 @@ class TutorialTool(ToolInstance):
     def init_button_clicked(self):            
         
         root = self.init_folder.text()
+        datasetinput = 'domain_fit_demo_3domains'
+        datasetoutput = 'dev_comp_domain_fit_3_domains_10s20q'
         
         if len(root) == 0:
             print("Specify the root folder first!")
@@ -179,11 +195,11 @@ class TutorialTool(ToolInstance):
         import os
 
         print("opening the volume")
-        vol_path = root + "\dev_data\input\domain_fit_demo_3domains\density2.mrc"
+        vol_path = "{0}\dev_data\input\{1}\density2.mrc".format(root, datasetinput)
         vol = run(self.session, f"open {vol_path}")[0]
 
         print("computing clusters")
-        self.e_sqd_log = np.load(root + "\dev_data\output\dev_comp_domain_fit_3_domains\e_sqd_log.npy")
+        self.e_sqd_log = np.load("{0}\dev_data\output\{1}\e_sqd_log.npy".format(root, datasetoutput))
         self.e_sqd_clusters_ordered = cluster_and_sort_sqd(self.e_sqd_log)
 
         from Qt.QtCore import QSortFilterProxyModel, Qt
@@ -200,8 +216,29 @@ class TutorialTool(ToolInstance):
         self.stats.setText("stats: {0} entries".format(self.model.rowCount())) 
         
         print("showing the first cluster")
-        self.mol_folder = root + "\dev_data\input\domain_fit_demo_3domains\subunits_cif"        
+        self.mol_folder = "{0}\dev_data\input\{1}\subunits_cif".format(root, datasetinput)        
         self.cluster_idx = 0
         look_at_cluster(self.e_sqd_clusters_ordered, self.mol_folder, self.cluster_idx, self.session)
+    
+    def save_button_clicked(self):          
+        from Qt.QtWidgets import QFileDialog
         
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        fileName, ext = QFileDialog.getSaveFileName(self.view, 
+            "Save File", "", "CIF Files(*.cif);;PDB Files (*.pdb)", options = options)
+            
+        ext = ext[-4:]
+        ext = ext[:3]
         
+        self.save_structure(fileName, ext)
+    
+    def save_structure(self, targetpath, ext):
+        
+        if len(targetpath) > 0:
+            run(self.session, "save '{0}.{1}' models #2".format(targetpath, ext))
+    
+    def copy_button_clicked(self):          
+        run(self.session, "combine #2")
+        return
+    
