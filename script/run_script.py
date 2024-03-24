@@ -1,6 +1,6 @@
 import sys
 sys.path.append('D:\\Research\\IPM\\PoseEstimation\\DiffFitViewer\\script')
-from parse_log import cluster_and_sort_sqd, look_at_cluster
+from parse_log import cluster_and_sort_sqd, look_at_cluster, look_at_MQS_idx
 import numpy as np
 from chimerax.core.commands import run
 import os

@@ -29,6 +29,27 @@ def test_rl():
     print("Test RL")
 
 
+def look_at_MQS_idx(e_sqd_log, mol_folder, MQS, session, clean_scene=True):
+
+    if clean_scene:
+        # delete all other structures
+        structures = session.models.list(type=AtomicStructure)
+        for structure in structures:
+            structure.delete()
+
+    mol_files = os.listdir(mol_folder)
+
+    look_at_mol_idx, transformation = get_transformation_at_MQS(e_sqd_log, MQS)
+
+    mol_path = os.path.join(mol_folder, mol_files[look_at_mol_idx])
+    mol = run(session, f"open {mol_path}")[0]
+
+    mol.scene_position = transformation
+
+    session.logger.info(f"MQS: {MQS}")
+
+
+
 def look_at_cluster(e_sqd_clusters_ordered, mol_folder, cluster_idx, session, clean_scene=True):
 
     if clean_scene:
@@ -48,6 +69,23 @@ def look_at_cluster(e_sqd_clusters_ordered, mol_folder, cluster_idx, session, cl
     mol.scene_position = transformation
 
     session.logger.info(f"Cluster size: {len(e_sqd_clusters_ordered[cluster_idx])}")
+    session.logger.info(f"Representative MQS: {e_sqd_clusters_ordered[cluster_idx][0, 0:3].astype(int)}")
+
+
+def get_transformation_at_MQS(e_sqd_log, MQS):
+    shift = e_sqd_log[*MQS, -1][0:3]
+    quat = e_sqd_log[*MQS, -1][3:7][[1, 2, 3, 0]]  # convert to x,y,z,w
+
+    R_matrix = R.from_quat(quat).as_matrix()
+
+    T_matrix = np.zeros([3, 4])
+    T_matrix[:, :3] = R_matrix
+    T_matrix[:, 3] = shift
+
+    transformation = Place(matrix=T_matrix)
+    mol_idx = MQS[0]
+
+    return mol_idx, transformation
 
 
 def get_transformation_at_idx(e_sqd_clusters_ordered, look_at_idx=0):
@@ -124,13 +162,13 @@ def cluster_and_sort_sqd(e_sqd_log, shift_tolerance: float = 3.0, angle_toleranc
     # e_sqd_clusters_len = [len(cluster) for cluster in e_sqd_clusters]
 
     # sort within each cluster by descending correlation
-    e_sqd_clusters_sorted = [cluster[np.argsort(-cluster[:, 9])] for cluster in e_sqd_clusters]
+    e_sqd_clusters_sorted = [cluster[np.argsort(-cluster[:, 12])] for cluster in e_sqd_clusters]
 
     # choose the highest correlation
     e_sqd_clusters_representative = np.array([cluster[0, :] for cluster in e_sqd_clusters_sorted])
 
     # order all the clusters by their representatives' correlation
-    clusters_order = np.argsort(-e_sqd_clusters_representative[:, 9])
+    clusters_order = np.argsort(-e_sqd_clusters_representative[:, 12])
     e_sqd_clusters_ordered = [e_sqd_clusters_sorted[i] for i in clusters_order]
 
     # e_sqd_clusters_ordered_len = [len(cluster) for cluster in e_sqd_clusters_ordered]
