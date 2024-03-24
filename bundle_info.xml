@@ -5,21 +5,20 @@ When uploaded to the ChimeraX toolshed, the bundle
 will be displayed without the ChimeraX- prefix.
 -->
 
-<BundleInfo name="ChimeraX-TutorialToolQt"
-	    version="0.1" package="chimerax.tut_tool_qt"
+<BundleInfo name="DiffFitViewerTool"
+	    version="0.1" package="chimerax.difffit"
   	    minSessionVersion="1" maxSessionVersion="1">
 
   <!-- Additional information about bundle source -->
-  <Author>UCSF RBVI</Author>
-  <Email>chimerax@cgl.ucsf.edu</Email>
+  <Author>Deng "Roden" Luo</Author>
+  <Email>deng.luo@kaust.edu.sa</Email>
   <URL>https://www.rbvi.ucsf.edu/chimerax/</URL>
 
   <!-- Synopsis is a one-line description
        Description is a full multi-line description -->
-  <Synopsis>Example for adding a graphical interface tool</Synopsis>
-  <Description>Example code for implementing ChimeraX bundle.
-
-Implements tool "Tutorial (Qt)" to log typed user input.
+  <Synopsis>DiffFit ChimeraX plugin GUI</Synopsis>
+  <Description>
+  Implements DiffFit ChimeraX plugin.
   </Description>
 
   <!-- Categories is a list where this bundle should appear -->

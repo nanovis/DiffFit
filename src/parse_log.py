@@ -5,6 +5,7 @@ from chimerax.core.commands import run
 import os
 from chimerax.atomic import AtomicStructure
 import time
+import asyncio
 
 def shift_difference(shift1, shift2):
     """
@@ -29,6 +30,15 @@ def quaternion_angle_distance(q1, q2):
 def test_rl():
     print("Test RL")
 
+#async def async_test_loop(session, count):    
+#    for x in range(count):
+#        session.logger.info("async test {0}".format(x))
+#        await asyncio.sleep(0.5)
+
+#async def async_test(session):  
+#    task = asyncio.create_task(async_test_loop(session, 10))
+#    
+#    await task
 
 def animate_MQS(e_sqd_log, mol_folder, MQS, session, clean_scene=True):
 
@@ -50,7 +60,42 @@ def animate_MQS(e_sqd_log, mol_folder, MQS, session, clean_scene=True):
 
     session.logger.info(f"MQS: {MQS}")
 
+def animate_MQS_2(e_sqd_log, mol_folder, MQS, session, clean_scene=True):
 
+    if clean_scene:
+        # delete all other structures
+        structures = session.models.list(type=AtomicStructure)
+        for structure in structures:
+            structure.delete()
+
+    mol_files = os.listdir(mol_folder)
+    mol_path = os.path.join(mol_folder, mol_files[MQS[0]])
+    mol = run(session, f"open {mol_path}")[0]
+
+    N_iter = len(e_sqd_log[0, 0, 0])
+    _, transformation = get_transformation_at_MQS(e_sqd_log, MQS, N_iter - 1)
+    
+    m = transformation.matrix
+    
+    print(m)
+    
+    run(session, "view matrix models #1,{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}".format(
+    m[0][0],
+    m[1][0],
+    m[2][0],
+    m[0][1],
+    m[1][1],
+    m[2][1],
+    m[0][2],
+    m[1][2],
+    m[2][2],
+    m[0][3],
+    m[1][3],
+    m[2][3]))
+    #mol.scene_position = transformation
+    
+    session.logger.info(f"MQS: {MQS}")
+    
 def animate_cluster(e_sqd_clusters_ordered, mol_folder, cluster_idx, session, clean_scene=True):
 
     return

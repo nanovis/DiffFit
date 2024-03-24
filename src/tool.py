@@ -141,14 +141,27 @@ class TutorialTool(ToolInstance):
         menu.addAction(clear_action)
         
     def table_row_clicked(self, item):
-        from .parse_log import cluster_and_sort_sqd, look_at_cluster, look_at_MQS_idx
+        from .parse_log import cluster_and_sort_sqd, look_at_cluster, look_at_MQS_idx, animate_MQS, animate_MQS_2
     
         if item.row() != -1:
-            self.cluster_idx = item.row()
+            proxyIndex = self.proxyModel.index(item.row(), 0)
+            sourceIndex = self.proxyModel.mapToSource(proxyIndex);
+            self.cluster_idx = sourceIndex.row()
+            
+            #print(self.cluster_idx)
+            
+            #MQS = self.e_sqd_clusters_ordered[self.cluster_idx][0, 0:3].astype(int).tolist()
+            
+            #animate_MQS_2(self.e_sqd_log, self.mol_folder, MQS, self.session)
             look_at_cluster(self.e_sqd_clusters_ordered, self.mol_folder, self.cluster_idx, self.session)
             
+    #def async_func(self):
+    #    import asyncio
+    #    from .parse_log import async_test        
+    #    asyncio.run(async_test(self.session))
     
-    def init_button_clicked(self):
+    def init_button_clicked(self):            
+        
         root = self.init_folder.text()
         
         if len(root) == 0:
@@ -170,23 +183,25 @@ class TutorialTool(ToolInstance):
         vol = run(self.session, f"open {vol_path}")[0]
 
         print("computing clusters")
-        e_sqd_log = np.load(root + "\dev_data\output\dev_comp_domain_fit_3_domains\e_sqd_log.npy")
-        self.e_sqd_clusters_ordered = cluster_and_sort_sqd(e_sqd_log)
+        self.e_sqd_log = np.load(root + "\dev_data\output\dev_comp_domain_fit_3_domains\e_sqd_log.npy")
+        self.e_sqd_clusters_ordered = cluster_and_sort_sqd(self.e_sqd_log)
 
         from Qt.QtCore import QSortFilterProxyModel, Qt
-        model = TableModel(self.e_sqd_clusters_ordered)
-        proxyModel = QSortFilterProxyModel()
-        proxyModel.setSourceModel(model)
+        self.model = TableModel(self.e_sqd_clusters_ordered)
+        self.proxyModel = QSortFilterProxyModel()
+        self.proxyModel.setSourceModel(self.model)
         
-        self.view.setModel(proxyModel)
+        self.view.setModel(self.proxyModel)
         self.view.setSortingEnabled(True)
         self.view.sortByColumn(0, Qt.DescendingOrder)
         self.view.reset()
         self.view.show()  
         
-        self.stats.setText("stats: {0} entries".format(model.rowCount())) 
+        self.stats.setText("stats: {0} entries".format(self.model.rowCount())) 
         
         print("showing the first cluster")
         self.mol_folder = root + "\dev_data\input\domain_fit_demo_3domains\subunits_cif"        
         self.cluster_idx = 0
         look_at_cluster(self.e_sqd_clusters_ordered, self.mol_folder, self.cluster_idx, self.session)
+        
+        
