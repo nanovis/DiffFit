@@ -17,7 +17,7 @@ N_mol, N_quat, N_shift, _, _ = e_sqd_log.shape
 # with corr, e_sqd_cluster[0][:, -1] is sorted in descending order
 
 
-e_sqd_cluster = []
+e_sqd_clusters = []
 
 for mol_idx in range(N_mol):
     for quat_idx in range(N_quat):
@@ -29,8 +29,8 @@ for mol_idx in range(N_mol):
             quat = e_sqd_log[mol_idx, quat_idx, shift_idx, -1, 3:7]
 
             hit_flag = False
-            for cluster_idx in range(len(e_sqd_cluster)):
-                for placement in e_sqd_cluster[cluster_idx]:
+            for cluster_idx in range(len(e_sqd_clusters)):
+                for placement in e_sqd_clusters[cluster_idx]:
                     if mol_idx == int(placement[0]):
                         placement_shift = placement[3:6]
                         placement_quat = placement[6:10]
@@ -40,7 +40,7 @@ for mol_idx in range(N_mol):
 
                         if shift_diff <= shift_tolerance and angle_diff <= angle_tolerance:
                             hit_flag = True
-                            e_sqd_cluster[cluster_idx] = np.vstack((e_sqd_cluster[cluster_idx],
+                            e_sqd_clusters[cluster_idx] = np.vstack((e_sqd_clusters[cluster_idx],
                                                                     np.array([np.hstack(([mol_idx, quat_idx, shift_idx],
                                                                                          e_sqd_log[mol_idx, quat_idx, shift_idx, -1]))])))
                             break
@@ -49,9 +49,22 @@ for mol_idx in range(N_mol):
                     break
 
             if not hit_flag:
-                e_sqd_cluster.append(np.array([np.hstack(([mol_idx, quat_idx, shift_idx],
+                e_sqd_clusters.append(np.array([np.hstack(([mol_idx, quat_idx, shift_idx],
                                                           e_sqd_log[mol_idx, quat_idx, shift_idx, -1]))]))
 
 
 
-e_sqd_cluster_len = [len(cluster) for cluster in e_sqd_cluster]
+e_sqd_clusters_len = [len(cluster) for cluster in e_sqd_clusters]
+
+# sort within each cluster by descending correlation
+e_sqd_clusters_sorted = [cluster[np.argsort(-cluster[:, 9])] for cluster in e_sqd_clusters]
+
+# choose the highest correlation
+e_sqd_clusters_representative = np.array([cluster[0, :] for cluster in e_sqd_clusters_sorted])
+
+# order all the clusters by their representatives' correlation
+clusters_order = np.argsort(-e_sqd_clusters_representative[:, 9])
+e_sqd_clusters_ordered = [e_sqd_clusters_sorted[i] for i in clusters_order]
+
+e_sqd_clusters_ordered_len = [len(cluster) for cluster in e_sqd_clusters_ordered]
+
