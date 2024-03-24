@@ -1,4 +1,6 @@
 import numpy as np
+from scipy.spatial.transform import Rotation as R
+from chimerax.geometry import Place
 
 
 def shift_difference(shift1, shift2):
@@ -23,6 +25,22 @@ def quaternion_angle_distance(q1, q2):
 
 def test_rl():
     print("Test RL")
+
+
+def get_transformation_at_idx(e_sqd_clusters_ordered, look_at_idx=0):
+    shift = e_sqd_clusters_ordered[look_at_idx][0, 3:6]
+    quat = e_sqd_clusters_ordered[look_at_idx][0, 6:10][[1, 2, 3, 0]]  # convert to x,y,z,w
+
+    R_matrix = R.from_quat(quat).as_matrix()
+
+    T_matrix = np.zeros([3, 4])
+    T_matrix[:, :3] = R_matrix
+    T_matrix[:, 3] = shift
+
+    transformation = Place(matrix=T_matrix)
+    mol_idx = int(e_sqd_clusters_ordered[look_at_idx][0, 0])
+
+    return mol_idx, transformation
 
 
 def cluster_and_sort_sqd(e_sqd_log, shift_tolerance: float = 3.0, angle_tolerance: float = 6.0):
