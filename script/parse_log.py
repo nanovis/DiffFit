@@ -4,6 +4,7 @@ from chimerax.geometry import Place
 from chimerax.core.commands import run
 import os
 from chimerax.atomic import AtomicStructure
+import time
 
 def shift_difference(shift1, shift2):
     """
@@ -27,6 +28,32 @@ def quaternion_angle_distance(q1, q2):
 
 def test_rl():
     print("Test RL")
+
+
+def animate_MQS(e_sqd_log, mol_folder, MQS, session, clean_scene=True):
+
+    if clean_scene:
+        # delete all other structures
+        structures = session.models.list(type=AtomicStructure)
+        for structure in structures:
+            structure.delete()
+
+    mol_files = os.listdir(mol_folder)
+    mol_path = os.path.join(mol_folder, mol_files[MQS[0]])
+    mol = run(session, f"open {mol_path}")[0]
+
+    N_iter = len(e_sqd_log[0, 0, 0])
+    for iter_idx in range(N_iter):
+        _, transformation = get_transformation_at_MQS(e_sqd_log, MQS, iter_idx)
+        mol.scene_position = transformation
+        time.sleep(0.1)
+
+    session.logger.info(f"MQS: {MQS}")
+
+
+def animate_cluster(e_sqd_clusters_ordered, mol_folder, cluster_idx, session, clean_scene=True):
+
+    return
 
 
 def look_at_MQS_idx(e_sqd_log, mol_folder, MQS, session, clean_scene=True):
@@ -72,9 +99,9 @@ def look_at_cluster(e_sqd_clusters_ordered, mol_folder, cluster_idx, session, cl
     session.logger.info(f"Representative MQS: {e_sqd_clusters_ordered[cluster_idx][0, 0:3].astype(int)}")
 
 
-def get_transformation_at_MQS(e_sqd_log, MQS):
-    shift = e_sqd_log[*MQS, -1][0:3]
-    quat = e_sqd_log[*MQS, -1][3:7][[1, 2, 3, 0]]  # convert to x,y,z,w
+def get_transformation_at_MQS(e_sqd_log, MQS, iter_idx=-1):
+    shift = e_sqd_log[*MQS, iter_idx][0:3]
+    quat = e_sqd_log[*MQS, iter_idx][3:7][[1, 2, 3, 0]]  # convert to x,y,z,w
 
     R_matrix = R.from_quat(quat).as_matrix()
 
