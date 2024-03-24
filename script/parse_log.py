@@ -51,7 +51,10 @@ def animate_MQS(e_sqd_log, mol_folder, MQS, session, clean_scene=True):
     session.logger.info(f"MQS: {MQS}")
 
 
-def animate_cluster(e_sqd_clusters_ordered, mol_folder, cluster_idx, session, clean_scene=True):
+def animate_cluster(e_sqd_log, e_sqd_clusters_ordered, mol_folder, cluster_idx, session, clean_scene=True):
+
+    MQS = e_sqd_clusters_ordered[cluster_idx][0, 0:3].astype(int).tolist()
+    animate_MQS(e_sqd_log, mol_folder, MQS, session, clean_scene)
 
     return
 
