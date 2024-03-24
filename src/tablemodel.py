@@ -6,6 +6,7 @@ class TableModel(QAbstractTableModel):
     def __init__(self, data, parent=None):
         QAbstractTableModel.__init__(self, parent)
         self._data = data;
+        self._header = ["Mol Id", "Quat Id", "Shift Id", "x", "y", "z", "rx", "ry", "rz", "rw", "corr 1", "corr 2", "corr 3", "corr 4"]
 
     def rowCount(self, parent=QModelIndex()) -> int:
         """ Override method from QAbstractTableModel
@@ -13,7 +14,7 @@ class TableModel(QAbstractTableModel):
         Return row count of the pandas DataFrame
         """
         if parent == QModelIndex():
-            return len(self._data) - 1                
+            return len(self._data)                
 
         return 0
 
@@ -23,10 +24,10 @@ class TableModel(QAbstractTableModel):
         Return column count of the pandas DataFrame
         """
         if parent == QModelIndex():
-            if len(self._data) == 0:
+            if len(self._data) == 0 or len(self._data[0]) == 0:
                return 0
             else:
-               return len(self._data[0])                
+               return len(self._data[0][0])                
 
     def data(self, index: QModelIndex, role=Qt.ItemDataRole):
         """Override method from QAbstractTableModel
@@ -37,9 +38,13 @@ class TableModel(QAbstractTableModel):
             return None
 
         if role == Qt.DisplayRole:
-            return str(self._data[index.row() + 1][index.column()])
-        # str(self._dataframe.iloc[index.row(), index.column()])
-
+            column = index.column()
+            
+            if column < 3:
+                return int(self._data[index.row()][0][index.column()])
+            else:
+                return float(self._data[index.row()][0][index.column()])
+                    
         return None
 
     def headerData(
@@ -47,11 +52,12 @@ class TableModel(QAbstractTableModel):
     ):
         if role == Qt.DisplayRole:
             if orientation == Qt.Horizontal:
-                return str(self._data[0][section])
-        # str(self._dataframe.columns[section])
-
+                if section <= len(self._header):
+                    return self._header[section]
+                else:
+                    return "<unknown>"
+                    
             if orientation == Qt.Vertical:
                 return ""
-        # str(self._dataframe.index[section])
-
+        
         return None

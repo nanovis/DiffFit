@@ -70,16 +70,30 @@ class TutorialTool(ToolInstance):
         # We will use an editable single-line text input field (QLineEdit)
         # with a descriptive text label to the left of it (QLabel).  To
         # arrange them horizontally side by side we use QHBoxLayout
-        from Qt.QtWidgets import QLabel, QLineEdit, QVBoxLayout, QTableView        
+        from Qt.QtWidgets import QLabel, QPushButton, QLineEdit, QVBoxLayout, QTableView        
 
-        layout = QVBoxLayout()
-        layout.addWidget(QLabel("Log this text:"))
-        self.line_edit = QLineEdit()
+        layout = QVBoxLayout()        
+
+        # root folder
+        layout.addWidget(QLabel("Specify the root directory (containing 'src' folder):"))
+        self.init_folder = QLineEdit()
+        self.init_folder.setText('D:\GIT\DiffFitViewer')
+        self.init_folder.returnPressed.connect(self.return_pressed)
+        layout.addWidget(self.init_folder)
+
+        # init button
+        button = QPushButton()
+        button.setText("Init")
+        button.clicked.connect(self.init_button_clicked)
+
+        layout.addWidget(button)        
 
         # Arrange for our 'return_pressed' method to be called when the
         # user presses the Return key
-        self.line_edit.returnPressed.connect(self.return_pressed)
-        layout.addWidget(self.line_edit)
+        #layout.addWidget(QLabel("Log this text:"))
+        #self.line_edit = QLineEdit()
+        #self.line_edit.returnPressed.connect(self.return_pressed)
+        #layout.addWidget(self.line_edit)
 
         view = QTableView();
         view.resize(800, 500)
@@ -87,36 +101,14 @@ class TutorialTool(ToolInstance):
         view.setAlternatingRowColors(True)
         view.setSelectionBehavior(QTableView.SelectRows)
         view.clicked.connect(self.table_row_clicked)        
-
-        # placeholder for actual Roden's data
-        data = []
-        rows = 4
-        
-        col = []
-        col.append("ID")
-        col.append("Position")
-        col.append("Rotation")
-        data.append(col)
-        
-        for i in range(rows):
-            col = []
-            col.append(i + 1)  # ID
-            col.append([i, i, i])  # shift
-            col.append(i)  # placeholder for quaternion
-            data.append(col)
-
-        data[1][2] = [1, 0, 0, 0]  # real quaternion
-        data[2][2] = [0, 1, 0, 0]
-        data[3][2] = [0, 0, 1, 0]
-        data[4][2] = [0, 0, 0, 1]
-
-        self._data = data
-
-        model = TableModel(data)
-        view.setModel(model)
-        view.show()  
         layout.addWidget(view)
+        self.view = view
 
+        stats = QLabel()
+        stats.setText("stats: ")
+        layout.addWidget(stats)
+        self.stats = stats
+        
         # Set the layout as the contents of our window
         self.tool_window.ui_area.setLayout(layout)
 
@@ -125,29 +117,15 @@ class TutorialTool(ToolInstance):
         self.tool_window.manage('side')
 
     def return_pressed(self):
+        #from Qt.QtWidgets import QFileDialog
+        
+        #folderpath = QFileDialog.getExistingDirectory(self, 'Select Folder')
+        #print(folderpath)
+        
         # The use has pressed the Return key; log the current text as HTML
 
         # ToolInstance has a 'session' attribute...
-        run(self.session, "log html %s" % self.line_edit.text())
-        
-        # If no models were given, use all atomic structures
-        #from chimerax.atomic import AtomicStructure
-        #structures = self.session.models.list(type=AtomicStructure)
-        #num_atoms = 0
-
-        # Loop through structures and print atoms
-        #for s in structures:
-            # We get the list of atoms and transformed atomic coordinates
-            # as arrays so that we can limit the number of accesses to
-            # molecular data, which is slower than accessing arrays directly
-            #atoms = s.atoms
-            #coords = atoms.scene_coords
-
-            #print(s.scene_coords)
-            #run(self.session, "turn y 1 360 model #1")
-
-            # First line for a structure is the number of atoms
-            #run(self.session, "log html atoms=%s" % s.num_atoms)
+        run(self.session, "log html %s" % self.init_folder.text())            
 
     def fill_context_menu(self, menu, x, y):
         # Add any tool-specific items to the given context menu (a QMenu instance).
@@ -159,34 +137,56 @@ class TutorialTool(ToolInstance):
         # was raised.
         from Qt.QtGui import QAction
         clear_action = QAction("Clear", menu)
-        clear_action.triggered.connect(lambda *args: self.line_edit.clear())
+        clear_action.triggered.connect(lambda *args: self.init_folder.clear())
         menu.addAction(clear_action)
         
     def table_row_clicked(self, item):
-         position = self._data[item.row() + 1][1]
-         quat = self._data[item.row() + 1][2]
-
-         # Create a transformation matrix from quaternion and position
-         transformation = Place(origin=position)
-
-         print("setting position {0} and quat {1}".format(position, quat))
-
-         structures = self.session.models.list(type=AtomicStructure)
-         structures[0].scene_position = transformation
-
-         # if len(structures) > 0:
-         #     s = structures[0]
-         #
-         #     #print(dir(s))
-         #     #o = s.scene_position.translation()
-         #     #print(o)
-         #     #s.scene_position.translation()
-         #
-         #     print(position)
-         #
-         #     from chimerax.core.commands import run
-         #     #view matrix models #1,0.40692,0.60876,0.68104,1.26,0.29794,0.79324,-0.53104,1.11,-0.56351,0.013184,0.50416,2.549
-         #     run(self.session, "view matrix models #1,0.40692,0.60876,0.68104,{0},0.29794,0.79324,-0.53104,{1},-0.56351,0.013184,0.50416,{2}".format(position[0], position[1], position[2]))
-            
-            # -----------------------------------------------------------------------------
+        from .parse_log import cluster_and_sort_sqd, look_at_cluster, look_at_MQS_idx
     
+        if item.row() != -1:
+            self.cluster_idx = item.row()
+            look_at_cluster(self.e_sqd_clusters_ordered, self.mol_folder, self.cluster_idx, self.session)
+            
+    
+    def init_button_clicked(self):
+        root = self.init_folder.text()
+        
+        if len(root) == 0:
+            print("Specify the root folder first!")
+            return
+        
+        #root = 'D:\\Research\\IPM\\PoseEstimation\\DiffFitViewer\\script'
+        #root = 'D:\GIT\DiffFitViewer'
+        
+        import sys
+        sys.path.append(root + '\\script')
+        from .parse_log import cluster_and_sort_sqd, look_at_cluster, look_at_MQS_idx
+        import numpy as np
+        from chimerax.core.commands import run
+        import os
+
+        print("opening the volume")
+        vol_path = root + "\dev_data\input\domain_fit_demo_3domains\density2.mrc"
+        vol = run(self.session, f"open {vol_path}")[0]
+
+        print("computing clusters")
+        e_sqd_log = np.load(root + "\dev_data\output\dev_comp_domain_fit_3_domains\e_sqd_log.npy")
+        self.e_sqd_clusters_ordered = cluster_and_sort_sqd(e_sqd_log)
+
+        from Qt.QtCore import QSortFilterProxyModel, Qt
+        model = TableModel(self.e_sqd_clusters_ordered)
+        proxyModel = QSortFilterProxyModel()
+        proxyModel.setSourceModel(model)
+        
+        self.view.setModel(proxyModel)
+        self.view.setSortingEnabled(True)
+        self.view.sortByColumn(0, Qt.DescendingOrder)
+        self.view.reset()
+        self.view.show()  
+        
+        self.stats.setText("stats: {0} entries".format(model.rowCount())) 
+        
+        print("showing the first cluster")
+        self.mol_folder = root + "\dev_data\input\domain_fit_demo_3domains\subunits_cif"        
+        self.cluster_idx = 0
+        look_at_cluster(self.e_sqd_clusters_ordered, self.mol_folder, self.cluster_idx, self.session)
