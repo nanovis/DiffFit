@@ -1,7 +1,7 @@
 import numpy as np
 import sys
 sys.path.append('D:\\Research\\IPM\\PoseEstimation\\DiffFitViewer\\script')
-from parse_log import cluster_and_sort_sqd, look_at_cluster, look_at_MQS_idx, animate_MQS, animate_cluster
+from parse_log import cluster_and_sort_sqd, look_at_cluster, look_at_MQS_idx, animate_MQS, animate_cluster, get_transformation_at_MQS
 from chimerax.core.commands import run
 
 
@@ -40,10 +40,19 @@ s = structures[0]
 s.display = False
 s.display = True
 
-v = F.simulated_map(s, 4.0, session)
+
+
+
+import os
+mol_path = os.path.join(mol_folder, os.listdir(mol_folder)[1])
+mol = run(session, f"open {mol_path}")[0]
+
+_, transformation = get_transformation_at_MQS(e_sqd_log, [1, 1, 1])
+
+mol.atoms.transform(transformation)
 
 from chimerax.map.molmap import molecule_map
-v = molecule_map(session, s.atoms, 4.0, grid_spacing=vol.data_origin_and_step()[1][0])
+v = molecule_map(session, mol.atoms, 4.0, grid_spacing=vol.data_origin_and_step()[1][0])
 v.display = False
 v.display = True
 v.delete()
@@ -52,6 +61,36 @@ v.data.array.shape
 
 v.data_origin_and_step()
 vol.data_origin_and_step()
+
+v.data.matrix()
+vol.data.matrix()
+
+
+v.data.size
+v.data.origin
+v.data.step
+
+v.maximum_surface_level
+
+
+v_matrix = v.data.matrix()
+vol_matrix = vol.data.matrix()
+eligible_indices = np.where(v_matrix > v.maximum_surface_level)
+eligible_indices_list = list(zip(*eligible_indices))
+
+for idx_in_v in eligible_indices_list:
+    xyz = v.data.ijk_to_xyz(idx_in_v)
+    idx_in_vol = vol.data.xyz_to_ijk(xyz).astype(int)
+    try:
+        vol_matrix[idx_in_vol] = 0.0
+    except IndexError:
+        # if idx_in_vol is out of bounds
+        continue
+
+v_matrix.shape
+type(v_matrix)
+
+_model_set_position
 
 # v.replace_data()
 
