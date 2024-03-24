@@ -1,7 +1,9 @@
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 from chimerax.geometry import Place
-
+from chimerax.core.commands import run
+import os
+from chimerax.atomic import AtomicStructure
 
 def shift_difference(shift1, shift2):
     """
@@ -25,6 +27,27 @@ def quaternion_angle_distance(q1, q2):
 
 def test_rl():
     print("Test RL")
+
+
+def look_at_cluster(e_sqd_clusters_ordered, mol_folder, cluster_idx, session, clean_scene=True):
+
+    if clean_scene:
+        # delete all other structures
+        structures = session.models.list(type=AtomicStructure)
+        for structure in structures:
+            structure.delete()
+
+    mol_files = os.listdir(mol_folder)
+    # mol_files[idx] pairs with e_sqd_clusters_ordered[:][:, idx]
+
+    look_at_mol_idx, transformation = get_transformation_at_idx(e_sqd_clusters_ordered, cluster_idx)
+
+    mol_path = os.path.join(mol_folder, mol_files[look_at_mol_idx])
+    mol = run(session, f"open {mol_path}")[0]
+
+    mol.scene_position = transformation
+
+    session.logger.info(f"Cluster size: {len(e_sqd_clusters_ordered[cluster_idx])}")
 
 
 def get_transformation_at_idx(e_sqd_clusters_ordered, look_at_idx=0):
