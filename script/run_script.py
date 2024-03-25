@@ -82,7 +82,7 @@ for idx_in_v in eligible_indices_list:
     xyz = v.data.ijk_to_xyz(idx_in_v)
     idx_in_vol = vol.data.xyz_to_ijk(xyz).astype(int)
     try:
-        vol_matrix[idx_in_vol] = 0.0
+        vol_matrix[*idx_in_vol] = 0.0
     except IndexError:
         # if idx_in_vol is out of bounds
         continue
@@ -90,11 +90,16 @@ for idx_in_v in eligible_indices_list:
 v_matrix.shape
 type(v_matrix)
 
-_model_set_position
-
-# v.replace_data()
 
 
+r=vol.subregion()
+g = vol.region_grid(r)
+g.array = vol.region_matrix(r)
+g.array[:, :, 0:15] = 0.0
+from chimerax.map.volume import volume_from_grid_data
+v = volume_from_grid_data(g, session)
+v.name
+v.copy_settings_from(vol, copy_region=False, copy_colors=True)
 
 # playground draft code ========
 
