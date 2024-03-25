@@ -25,7 +25,7 @@ class _MyAPI(BundleAPI):
         # ones listed in bundle_info.xml (without the leading and
         # trailing whitespace), and create and return an instance of the
         # appropriate class from the ``tool`` module.
-        if ti.name == "DiffFit Viewer":
+        if ti.name == "DiffFit":
             from . import tool
             return tool.TutorialTool(session, ti.name)
         raise ValueError("trying to start unknown tool: %s" % ti.name)

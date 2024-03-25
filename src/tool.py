@@ -79,6 +79,7 @@ class TutorialTool(ToolInstance):
         init_folder_layout.addWidget(QLabel("Specify the root directory (containing 'src' folder):"))
         self.init_folder = QLineEdit()
         self.init_folder.setText('D:\GIT\DiffFitViewer')
+        # self.init_folder.setText('D:\Research\IPM\PoseEstimation\DiffFitViewer')
         self.init_folder.returnPressed.connect(self.return_pressed)
         init_folder_layout.addWidget(self.init_folder)
         layout.addLayout(init_folder_layout)
@@ -112,20 +113,26 @@ class TutorialTool(ToolInstance):
         layout.addWidget(stats)
         self.stats = stats
         
-        # copying of the currently selected object
+        # button panel        
+        buttons_layout = QHBoxLayout()        
+        
         copy_button = QPushButton()
         copy_button.setText("Place Copy")
         copy_button.clicked.connect(self.copy_button_clicked)
-
+        
+        zero_density_button = QPushButton()
+        zero_density_button.setText("Zero density")
+        zero_density_button.clicked.connect(self.zero_density_button_clicked)
+        
         # saving currently selected object
         save_button = QPushButton()
         save_button.setText("Save")
         save_button.clicked.connect(self.save_button_clicked)
-
-        # button panel
-        buttons_layout = QHBoxLayout()                
+        
         buttons_layout.addWidget(copy_button)
-        buttons_layout.addWidget(save_button)        
+        buttons_layout.addWidget(zero_density_button)
+        buttons_layout.addWidget(save_button)
+        
         layout.addLayout(buttons_layout)
         
         # slider for animation
@@ -271,8 +278,12 @@ class TutorialTool(ToolInstance):
         if len(targetpath) > 0 and self.mol:
             run(self.session, "save '{0}.{1}' models #{2}".format(targetpath, ext, self.mol.id[0]))
     
-    def copy_button_clicked(self):          
-        run(self.session, "combine #2")
+    def copy_button_clicked(self):
+        self.session.logger.info("run combine")
+        return
+        
+    def zero_density_button_clicked(self):
+        self.session.logger.info("Zeroing density")
         return
     
     def progress_value_changed(self):
