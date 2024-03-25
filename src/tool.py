@@ -86,9 +86,14 @@ class TutorialTool(ToolInstance):
 
         # init button
         button = QPushButton()
-        button.setText("Init")
-        button.clicked.connect(self.init_button_clicked)
+        button.setText("Run!")
+        button.clicked.connect(self.run_button_clicked)
         layout.addWidget(button)        
+        
+        button2 = QPushButton()
+        button2.setText("Init")
+        button2.clicked.connect(self.init_button_clicked)
+        layout.addWidget(button2)        
 
         # Arrange for our 'return_pressed' method to be called when the
         # user presses the Return key
@@ -215,6 +220,29 @@ class TutorialTool(ToolInstance):
     #    from .parse_log import async_test        
     #    asyncio.run(async_test(self.session))
     
+    def run_button_clicked(self):
+        import sys
+        sys.path.append('D:\\GIT\\DiffFitViewer\\src')
+        from DiffAtomComp import diff_atom_comp
+
+        output_folder = "D:\\GIT\\DiffFitViewer\dev_data\output"
+        target_vol_path = "D:\\GIT\\DiffFitViewer\dev_data\input\domain_fit_demo_3domains\density2.mrc"
+        structures_directory = "D:\\GIT\\DiffFitViewer\dev_data\input\domain_fit_demo_3domains\subunits_cif"
+        structures_sim_map_dir = "D:\\GIT\\DiffFitViewer\dev_data\input\domain_fit_demo_3domains\subunits_mrc"
+        
+        e_sqd_log = diff_atom_comp(
+        target_vol_path, 
+        0.7, 
+        100, 
+        structures_directory, 
+        structures_sim_map_dir, 
+        out_dir=output_folder, 
+        negative_space_value=-0.5, 
+        N_shifts=10, 
+        N_quaternions=20, 
+        out_dir_exist_ok=True)
+    
+    
     def init_button_clicked(self):            
         
         root = self.init_folder.text()
@@ -237,7 +265,7 @@ class TutorialTool(ToolInstance):
 
         print("opening the volume")
         vol_path = "{0}\dev_data\input\{1}\density2.mrc".format(root, datasetinput)
-        vol = run(self.session, f"open {vol_path}")[0]
+        self.vol = run(self.session, f"open {vol_path}")[0]
 
         print("computing clusters")
         self.e_sqd_log = np.load("{0}\dev_data\output\{1}\e_sqd_log.npy".format(root, datasetoutput))
@@ -282,8 +310,8 @@ class TutorialTool(ToolInstance):
         self.session.logger.info("run combine")
         return
         
-    def zero_density_button_clicked(self):
-        self.session.logger.info("Zeroing density")
+    def zero_density_button_clicked(self):        
+        zero_cluster_density(self.vol, self.e_sqd_clusters_ordered, self.mol_folder, self.cluster_idx, self.session, res=4.0, zero_iter=0)
         return
     
     def progress_value_changed(self):
