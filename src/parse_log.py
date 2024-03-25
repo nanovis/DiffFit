@@ -144,6 +144,55 @@ def look_at_cluster(e_sqd_clusters_ordered, mol_folder, cluster_idx, session, cl
     session.logger.info(f"Representative MQS: {e_sqd_clusters_ordered[cluster_idx][0, 0:3].astype(int)}")
 
 
+def zero_cluster_density(vol, e_sqd_clusters_ordered, mol_folder, cluster_idx, session, clean_scene=True,
+                         res=4.0, zero_iter=0):
+
+    mol_files = os.listdir(mol_folder)
+    # mol_files[idx] pairs with e_sqd_clusters_ordered[:][:, idx]
+
+    look_at_mol_idx, transformation = get_transformation_at_idx(e_sqd_clusters_ordered, cluster_idx)
+
+    mol_path = os.path.join(mol_folder, mol_files[look_at_mol_idx])
+    mol = run(session, f"open {mol_path}")[0]
+
+    mol.atoms.transform(transformation)
+
+    from chimerax.map.molmap import molecule_map
+    mol_vol = molecule_map(session, mol.atoms, res, grid_spacing=vol.data_origin_and_step()[1][0] / 3)
+
+    # TODO: Manually change the surface threshold
+
+    mol_vol_matrix = mol_vol.data.matrix()
+    vol_matrix = vol.data.matrix().copy()
+    eligible_indices = np.where(mol_vol_matrix > mol_vol.maximum_surface_level)
+    eligible_indices_list = list(zip(*eligible_indices))
+
+    xyz_in_mol = [mol_vol.data.ijk_to_xyz(idx_in_mol_vol) for idx_in_mol_vol in eligible_indices_list]
+    idx_in_vol = [vol.data.xyz_to_ijk(xyz).astype(int).tolist() for xyz in xyz_in_mol]
+
+    for idx in idx_in_vol:
+        try:
+            vol_matrix[*idx] = 0.0
+        except IndexError:
+            # if idx_in_vol is out of bounds
+            continue
+
+    r = vol.subregion()
+    g = vol.region_grid(r)
+    g.array[:, :, :] = vol_matrix
+    g.name = vol.name + f"zero_{zero_iter}"
+
+    from chimerax.map.volume import volume_from_grid_data
+    v_zeroed = volume_from_grid_data(g, session)
+    v_zeroed.copy_settings_from(vol, copy_region=False, copy_colors=True)
+
+    mol_vol.delete()
+    mol.delete()
+
+    session.logger.info(f"Zeroing density for MQS: {e_sqd_clusters_ordered[cluster_idx][0, 0:3].astype(int)}")
+
+
+
 def get_transformation_at_MQS(e_sqd_log, MQS, iter_idx=-1):
     shift = e_sqd_log[*MQS, iter_idx][0:3]
     quat = e_sqd_log[*MQS, iter_idx][3:7][[1, 2, 3, 0]]  # convert to x,y,z,w
