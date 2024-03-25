@@ -16,7 +16,7 @@ from Bio.PDB.PDBExceptions import PDBConstructionWarning
 
 from scipy.ndimage import label, center_of_mass
 
-from common import generate_random_quaternions
+from .common import generate_random_quaternions
 
 from scipy.spatial.transform import Rotation as R
 

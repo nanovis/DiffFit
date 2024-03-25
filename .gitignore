@@ -8,3 +8,4 @@ _info.txt
 /.venv
 *.pyc
 DiffFitViewerTool.egg-info/
+dev_data/output/
