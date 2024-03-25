@@ -44,7 +44,7 @@ will be displayed without the ChimeraX- prefix.
     <PythonClassifier>License :: Freeware</PythonClassifier>
     <!-- ChimeraX classifiers describe supplied functionality -->
     <!-- Register a graphical interface tool -->
-    <ChimeraXClassifier>ChimeraX :: Tool :: DiffFit Viewer ::
+    <ChimeraXClassifier>ChimeraX :: Tool :: DiffFit ::
       General :: Graphical interface example</ChimeraXClassifier>
   </Classifiers>
 
