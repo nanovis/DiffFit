@@ -78,6 +78,7 @@ class TutorialTool(ToolInstance):
         layout.addWidget(QLabel("Specify the root directory (containing 'src' folder):"))
         self.init_folder = QLineEdit()
         self.init_folder.setText('D:\GIT\DiffFitViewer')
+        # self.init_folder.setText('D:\Research\IPM\PoseEstimation\DiffFitViewer')
         self.init_folder.returnPressed.connect(self.return_pressed)
         layout.addWidget(self.init_folder)
 
@@ -110,15 +111,15 @@ class TutorialTool(ToolInstance):
         self.stats = stats
 
         buttons_layout = QHBoxLayout()        
-        copy_button = QPushButton()
-        copy_button.setText("Place Copy")
-        copy_button.clicked.connect(self.copy_button_clicked)
+        zero_density_button = QPushButton()
+        zero_density_button.setText("Zero density")
+        zero_density_button.clicked.connect(self.zero_density_button_clicked)
         
         save_button = QPushButton()
         save_button.setText("Save")
         save_button.clicked.connect(self.save_button_clicked)
         
-        buttons_layout.addWidget(copy_button)
+        buttons_layout.addWidget(zero_density_button)
         buttons_layout.addWidget(save_button)
         
         layout.addLayout(buttons_layout)
@@ -238,7 +239,7 @@ class TutorialTool(ToolInstance):
         if len(targetpath) > 0:
             run(self.session, "save '{0}.{1}' models #2".format(targetpath, ext))
     
-    def copy_button_clicked(self):          
-        run(self.session, "combine #2")
+    def zero_density_button_clicked(self):
+        self.session.logger.info("Zeroing density")
         return
     
