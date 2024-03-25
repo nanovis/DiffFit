@@ -128,7 +128,7 @@ def look_at_cluster(e_sqd_clusters_ordered, mol_folder, cluster_idx, session, cl
         # delete all other structures
         structures = session.models.list(type=AtomicStructure)
         for structure in structures:
-            structure.delete()
+            structure.display = False
 
     mol_files = os.listdir(mol_folder)
     # mol_files[idx] pairs with e_sqd_clusters_ordered[:][:, idx]
@@ -142,6 +142,8 @@ def look_at_cluster(e_sqd_clusters_ordered, mol_folder, cluster_idx, session, cl
 
     session.logger.info(f"Cluster size: {len(e_sqd_clusters_ordered[cluster_idx])}")
     session.logger.info(f"Representative MQS: {e_sqd_clusters_ordered[cluster_idx][0, 0:3].astype(int)}")
+    
+    return mol
 
 
 def get_transformation_at_MQS(e_sqd_log, MQS, iter_idx=-1):

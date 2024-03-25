@@ -11,12 +11,17 @@
 # or derivations thereof.
 # === UCSF ChimeraX Copyright ===
 
-from .tablemodel import TableModel
+from Qt.QtWidgets import QLabel, QPushButton, QLineEdit, QVBoxLayout, QHBoxLayout, QTableView, QSlider    
+from Qt.QtCore import QSortFilterProxyModel, Qt
 
 from chimerax.core.tools import ToolInstance
 from chimerax.core.commands import run
 from chimerax.atomic import AtomicStructure
 from chimerax.geometry import Place
+
+from .parse_log import cluster_and_sort_sqd, look_at_cluster, look_at_MQS_idx, animate_MQS, animate_MQS_2, get_transformation_at_MQS
+
+from .tablemodel import TableModel
 
 class TutorialTool(ToolInstance):
 
@@ -65,27 +70,23 @@ class TutorialTool(ToolInstance):
         self._build_ui()        
 
     def _build_ui(self):
-        # Put our widgets in the tool window
-
-        # We will use an editable single-line text input field (QLineEdit)
-        # with a descriptive text label to the left of it (QLabel).  To
-        # arrange them horizontally side by side we use QHBoxLayout
-        from Qt.QtWidgets import QLabel, QPushButton, QLineEdit, QVBoxLayout, QHBoxLayout, QTableView        
-
+        
+        # the base layout is Vertical
         layout = QVBoxLayout()        
 
-        # root folder
-        layout.addWidget(QLabel("Specify the root directory (containing 'src' folder):"))
+        # root folder - where the data is stored
+        init_folder_layout = QHBoxLayout()
+        init_folder_layout.addWidget(QLabel("Specify the root directory (containing 'src' folder):"))
         self.init_folder = QLineEdit()
         self.init_folder.setText('D:\GIT\DiffFitViewer')
         self.init_folder.returnPressed.connect(self.return_pressed)
-        layout.addWidget(self.init_folder)
+        init_folder_layout.addWidget(self.init_folder)
+        layout.addLayout(init_folder_layout)
 
         # init button
         button = QPushButton()
         button.setText("Init")
         button.clicked.connect(self.init_button_clicked)
-
         layout.addWidget(button)        
 
         # Arrange for our 'return_pressed' method to be called when the
@@ -95,6 +96,7 @@ class TutorialTool(ToolInstance):
         #self.line_edit.returnPressed.connect(self.return_pressed)
         #layout.addWidget(self.line_edit)
 
+        # table view of all the results
         view = QTableView();
         view.resize(800, 500)
         view.horizontalHeader().setStretchLastSection(True)
@@ -104,24 +106,47 @@ class TutorialTool(ToolInstance):
         layout.addWidget(view)
         self.view = view
 
+        # simple label for simple statistics
         stats = QLabel()
-        stats.setText("stats: ")
+        stats.setText("Stats: ")
         layout.addWidget(stats)
         self.stats = stats
-
-        buttons_layout = QHBoxLayout()        
+        
+        # copying of the currently selected object
         copy_button = QPushButton()
         copy_button.setText("Place Copy")
         copy_button.clicked.connect(self.copy_button_clicked)
-        
+
+        # saving currently selected object
         save_button = QPushButton()
         save_button.setText("Save")
         save_button.clicked.connect(self.save_button_clicked)
-        
+
+        # button panel
+        buttons_layout = QHBoxLayout()                
         buttons_layout.addWidget(copy_button)
-        buttons_layout.addWidget(save_button)
-        
+        buttons_layout.addWidget(save_button)        
         layout.addLayout(buttons_layout)
+        
+        # slider for animation
+        progress_layout = QHBoxLayout()    
+
+        progress_label1 = QLabel()
+        progress_label1.setText("Step: ")
+        progress_layout.addWidget(progress_label1)        
+
+        progress = QSlider(Qt.Horizontal)
+        progress.setTickPosition(QSlider.TicksBelow)
+        progress.setTickInterval(1) 
+        progress.valueChanged.connect(self.progress_value_changed)        
+        self.progress = progress              
+        progress_layout.addWidget(progress)
+        
+        progress_label = QLabel()
+        progress_label.setText("0/10")
+        self.progress_label = progress_label
+        progress_layout.addWidget(progress_label)
+        layout.addLayout(progress_layout)
         
         # Set the layout as the contents of our window
         self.tool_window.ui_area.setLayout(layout)
@@ -154,12 +179,11 @@ class TutorialTool(ToolInstance):
         clear_action.triggered.connect(lambda *args: self.init_folder.clear())
         menu.addAction(clear_action)
         
-    def table_row_clicked(self, item):
-        from .parse_log import cluster_and_sort_sqd, look_at_cluster, look_at_MQS_idx, animate_MQS, animate_MQS_2
+    def table_row_clicked(self, item):        
     
         if item.row() != -1:
             proxyIndex = self.proxyModel.index(item.row(), 0)
-            sourceIndex = self.proxyModel.mapToSource(proxyIndex);
+            sourceIndex = self.proxyModel.mapToSource(proxyIndex)
             self.cluster_idx = sourceIndex.row()
             
             #print(self.cluster_idx)
@@ -167,7 +191,17 @@ class TutorialTool(ToolInstance):
             #MQS = self.e_sqd_clusters_ordered[self.cluster_idx][0, 0:3].astype(int).tolist()
             
             #animate_MQS_2(self.e_sqd_log, self.mol_folder, MQS, self.session)
-            look_at_cluster(self.e_sqd_clusters_ordered, self.mol_folder, self.cluster_idx, self.session)
+            self.mol = look_at_cluster(self.e_sqd_clusters_ordered, self.mol_folder, self.cluster_idx, self.session)
+            
+            MQS = self.e_sqd_clusters_ordered[self.cluster_idx][0, 0:3].astype(int).tolist()
+            print(MQS)
+            N_iter = len(self.e_sqd_log[MQS[0], MQS[1], MQS[2]])
+            print(N_iter)
+            
+            self.progress.setMinimum(1)
+            self.progress.setMaximum(N_iter)
+            self.progress.setValue(N_iter)
+            
             
     #def async_func(self):
     #    import asyncio
@@ -201,8 +235,7 @@ class TutorialTool(ToolInstance):
         print("computing clusters")
         self.e_sqd_log = np.load("{0}\dev_data\output\{1}\e_sqd_log.npy".format(root, datasetoutput))
         self.e_sqd_clusters_ordered = cluster_and_sort_sqd(self.e_sqd_log)
-
-        from Qt.QtCore import QSortFilterProxyModel, Qt
+        
         self.model = TableModel(self.e_sqd_clusters_ordered)
         self.proxyModel = QSortFilterProxyModel()
         self.proxyModel.setSourceModel(self.model)
@@ -219,7 +252,7 @@ class TutorialTool(ToolInstance):
         self.mol_folder = "{0}\dev_data\input\{1}\subunits_cif".format(root, datasetinput)        
         self.cluster_idx = 0
         look_at_cluster(self.e_sqd_clusters_ordered, self.mol_folder, self.cluster_idx, self.session)
-    
+        
     def save_button_clicked(self):          
         from Qt.QtWidgets import QFileDialog
         
@@ -235,10 +268,20 @@ class TutorialTool(ToolInstance):
     
     def save_structure(self, targetpath, ext):
         
-        if len(targetpath) > 0:
-            run(self.session, "save '{0}.{1}' models #2".format(targetpath, ext))
+        if len(targetpath) > 0 and self.mol:
+            run(self.session, "save '{0}.{1}' models #{2}".format(targetpath, ext, self.mol.id[0]))
     
     def copy_button_clicked(self):          
         run(self.session, "combine #2")
         return
+    
+    def progress_value_changed(self):
+        progress = self.progress.value()
+        self.progress_label.setText("{0}/{1}".format(progress, self.progress.maximum()))
+        
+        if self.e_sqd_clusters_ordered and self.mol :
+            MQS = self.e_sqd_clusters_ordered[self.cluster_idx][0, 0:3].astype(int).tolist()
+                 
+            _, transformation = get_transformation_at_MQS(self.e_sqd_log, MQS, progress - 1)
+            self.mol.scene_position = transformation        
     
