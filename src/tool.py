@@ -11,7 +11,8 @@
 # or derivations thereof.
 # === UCSF ChimeraX Copyright ===
 
-from Qt.QtWidgets import QLabel, QPushButton, QLineEdit, QVBoxLayout, QHBoxLayout, QTableView, QSlider, QTabWidget, QGroupBox, QDoubleSpinBox, QSpinBox
+from Qt.QtWidgets import QLabel, QPushButton, QLineEdit, QVBoxLayout, QHBoxLayout, QGridLayout
+from Qt.QtWidgets import QTableView, QSlider, QTabWidget, QGroupBox, QDoubleSpinBox, QSpinBox 
 from Qt.QtCore import QSortFilterProxyModel, Qt
 
 from chimerax.core.tools import ToolInstance
@@ -48,15 +49,17 @@ class DiffFitSettings:
         self.target_surface_threshold: float = 0.7
         self.min_cluster_size: float = 100
         self.N_shifts: int = 10
-        self.N_quaternions: int = 20
+        self.N_quaternions: int = 100
         self.negative_space_value: float = -0.5
         self.learning_rate: float = 0.01
-        self.n_iters: int = 201        
+        self.N_iters: int = 201        
         self.out_dir_exist_ok: bool = True
         self.conv_loops: int = 10
-        self.conv_kernel_sizes: list = (5, 5, 5, 5, 5, 5, 5, 5, 5, 5)
-        self.conv_weights: list = (1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
+        self.conv_kernel_sizes: list = [5, 5, 5, 5, 5, 5, 5, 5, 5, 5]
+        self.conv_weights: list = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
     
+        print(self)
+        print(self.conv_kernel_sizes)
 
 
 class TutorialTool(ToolInstance):
@@ -114,17 +117,17 @@ class TutorialTool(ToolInstance):
         
         # computation GUI
         compute_group = QGroupBox()
-        compute_group_layout = QVBoxLayout()
+        compute_group_layout = QGridLayout()
         compute_group.setLayout(compute_group_layout)
         self.build_compute_ui(compute_group_layout)
         tab_widget.addTab(compute_group, "Compute")
     
         # view GUI
-        compute_group = QGroupBox()
-        compute_group_layout = QVBoxLayout()
-        compute_group.setLayout(compute_group_layout)
-        self.build_view_ui(compute_group_layout)
-        tab_widget.addTab(compute_group, "View")
+        view_group = QGroupBox()
+        view_group_layout = QGridLayout()
+        view_group.setLayout(view_group_layout)
+        self.build_view_ui(view_group_layout)
+        tab_widget.addTab(view_group, "View")
         
         # TODO: place where to update the settings
         self.load_settings(self.settings)
@@ -147,9 +150,18 @@ class TutorialTool(ToolInstance):
         self.target_vol_path.setText(settings.target_vol_path)
         self.structures_dir.setText(settings.structures_directory)
         self.structures_sim_map_dir.setText(settings.structures_sim_map_dir)
-        self.exp_name.setText(settings.exp_name)
+        self.out_dir.setText(settings.output_directory)
+        self.exp_name.setText(settings.exp_name)        
         self.target_surface_threshold.setValue(settings.target_surface_threshold)
         self.min_cluster_size.setValue(settings.min_cluster_size)
+        self.n_iters.setValue(settings.N_iters)
+        self.n_shifts.setValue(settings.N_shifts)
+        self.n_quaternions.setValue(settings.N_quaternions)        
+        self.negative_space_value.setValue(settings.negative_space_value)
+        self.learning_rate.setValue(settings.learning_rate)
+        self.conv_loops.setValue(settings.conv_loops)
+        self.conv_kernel_sizes.setText("[{0}]".format(','.join(map(str, settings.conv_kernel_sizes))))
+        self.conv_weights.setText("[{0}]".format(','.join(map(str, settings.conv_weights))))
         
         # view
         self.dataset_folder.setText(settings.view_output_directory)        
@@ -162,15 +174,28 @@ class TutorialTool(ToolInstance):
         if self.settings.loading :
             return
         
-        print("settings changed...")
+        #print("settings changed...")
         
         #compute
         self.settings.target_vol_path = self.target_vol_path.text()
         self.settings.structures_directory = self.structures_dir.text()
         self.settings.structures_sim_map_dir = self.structures_sim_map_dir.text()
-        self.settings.exp_name = self.exp_name.text()
+        self.settings.output_directory = self.out_dir.text()        
+        self.settings.exp_name = self.exp_name.text()        
         self.settings.target_surface_threshold = self.target_surface_threshold.value()
         self.settings.min_cluster_size = self.min_cluster_size.value()
+        self.settings.N_iters = self.n_iters.value()
+        self.settings.N_shifts = self.n_shifts.value()
+        self.settings.N_quaternions = self.n_quaternions.value()        
+        self.settings.negative_space_value = self.negative_space_value.value()
+        self.settings.learning_rate = self.learning_rate.value()
+        self.settings.conv_loops = self.conv_loops.value()
+        
+        kernel_sizes = self.conv_kernel_sizes.text().replace(" ", "").strip('][').split(',')
+        self.settings.conv_kernel_sizes = [int(s) for s in kernel_sizes]
+        
+        weights = self.conv_weights.text().replace(" ", "").strip('][').split(',')
+        self.settings.conv_weights = [float(s) for s in kernel_sizes]
         
         #view
         self.settings.view_output_directory = self.dataset_folder.text()
@@ -179,113 +204,192 @@ class TutorialTool(ToolInstance):
         
     
     def build_compute_ui(self, layout):
-        # basic
-        target_vol_path_layout = QHBoxLayout()
+        row = 0
+               
         target_vol_path_label = QLabel()
         target_vol_path_label.setText("Target Volume Path:")
-        target_vol_path_layout.addWidget(target_vol_path_label)
         self.target_vol_path = QLineEdit()
-        self.target_vol_path.textChanged.connect(lambda: self.store_settings())        
-        target_vol_path_layout.addWidget(self.target_vol_path)
-        layout.addLayout(target_vol_path_layout)
+        self.target_vol_path.textChanged.connect(lambda: self.store_settings())                
+        layout.addWidget(target_vol_path_label, row, 0)
+        layout.addWidget(self.target_vol_path, row, 1)
+        row = row + 1
         
-        structures_dir_layout = QHBoxLayout()
         structures_dir_label = QLabel()
         structures_dir_label.setText("Structures dir:")
-        structures_dir_layout.addWidget(structures_dir_label)
         self.structures_dir = QLineEdit()
         self.structures_dir.textChanged.connect(lambda: self.store_settings())        
-        structures_dir_layout.addWidget(self.structures_dir)
-        layout.addLayout(structures_dir_layout)
+        layout.addWidget(structures_dir_label, row, 0)
+        layout.addWidget(self.structures_dir, row, 1)
+        row = row + 1
         
-        structures_sim_map_dir_layout = QHBoxLayout()
         structures_sim_map_dir_label = QLabel()
-        structures_sim_map_dir_label.setText("Structures sim map dir:")
-        structures_sim_map_dir_layout.addWidget(structures_sim_map_dir_label)
+        structures_sim_map_dir_label.setText("Structures sim map dir:")        
         self.structures_sim_map_dir = QLineEdit()
-        self.structures_sim_map_dir.textChanged.connect(lambda: self.store_settings())        
-        structures_sim_map_dir_layout.addWidget(self.structures_sim_map_dir)
-        layout.addLayout(structures_sim_map_dir_layout)
+        self.structures_sim_map_dir.textChanged.connect(lambda: self.store_settings())                
+        layout.addWidget(structures_sim_map_dir_label, row, 0)
+        layout.addWidget(self.structures_sim_map_dir, row, 1)
+        row = row + 1
         
-        exp_name_layout = QHBoxLayout()
+        out_dir_label = QLabel()
+        out_dir_label.setText("Out dir:")
+        self.out_dir = QLineEdit()
+        self.out_dir.textChanged.connect(lambda: self.store_settings())        
+        layout.addWidget(out_dir_label, row, 0)
+        layout.addWidget(self.out_dir, row, 1)
+        row = row + 1
+        
         exp_name_label = QLabel()
         exp_name_label.setText("Experiment name:")
-        exp_name_layout.addWidget(exp_name_label)
         self.exp_name = QLineEdit()
         self.exp_name.textChanged.connect(lambda: self.store_settings())        
-        exp_name_layout.addWidget(self.exp_name)
-        layout.addLayout(exp_name_layout)
+        layout.addWidget(exp_name_label, row, 0)
+        layout.addWidget(self.exp_name, row, 1)
+        row = row + 1
         
-        target_surface_threshold_layout = QHBoxLayout()
         target_surface_threshold_label = QLabel()
         target_surface_threshold_label.setText("Target surface threshold:")
-        target_surface_threshold_layout.addWidget(target_surface_threshold_label)
         self.target_surface_threshold = QDoubleSpinBox()
         self.target_surface_threshold.setMinimum(0.0)
         self.target_surface_threshold.setMaximum(2.0)
         self.target_surface_threshold.setSingleStep(0.1)
         self.target_surface_threshold.valueChanged.connect(lambda: self.store_settings())        
-        target_surface_threshold_layout.addWidget(self.target_surface_threshold)
-        layout.addLayout(target_surface_threshold_layout)
+        layout.addWidget(target_surface_threshold_label, row, 0)
+        layout.addWidget(self.target_surface_threshold, row, 1)
+        row = row + 1
         
-        min_cluster_size_layout = QHBoxLayout()
         min_cluster_size_label = QLabel()
         min_cluster_size_label.setText("Min cluster size:")
-        min_cluster_size_layout.addWidget(min_cluster_size_label)
         self.min_cluster_size = QSpinBox()
         self.min_cluster_size.setMinimum(1)
         self.min_cluster_size.setMaximum(500)
         self.min_cluster_size.valueChanged.connect(lambda: self.store_settings())        
-        min_cluster_size_layout.addWidget(self.min_cluster_size)
-        layout.addLayout(min_cluster_size_layout)
+        layout.addWidget(min_cluster_size_label, row, 0)
+        layout.addWidget(self.min_cluster_size, row, 1)
+        row = row + 1
+        
         
         # advanced
         # TODO:
+        n_iters_label = QLabel()
+        n_iters_label.setText("# iters:")
+        self.n_iters = QSpinBox()
+        self.n_iters.setMinimum(1)
+        self.n_iters.setMaximum(500)
+        self.n_iters.valueChanged.connect(lambda: self.store_settings())        
+        layout.addWidget(n_iters_label, row, 0)
+        layout.addWidget(self.n_iters, row, 1)
+        row = row + 1
         
+        n_shifts_label = QLabel()
+        n_shifts_label.setText("# shifts:")
+        self.n_shifts = QSpinBox()
+        self.n_shifts.setMinimum(1)
+        self.n_shifts.setMaximum(500)
+        self.n_shifts.valueChanged.connect(lambda: self.store_settings())        
+        layout.addWidget(n_shifts_label, row, 0)
+        layout.addWidget(self.n_shifts, row, 1)
+        row = row + 1
         
+        n_quaternions_label = QLabel()
+        n_quaternions_label.setText("# quaternions:")
+        self.n_quaternions = QSpinBox()
+        self.n_quaternions.setMinimum(1)
+        self.n_quaternions.setMaximum(500)
+        self.n_quaternions.valueChanged.connect(lambda: self.store_settings())        
+        layout.addWidget(n_quaternions_label, row, 0)
+        layout.addWidget(self.n_quaternions, row, 1)
+        row = row + 1
         
+        negative_space_value_label = QLabel()
+        negative_space_value_label.setText("Negative space value:")
+        self.negative_space_value = QDoubleSpinBox()
+        self.negative_space_value.setMinimum(-100)
+        self.negative_space_value.setMaximum(100)
+        self.negative_space_value.setSingleStep(0.1)
+        self.negative_space_value.valueChanged.connect(lambda: self.store_settings())        
+        layout.addWidget(negative_space_value_label, row, 0)
+        layout.addWidget(self.negative_space_value, row, 1)
+        row = row + 1
         
+        learning_rate_label = QLabel()
+        learning_rate_label.setText("Learning rate:")
+        self.learning_rate = QDoubleSpinBox()
+        self.learning_rate.setMinimum(0.00001)
+        self.learning_rate.setMaximum(10)
+        self.learning_rate.setSingleStep(0.01)
+        self.learning_rate.valueChanged.connect(lambda: self.store_settings())        
+        layout.addWidget(learning_rate_label, row, 0)
+        layout.addWidget(self.learning_rate, row, 1)
+        row = row + 1
         
+        convs_loops_label = QLabel()
+        convs_loops_label.setText("Conv. loops:")
+        self.conv_loops = QSpinBox()
+        self.conv_loops.setMinimum(1)
+        self.conv_loops.setMaximum(500)
+        self.conv_loops.valueChanged.connect(lambda: self.store_settings())        
+        layout.addWidget(convs_loops_label, row, 0)
+        layout.addWidget(self.conv_loops, row, 1)
+        row = row + 1
         
+        conv_kernel_sizes_label = QLabel()
+        conv_kernel_sizes_label.setText("Conv. kernel sizes [list]:")
+        self.conv_kernel_sizes = QLineEdit()
+        self.conv_kernel_sizes.setText("[5, 5, 5, 5, 5, 5, 5, 5, 5, 5]")
+        self.conv_kernel_sizes.textChanged.connect(lambda: self.store_settings())        
+        layout.addWidget(conv_kernel_sizes_label, row, 0)
+        layout.addWidget(self.conv_kernel_sizes, row, 1)
+        row = row + 1
+        
+        conv_weights_label = QLabel()
+        conv_weights_label.setText("Conv. weights [list]:")
+        self.conv_weights = QLineEdit()
+        self.conv_weights.setText("[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]")
+        self.conv_weights.textChanged.connect(lambda: self.store_settings())        
+        layout.addWidget(conv_weights_label, row, 0)
+        layout.addWidget(self.conv_weights, row, 1)
+        row = row + 1
         
         
         button = QPushButton()
         button.setText("Run!")
-        button.clicked.connect(self.run_button_clicked)
-        layout.addWidget(button)        
+        button.clicked.connect(self.run_button_clicked)        
+        layout.addWidget(button, row, 1)        
 
 
     def build_view_ui(self, layout):
+        row = 0
     
         # data folder - where the data is stored
-        dataset_folder_layout = QHBoxLayout()
-        dataset_folder_layout.addWidget(QLabel("Data folder:"))
+        dataset_folder_label = QLabel("Data folder:")
         self.dataset_folder = QLineEdit()    
-        self.dataset_folder.textChanged.connect(lambda: self.store_settings())
-        dataset_folder_layout.addWidget(self.dataset_folder)
-        layout.addLayout(dataset_folder_layout)
+        self.dataset_folder.textChanged.connect(lambda: self.store_settings())        
+        layout.addWidget(dataset_folder_label, row, 0)
+        layout.addWidget(self.dataset_folder, row, 1, 1, 2)
+        row = row + 1
         
-        # self.view_structures_directory: str = "..."      
-        structures_folder_layout = QHBoxLayout()
-        structures_folder_layout.addWidget(QLabel("Structures folder:"))
+        # self.view_structures_directory: str = "..."              
+        structures_folder_label = QLabel("Structures folder:")
         self.structures_folder = QLineEdit()
-        self.structures_folder.textChanged.connect(lambda: self.store_settings())
-        structures_folder_layout.addWidget(self.structures_folder)
-        layout.addLayout(structures_folder_layout)
+        self.structures_folder.textChanged.connect(lambda: self.store_settings())        
+        layout.addWidget(structures_folder_label, row, 0)
+        layout.addWidget(self.structures_folder, row, 1, 1, 2)
+        row = row + 1
         
         #self.view_target_vol_path: str = "..."        
-        target_vol_layout = QHBoxLayout()
-        target_vol_layout.addWidget(QLabel("Target volume:"))
+        target_vol_label = QLabel("Target volume:")
         self.target_vol = QLineEdit()        
         self.target_vol.textChanged.connect(lambda: self.store_settings())
-        target_vol_layout.addWidget(self.target_vol)
-        layout.addLayout(target_vol_layout)
+        layout.addWidget(target_vol_label, row, 0)
+        layout.addWidget(self.target_vol, row, 1, 1, 2)
+        row = row + 1
         
         # init button                
         button = QPushButton()
         button.setText("Load")
-        button.clicked.connect(self.init_button_clicked)
-        layout.addWidget(button)        
+        button.clicked.connect(self.init_button_clicked)        
+        layout.addWidget(button, row, 1, 1, 2)
+        row = row + 1        
 
         # Arrange for our 'return_pressed' method to be called when the
         # user presses the Return key
@@ -301,21 +405,22 @@ class TutorialTool(ToolInstance):
         view.setAlternatingRowColors(True)
         view.setSelectionBehavior(QTableView.SelectRows)
         view.clicked.connect(self.table_row_clicked)        
-        layout.addWidget(view)
+        layout.addWidget(view)        
         self.view = view
+        layout.addWidget(view, row, 0, 1, 3)
+        row = row + 1        
 
         # simple label for simple statistics
         stats = QLabel()
         stats.setText("Stats: ")
-        layout.addWidget(stats)
         self.stats = stats
+        layout.addWidget(stats, row, 0, 1, 3)
+        row = row + 1        
         
-        # button panel        
-        buttons_layout = QHBoxLayout()        
-        
+        # button panel                
         copy_button = QPushButton()
         copy_button.setText("Place Copy")
-        copy_button.clicked.connect(self.copy_button_clicked)
+        copy_button.clicked.connect(self.copy_button_clicked)        
         
         zero_density_button = QPushButton()
         zero_density_button.setText("Zero density")
@@ -326,32 +431,31 @@ class TutorialTool(ToolInstance):
         save_button.setText("Save")
         save_button.clicked.connect(self.save_button_clicked)
         
-        buttons_layout.addWidget(copy_button)
-        buttons_layout.addWidget(zero_density_button)
-        buttons_layout.addWidget(save_button)
-        
-        layout.addLayout(buttons_layout)
+        layout.addWidget(copy_button, row, 0)
+        layout.addWidget(zero_density_button, row, 1)
+        layout.addWidget(save_button, row, 2)
+        row = row + 1        
         
         # slider for animation
-        progress_layout = QHBoxLayout()    
-
         progress_label1 = QLabel()
         progress_label1.setText("Step: ")
-        progress_layout.addWidget(progress_label1)        
 
         progress = QSlider(Qt.Horizontal)
         progress.setTickPosition(QSlider.TicksBelow)
         progress.setTickInterval(1) 
+        progress.setMinimum(1)
+        progress.setMaximum(1)
         progress.valueChanged.connect(self.progress_value_changed)        
         self.progress = progress              
-        progress_layout.addWidget(progress)
         
         progress_label = QLabel()
-        progress_label.setText("0/10")
+        progress_label.setText("1/1")
         self.progress_label = progress_label
-        progress_layout.addWidget(progress_label)
-        layout.addLayout(progress_layout)
-        
+
+        layout.addWidget(progress_label1, row, 0)
+        layout.addWidget(progress, row, 1)
+        layout.addWidget(progress_label, row, 2)
+        row = row + 1        
         
     #def fill_context_menu(self, menu, x, y):
         # Add any tool-specific items to the given context menu (a QMenu instance).
@@ -408,7 +512,7 @@ class TutorialTool(ToolInstance):
         negative_space_value = self.settings.negative_space_value,
         exp_name = self.settings.exp_name,
         learning_rate = self.settings.learning_rate,
-        n_iters = self.settings.n_iters,
+        n_iters = self.settings.N_iters,
         out_dir = self.settings.output_directory, 
         out_dir_exist_ok = self.settings.out_dir_exist_ok,       
         conv_loops = self.settings.conv_loops,
