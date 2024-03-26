@@ -31,7 +31,7 @@ class TableModel(QAbstractTableModel):
             if len(self._data) == 0 or len(self._data[0]) == 0:
                return 0
             else:
-               return len(self._data[0][0] + 2)
+               return len(self._data[0][0]) + 2
 
     def data(self, index: QModelIndex, role=Qt.ItemDataRole):
         """Override method from QAbstractTableModel
