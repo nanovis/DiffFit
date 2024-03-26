@@ -7,10 +7,10 @@ class TableModel(QAbstractTableModel):
         QAbstractTableModel.__init__(self, parent)
         self._data = data
         self._header = ["Id", "Hits",
+                        "Density", "Overlap", "Correlation", "Cam",
                         "Mol Id", "Quat Id", "Shift Id",
                         "x", "y", "z",
-                        "rw", "rx", "ry", "rz",
-                        "Density", "Overlap", "Correlation", "Cam"]
+                        "rw", "rx", "ry", "rz"]
 
     def rowCount(self, parent=QModelIndex()) -> int:
         """ Override method from QAbstractTableModel
@@ -48,11 +48,15 @@ class TableModel(QAbstractTableModel):
                 return int(index.row() + 1)
             elif column == 1:
                 return len(self._data[index.row()])
-            elif column < 5:
-                return int(self._data[index.row()][0][index.column() - 2])
+
+            elif 2 <= column <= 5:
+                return float(self._data[index.row()][0][index.column() + 8])
+
+            elif column <= 8:
+                return int(self._data[index.row()][0][index.column() - 6])
             else:
-                return float(self._data[index.row()][0][index.column() - 2])
-                    
+                return float(self._data[index.row()][0][index.column() - 6])
+
         return None
 
     def headerData(
