@@ -13,6 +13,7 @@
 
 from Qt.QtWidgets import QLabel, QPushButton, QLineEdit, QVBoxLayout, QHBoxLayout, QGridLayout
 from Qt.QtWidgets import QTableView, QSlider, QTabWidget, QGroupBox, QDoubleSpinBox, QSpinBox 
+from Qt.QtWidgets import QFileDialog
 from Qt.QtCore import QSortFilterProxyModel, Qt
 
 from chimerax.core.tools import ToolInstance
@@ -207,35 +208,47 @@ class TutorialTool(ToolInstance):
         row = 0
                
         target_vol_path_label = QLabel()
-        target_vol_path_label.setText("Target Volume Path:")
+        target_vol_path_label.setText("Target Volume:")
         self.target_vol_path = QLineEdit()
         self.target_vol_path.textChanged.connect(lambda: self.store_settings())                
+        target_vol_path_select = QPushButton("Select")        
+        target_vol_path_select.clicked.connect(lambda: self.select_clicked("Target Volume", self.target_vol_path, "MRC Files(*.mrc)"))        
         layout.addWidget(target_vol_path_label, row, 0)
         layout.addWidget(self.target_vol_path, row, 1)
+        layout.addWidget(target_vol_path_select, row, 2)
         row = row + 1
         
         structures_dir_label = QLabel()
-        structures_dir_label.setText("Structures dir:")
+        structures_dir_label.setText("Structures Folder:")
         self.structures_dir = QLineEdit()
-        self.structures_dir.textChanged.connect(lambda: self.store_settings())        
+        self.structures_dir.textChanged.connect(lambda: self.store_settings())    
+        structures_dir_select = QPushButton("Select")        
+        structures_dir_select.clicked.connect(lambda: self.select_clicked("Structures folder (containing *.cif)", self.structures_dir))
         layout.addWidget(structures_dir_label, row, 0)
         layout.addWidget(self.structures_dir, row, 1)
+        layout.addWidget(structures_dir_select, row, 2)
         row = row + 1
         
         structures_sim_map_dir_label = QLabel()
-        structures_sim_map_dir_label.setText("Structures sim map dir:")        
+        structures_sim_map_dir_label.setText("Structures sim-map Folder:")        
         self.structures_sim_map_dir = QLineEdit()
-        self.structures_sim_map_dir.textChanged.connect(lambda: self.store_settings())                
+        self.structures_sim_map_dir.textChanged.connect(lambda: self.store_settings())   
+        structures_sim_map_dir_select = QPushButton("Select")        
+        structures_sim_map_dir_select.clicked.connect(lambda: self.select_clicked("Structures sim-map Folder", self.structures_sim_map_dir))
         layout.addWidget(structures_sim_map_dir_label, row, 0)
         layout.addWidget(self.structures_sim_map_dir, row, 1)
+        layout.addWidget(structures_sim_map_dir_select, row, 2)
         row = row + 1
         
         out_dir_label = QLabel()
-        out_dir_label.setText("Out dir:")
+        out_dir_label.setText("Output Folder:")
         self.out_dir = QLineEdit()
-        self.out_dir.textChanged.connect(lambda: self.store_settings())        
+        self.out_dir.textChanged.connect(lambda: self.store_settings()) 
+        out_dir_select = QPushButton("Select")        
+        out_dir_select.clicked.connect(lambda: self.select_clicked("Output Folder", self.out_dir))        
         layout.addWidget(out_dir_label, row, 0)
         layout.addWidget(self.out_dir, row, 1)
+        layout.addWidget(out_dir_select, row, 2)
         row = row + 1
         
         exp_name_label = QLabel()
@@ -243,7 +256,7 @@ class TutorialTool(ToolInstance):
         self.exp_name = QLineEdit()
         self.exp_name.textChanged.connect(lambda: self.store_settings())        
         layout.addWidget(exp_name_label, row, 0)
-        layout.addWidget(self.exp_name, row, 1)
+        layout.addWidget(self.exp_name, row, 1, 1, 2)
         row = row + 1
         
         target_surface_threshold_label = QLabel()
@@ -254,7 +267,7 @@ class TutorialTool(ToolInstance):
         self.target_surface_threshold.setSingleStep(0.1)
         self.target_surface_threshold.valueChanged.connect(lambda: self.store_settings())        
         layout.addWidget(target_surface_threshold_label, row, 0)
-        layout.addWidget(self.target_surface_threshold, row, 1)
+        layout.addWidget(self.target_surface_threshold, row, 1, 1, 2)
         row = row + 1
         
         min_cluster_size_label = QLabel()
@@ -264,7 +277,7 @@ class TutorialTool(ToolInstance):
         self.min_cluster_size.setMaximum(500)
         self.min_cluster_size.valueChanged.connect(lambda: self.store_settings())        
         layout.addWidget(min_cluster_size_label, row, 0)
-        layout.addWidget(self.min_cluster_size, row, 1)
+        layout.addWidget(self.min_cluster_size, row, 1, 1, 2)
         row = row + 1
         
         
@@ -277,7 +290,7 @@ class TutorialTool(ToolInstance):
         self.n_iters.setMaximum(500)
         self.n_iters.valueChanged.connect(lambda: self.store_settings())        
         layout.addWidget(n_iters_label, row, 0)
-        layout.addWidget(self.n_iters, row, 1)
+        layout.addWidget(self.n_iters, row, 1, 1, 2)
         row = row + 1
         
         n_shifts_label = QLabel()
@@ -287,7 +300,7 @@ class TutorialTool(ToolInstance):
         self.n_shifts.setMaximum(500)
         self.n_shifts.valueChanged.connect(lambda: self.store_settings())        
         layout.addWidget(n_shifts_label, row, 0)
-        layout.addWidget(self.n_shifts, row, 1)
+        layout.addWidget(self.n_shifts, row, 1, 1, 2)
         row = row + 1
         
         n_quaternions_label = QLabel()
@@ -297,7 +310,7 @@ class TutorialTool(ToolInstance):
         self.n_quaternions.setMaximum(500)
         self.n_quaternions.valueChanged.connect(lambda: self.store_settings())        
         layout.addWidget(n_quaternions_label, row, 0)
-        layout.addWidget(self.n_quaternions, row, 1)
+        layout.addWidget(self.n_quaternions, row, 1, 1, 2)
         row = row + 1
         
         negative_space_value_label = QLabel()
@@ -308,7 +321,7 @@ class TutorialTool(ToolInstance):
         self.negative_space_value.setSingleStep(0.1)
         self.negative_space_value.valueChanged.connect(lambda: self.store_settings())        
         layout.addWidget(negative_space_value_label, row, 0)
-        layout.addWidget(self.negative_space_value, row, 1)
+        layout.addWidget(self.negative_space_value, row, 1, 1, 2)
         row = row + 1
         
         learning_rate_label = QLabel()
@@ -319,7 +332,7 @@ class TutorialTool(ToolInstance):
         self.learning_rate.setSingleStep(0.01)
         self.learning_rate.valueChanged.connect(lambda: self.store_settings())        
         layout.addWidget(learning_rate_label, row, 0)
-        layout.addWidget(self.learning_rate, row, 1)
+        layout.addWidget(self.learning_rate, row, 1, 1, 2)
         row = row + 1
         
         convs_loops_label = QLabel()
@@ -329,7 +342,7 @@ class TutorialTool(ToolInstance):
         self.conv_loops.setMaximum(500)
         self.conv_loops.valueChanged.connect(lambda: self.store_settings())        
         layout.addWidget(convs_loops_label, row, 0)
-        layout.addWidget(self.conv_loops, row, 1)
+        layout.addWidget(self.conv_loops, row, 1, 1, 2)
         row = row + 1
         
         conv_kernel_sizes_label = QLabel()
@@ -338,7 +351,7 @@ class TutorialTool(ToolInstance):
         self.conv_kernel_sizes.setText("[5, 5, 5, 5, 5, 5, 5, 5, 5, 5]")
         self.conv_kernel_sizes.textChanged.connect(lambda: self.store_settings())        
         layout.addWidget(conv_kernel_sizes_label, row, 0)
-        layout.addWidget(self.conv_kernel_sizes, row, 1)
+        layout.addWidget(self.conv_kernel_sizes, row, 1, 1, 2)
         row = row + 1
         
         conv_weights_label = QLabel()
@@ -347,41 +360,50 @@ class TutorialTool(ToolInstance):
         self.conv_weights.setText("[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]")
         self.conv_weights.textChanged.connect(lambda: self.store_settings())        
         layout.addWidget(conv_weights_label, row, 0)
-        layout.addWidget(self.conv_weights, row, 1)
+        layout.addWidget(self.conv_weights, row, 1, 1, 2)
         row = row + 1
         
         
         button = QPushButton()
         button.setText("Run!")
         button.clicked.connect(self.run_button_clicked)        
-        layout.addWidget(button, row, 1)        
+        layout.addWidget(button, row, 1, 1, 2)        
 
 
     def build_view_ui(self, layout):
         row = 0
-    
-        # data folder - where the data is stored
-        dataset_folder_label = QLabel("Data folder:")
-        self.dataset_folder = QLineEdit()    
-        self.dataset_folder.textChanged.connect(lambda: self.store_settings())        
-        layout.addWidget(dataset_folder_label, row, 0)
-        layout.addWidget(self.dataset_folder, row, 1, 1, 2)
+            
+        #self.view_target_vol_path: str = "..."        
+        target_vol_label = QLabel("Target Volume:")
+        self.target_vol = QLineEdit()        
+        self.target_vol.textChanged.connect(lambda: self.store_settings())
+        target_vol_select = QPushButton("Select")        
+        target_vol_select.clicked.connect(lambda: self.select_clicked("Target Volume", self.target_vol, "MRC Files(*.mrc)"))        
+        layout.addWidget(target_vol_label, row, 0)
+        layout.addWidget(self.target_vol, row, 1)
+        layout.addWidget(target_vol_select, row, 2)
         row = row + 1
         
         # self.view_structures_directory: str = "..."              
-        structures_folder_label = QLabel("Structures folder:")
+        structures_folder_label = QLabel("Structures Folder:")
         self.structures_folder = QLineEdit()
-        self.structures_folder.textChanged.connect(lambda: self.store_settings())        
+        self.structures_folder.textChanged.connect(lambda: self.store_settings()) 
+        structures_folder_select = QPushButton("Select")        
+        structures_folder_select.clicked.connect(lambda: self.select_clicked("Structures folder (containing *.cif)", self.structures_folder))                
         layout.addWidget(structures_folder_label, row, 0)
-        layout.addWidget(self.structures_folder, row, 1, 1, 2)
+        layout.addWidget(self.structures_folder, row, 1)
+        layout.addWidget(structures_folder_select, row, 2)
         row = row + 1
         
-        #self.view_target_vol_path: str = "..."        
-        target_vol_label = QLabel("Target volume:")
-        self.target_vol = QLineEdit()        
-        self.target_vol.textChanged.connect(lambda: self.store_settings())
-        layout.addWidget(target_vol_label, row, 0)
-        layout.addWidget(self.target_vol, row, 1, 1, 2)
+        # data folder - where the data is stored
+        dataset_folder_label = QLabel("Data Folder:")
+        self.dataset_folder = QLineEdit()    
+        self.dataset_folder.textChanged.connect(lambda: self.store_settings())                
+        dataset_folder_select = QPushButton("Select")        
+        dataset_folder_select.clicked.connect(lambda: self.select_clicked("Data Folder", self.dataset_folder))        
+        layout.addWidget(dataset_folder_label, row, 0)
+        layout.addWidget(self.dataset_folder, row, 1)
+        layout.addWidget(dataset_folder_select, row, 2)
         row = row + 1
         
         # init button                
@@ -519,22 +541,37 @@ class TutorialTool(ToolInstance):
         conv_kernel_sizes = self.settings.conv_kernel_sizes,
         conv_weights = self.settings.conv_weights
         )
-    
-    
-    def init_button_clicked(self):            
         
-        datasetoutput = self.settings.view_output_directory        
+        print(e_sqd_log)
         
-        if len(datasetoutput) == 0:
-            print("Specify the datasetoutput folder first!")
+        # copy the directories
+        self.view_target_vol_path = self.settings.target_vol_path
+        self.view_structures_directory = self.settings.structures_directory
+        
+        # output is tensor
+        self.show_results(e_sqd_log.detach().cpu().numpy())
+    
+    def select_clicked(self, text, target, pattern = "dir"):
+        fileName = ""
+        if pattern == "dir":
+            fileName = QFileDialog.getExistingDirectory(target, text)
+        else:
+            options = QFileDialog.Options()
+            options |= QFileDialog.DontUseNativeDialog
+            fileName, ext = QFileDialog.getSaveFileName(target, text, "", pattern, options = options)
+        
+        if len(fileName) > 0:
+            target.setText(fileName)
+    
+    def show_results(self, e_sqd_log):
+        if e_sqd_log is None:
             return
-        
+            
         print("opening the volume")
         vol_path = self.settings.view_target_vol_path
         self.vol = run(self.session, f"open {vol_path}")[0]
-
-        print("computing clusters")
-        self.e_sqd_log = np.load("{0}\\e_sqd_log.npy".format(datasetoutput))
+        
+        self.e_sqd_log = e_sqd_log
         self.e_sqd_clusters_ordered = cluster_and_sort_sqd(self.e_sqd_log)
         
         self.model = TableModel(self.e_sqd_clusters_ordered)
@@ -543,7 +580,7 @@ class TutorialTool(ToolInstance):
         
         self.view.setModel(self.proxyModel)
         self.view.setSortingEnabled(True)
-        self.view.sortByColumn(0, Qt.DescendingOrder)
+        self.view.sortByColumn(0, Qt.AscendingOrder)
         self.view.reset()
         self.view.show()  
         
@@ -554,8 +591,26 @@ class TutorialTool(ToolInstance):
         self.cluster_idx = 0
         look_at_cluster(self.e_sqd_clusters_ordered, self.mol_folder, self.cluster_idx, self.session)
         
+    
+    def init_button_clicked(self):            
+        if self.settings is None:
+            return
+            
+        datasetoutput = self.settings.view_output_directory        
+        
+        if len(datasetoutput) == 0:
+            print("Specify the datasetoutput folder first!")
+            return
+                
+        print("loading data...")
+        e_sqd_log = np.load("{0}\\e_sqd_log.npy".format(datasetoutput))
+        
+        #print(e_sqd_log)
+        self.show_results(e_sqd_log)
+        
     def save_button_clicked(self):          
-        from Qt.QtWidgets import QFileDialog
+        if not self.mol:
+            return;
         
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog

@@ -11,6 +11,9 @@ class TableModel(QAbstractTableModel):
                         "Mol Id", "Quat Id", "Shift Id",
                         "x", "y", "z",
                         "rw", "rx", "ry", "rz"]
+                            
+        # mapping of columns (from view to data)
+        # self._mapping = [-1, -1, 10, 11, 12, 13]
 
     def rowCount(self, parent=QModelIndex()) -> int:
         """ Override method from QAbstractTableModel
@@ -43,15 +46,13 @@ class TableModel(QAbstractTableModel):
 
         if role == Qt.DisplayRole:
             column = index.column()
-
+            
             if column == 0:
                 return int(index.row() + 1)
             elif column == 1:
-                return len(self._data[index.row()])
-
+                return len(self._data[index.row()])            
             elif 2 <= column <= 5:
                 return float(self._data[index.row()][0][index.column() + 8])
-
             elif column <= 8:
                 return int(self._data[index.row()][0][index.column() - 6])
             else:
