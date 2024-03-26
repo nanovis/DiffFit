@@ -128,7 +128,7 @@ def look_at_cluster(e_sqd_clusters_ordered, mol_folder, cluster_idx, session, cl
         # delete all other structures
         structures = session.models.list(type=AtomicStructure)
         for structure in structures:
-            structure.display = False
+            structure.delete()
 
     mol_files = os.listdir(mol_folder)
     # mol_files[idx] pairs with e_sqd_clusters_ordered[:][:, idx]

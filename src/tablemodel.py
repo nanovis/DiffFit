@@ -6,7 +6,10 @@ class TableModel(QAbstractTableModel):
     def __init__(self, data, parent=None):
         QAbstractTableModel.__init__(self, parent)
         self._data = data;
-        self._header = ["Mol Id", "Quat Id", "Shift Id", "x", "y", "z", "rx", "ry", "rz", "rw", "corr 1", "corr 2", "corr 3", "corr 4"]
+        self._header = ["Mol Id", "Quat Id", "Shift Id",
+                        "x", "y", "z",
+                        "rw", "rx", "ry", "rz",
+                        "Density", "Overlap", "Correlation", "Cam"]
 
     def rowCount(self, parent=QModelIndex()) -> int:
         """ Override method from QAbstractTableModel
