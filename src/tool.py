@@ -683,7 +683,7 @@ class TutorialTool(ToolInstance):
         
     def save_button_clicked(self):          
         if not self.mol:
-            return;
+            return
         
         fileName, ext = self.select_clicked("Save File", self.view, True, "CIF Files(*.cif);;PDB Files (*.pdb)")           
         

@@ -180,7 +180,7 @@ def zero_cluster_density(session, mol_vol, mol, vol, MQS, zero_iter=0):
             # if idx_in_vol is out of bounds
             continue
 
-    r = vol.subregion()
+    r = vol.subregion(step = [1, 1, 1])
     g = vol.region_grid(r)
     g.array[:, :, :] = vol_matrix
     g.name = vol.name + f"zero_{zero_iter}"
