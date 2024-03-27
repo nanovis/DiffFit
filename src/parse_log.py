@@ -146,8 +146,7 @@ def look_at_cluster(e_sqd_clusters_ordered, mol_folder, cluster_idx, session, cl
     return mol
 
 
-def zero_cluster_density(vol, e_sqd_clusters_ordered, mol_folder, cluster_idx, session, clean_scene=True,
-                         res=4.0, zero_iter=0):
+def simulate_volume(session, vol, e_sqd_clusters_ordered, mol_folder, cluster_idx, res=4.0):
 
     mol_files = os.listdir(mol_folder)
     # mol_files[idx] pairs with e_sqd_clusters_ordered[:][:, idx]
@@ -162,8 +161,10 @@ def zero_cluster_density(vol, e_sqd_clusters_ordered, mol_folder, cluster_idx, s
     from chimerax.map.molmap import molecule_map
     mol_vol = molecule_map(session, mol.atoms, res, grid_spacing=vol.data_origin_and_step()[1][0] / 3)
 
+    return mol_vol
     # TODO: Manually change the surface threshold
 
+def zero_cluster_density(session, mol_vol, mol, vol, MQS, zero_iter=0):
     mol_vol_matrix = mol_vol.data.matrix()
     vol_matrix = vol.data.matrix().copy()
     eligible_indices = np.where(mol_vol_matrix > mol_vol.maximum_surface_level)
@@ -191,7 +192,7 @@ def zero_cluster_density(vol, e_sqd_clusters_ordered, mol_folder, cluster_idx, s
     mol_vol.delete()
     mol.delete()
 
-    session.logger.info(f"Zeroing density for MQS: {e_sqd_clusters_ordered[cluster_idx][0, 0:3].astype(int)}")
+    session.logger.info(f"Zeroing density for MQS: {MQS}")
 
 
 

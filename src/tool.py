@@ -22,7 +22,8 @@ from chimerax.atomic import AtomicStructure
 from chimerax.geometry import Place
 from chimerax.ui import MainToolWindow
 
-from .parse_log import cluster_and_sort_sqd, look_at_cluster, look_at_MQS_idx, animate_MQS, animate_MQS_2, get_transformation_at_MQS
+from .parse_log import cluster_and_sort_sqd, look_at_cluster, look_at_MQS_idx, animate_MQS, animate_MQS_2
+from .parse_log import simulate_volume, get_transformation_at_MQS, get_transformation_at_idx, zero_cluster_density
 from .tablemodel import TableModel
 from .DiffAtomComp import diff_atom_comp
 
@@ -363,6 +364,15 @@ class TutorialTool(ToolInstance):
         layout.addWidget(self.conv_weights, row, 1, 1, 2)
         row = row + 1
         
+        #conv_weights_label = QCheckBox()
+        #conv_weights_label.setText("Visualize results:")
+        #self.conv_weights = QLineEdit()
+        #self.conv_weights.setText("[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]")
+        #self.conv_weights.textChanged.connect(lambda: self.store_settings())        
+        #layout.addWidget(conv_weights_label, row, 0)
+        #layout.addWidget(self.conv_weights, row, 1, 1, 2)
+        #row = row + 1
+        
         
         button = QPushButton()
         button.setText("Run!")
@@ -440,9 +450,19 @@ class TutorialTool(ToolInstance):
         row = row + 1        
         
         # button panel                
-        copy_button = QPushButton()
-        copy_button.setText("Place Copy")
-        copy_button.clicked.connect(self.copy_button_clicked)        
+        simulate_volume_label = QLabel("Resolution:")        
+        self.simulate_volume_resolution = QDoubleSpinBox()
+        self.simulate_volume_resolution.setMinimum(0.001)
+        self.simulate_volume_resolution.setMaximum(100.0)
+        self.simulate_volume_resolution.setSingleStep(0.1)
+        self.simulate_volume_resolution.setValue(4.0)        
+        simulate_volume = QPushButton()
+        simulate_volume.setText("Simulate Volume")
+        simulate_volume.clicked.connect(self.simulate_volume_clicked)        
+        layout.addWidget(simulate_volume_label, row, 0)
+        layout.addWidget(self.simulate_volume_resolution, row, 1)
+        layout.addWidget(simulate_volume, row, 2)
+        row = row + 1        
         
         zero_density_button = QPushButton()
         zero_density_button.setText("Zero density")
@@ -452,8 +472,6 @@ class TutorialTool(ToolInstance):
         save_button = QPushButton()
         save_button.setText("Save")
         save_button.clicked.connect(self.save_button_clicked)
-        
-        layout.addWidget(copy_button, row, 0)
         layout.addWidget(zero_density_button, row, 1)
         layout.addWidget(save_button, row, 2)
         row = row + 1        
@@ -627,12 +645,22 @@ class TutorialTool(ToolInstance):
         if len(targetpath) > 0 and self.mol:
             run(self.session, "save '{0}.{1}' models #{2}".format(targetpath, ext, self.mol.id[0]))
     
-    def copy_button_clicked(self):
-        self.session.logger.info("run combine")
+    def simulate_volume_clicked(self): 
+        resolution = self.simulate_volume_resolution.value()
+        self.mol_vol = simulate_volume(self.session, self.vol, self.e_sqd_clusters_ordered, self.mol_folder, self.cluster_idx, resolution)        
         return
         
-    def zero_density_button_clicked(self):        
-        zero_cluster_density(self.vol, self.e_sqd_clusters_ordered, self.mol_folder, self.cluster_idx, self.session, res=4.0, zero_iter=0)
+    def zero_density_button_clicked(self):      
+        if self.vol is None:
+            print("You have to select a row first!")
+            return
+            
+        if self.mol_vol is None:
+            print("You have to simulate a volume first!")
+            return
+            
+        MQS = self.e_sqd_clusters_ordered[self.cluster_idx][0, 0:3].astype(int)
+        zero_cluster_density(self.session, self.mol_vol, self.mol, self.vol, MQS)
         return
     
     def progress_value_changed(self):
