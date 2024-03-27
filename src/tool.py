@@ -59,6 +59,9 @@ class DiffFitSettings:
         self.conv_loops: int = 10
         self.conv_kernel_sizes: list = [5, 5, 5, 5, 5, 5, 5, 5, 5, 5]
         self.conv_weights: list = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+        
+        self.clustering_shift_tolerance : float = 3.0
+        self.clustering_angle_tolerance : float = 6.0
 
 
 class TutorialTool(ToolInstance):
@@ -167,6 +170,9 @@ class TutorialTool(ToolInstance):
         self.dataset_folder.setText(self.settings.view_output_directory)        
         self.structures_folder.setText(self.settings.view_structures_directory)        
         
+        # clustering
+        self.clustering_angle_tolerance.setValue(self.settings.clustering_angle_tolerance)
+        self.clustering_shift_tolerance.setValue(self.settings.clustering_shift_tolerance)
         
         self.settings.loading = False
     
@@ -201,6 +207,10 @@ class TutorialTool(ToolInstance):
         self.settings.view_output_directory = self.dataset_folder.text()
         self.settings.view_structures_directory = self.structures_folder.text()
         self.settings.view_target_vol_path = self.target_vol.text()
+        
+        # clustering
+        self.settings.clustering_angle_tolerance = self.clustering_angle_tolerance.value()
+        self.settings.clustering_shift_tolerance = self.clustering_shift_tolerance.value()
         
         #print(self.settings)
         #print(self.settings.view_target_vol_path)
@@ -417,6 +427,28 @@ class TutorialTool(ToolInstance):
         layout.addWidget(dataset_folder_select, row, 2)
         row = row + 1
         
+        clustering_shift_tolerance_label = QLabel()
+        clustering_shift_tolerance_label.setText("Clustering - Shift Tolerance:")
+        self.clustering_shift_tolerance = QDoubleSpinBox()
+        self.clustering_shift_tolerance.setMinimum(0.0)
+        self.clustering_shift_tolerance.setMaximum(100)
+        self.clustering_shift_tolerance.setSingleStep(1.0)
+        self.clustering_shift_tolerance.valueChanged.connect(lambda: self.store_settings())        
+        layout.addWidget(clustering_shift_tolerance_label, row, 0)
+        layout.addWidget(self.clustering_shift_tolerance, row, 1, 1, 2)
+        row = row + 1
+                
+        clustering_angle_tolerance_label = QLabel()
+        clustering_angle_tolerance_label.setText("Clustering - Angle Tolerance:")
+        self.clustering_angle_tolerance = QDoubleSpinBox()
+        self.clustering_angle_tolerance.setMinimum(0.0)
+        self.clustering_angle_tolerance.setMaximum(180)
+        self.clustering_angle_tolerance.setSingleStep(1.0)
+        self.clustering_angle_tolerance.valueChanged.connect(lambda: self.store_settings())        
+        layout.addWidget(clustering_angle_tolerance_label, row, 0)
+        layout.addWidget(self.clustering_angle_tolerance, row, 1, 1, 2)
+        row = row + 1
+        
         # init button                
         button = QPushButton()
         button.setText("Load")
@@ -606,7 +638,7 @@ class TutorialTool(ToolInstance):
         self.vol = run(self.session, "open {0}".format(self.settings.view_target_vol_path))[0]
         
         self.e_sqd_log = e_sqd_log
-        self.e_sqd_clusters_ordered = cluster_and_sort_sqd(e_sqd_log)
+        self.e_sqd_clusters_ordered = cluster_and_sort_sqd(e_sqd_log, self.settings.clustering_shift_tolerance, self.settings.clustering_angle_tolerance)
         
         self.model = TableModel(self.e_sqd_clusters_ordered)
         self.proxyModel = QSortFilterProxyModel()
