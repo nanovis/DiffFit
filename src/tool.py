@@ -605,7 +605,7 @@ class TutorialTool(ToolInstance):
         print(self.settings.view_target_vol_path)
         self.vol = run(self.session, "open {0}".format(self.settings.view_target_vol_path))[0]
         
-        #self.e_sqd_log = e_sqd_log
+        self.e_sqd_log = e_sqd_log
         self.e_sqd_clusters_ordered = cluster_and_sort_sqd(e_sqd_log)
         
         self.model = TableModel(self.e_sqd_clusters_ordered)
