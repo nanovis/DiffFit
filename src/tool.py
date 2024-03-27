@@ -178,7 +178,7 @@ class TutorialTool(ToolInstance):
         self.settings.loading = False
     
     def store_settings(self):    
-        print("settings changed...")
+        #print("settings changed...")
         
         if self.settings.loading :
             return
