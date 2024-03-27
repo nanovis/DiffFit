@@ -213,7 +213,7 @@ class TutorialTool(ToolInstance):
         self.target_vol_path = QLineEdit()
         self.target_vol_path.textChanged.connect(lambda: self.store_settings())                
         target_vol_path_select = QPushButton("Select")        
-        target_vol_path_select.clicked.connect(lambda: self.select_clicked("Target Volume", self.target_vol_path, "MRC Files(*.mrc)"))        
+        target_vol_path_select.clicked.connect(lambda: self.select_clicked("Target Volume", self.target_vol_path, False, "MRC Files(*.mrc)"))        
         layout.addWidget(target_vol_path_label, row, 0)
         layout.addWidget(self.target_vol_path, row, 1)
         layout.addWidget(target_vol_path_select, row, 2)
@@ -388,7 +388,7 @@ class TutorialTool(ToolInstance):
         self.target_vol = QLineEdit()        
         self.target_vol.textChanged.connect(lambda: self.store_settings())
         target_vol_select = QPushButton("Select")        
-        target_vol_select.clicked.connect(lambda: self.select_clicked("Target Volume", self.target_vol, "MRC Files(*.mrc)"))        
+        target_vol_select.clicked.connect(lambda: self.select_clicked("Target Volume", self.target_vol, False, "MRC Files(*.mrc)"))        
         layout.addWidget(target_vol_label, row, 0)
         layout.addWidget(self.target_vol, row, 1)
         layout.addWidget(target_vol_select, row, 2)
@@ -569,17 +569,30 @@ class TutorialTool(ToolInstance):
         # output is tensor
         self.show_results(e_sqd_log.detach().cpu().numpy())
     
-    def select_clicked(self, text, target, pattern = "dir"):
+    def select_clicked(self, text, target, save = False, pattern = "dir"):
         fileName = ""
-        if pattern == "dir":
-            fileName = QFileDialog.getExistingDirectory(target, text)
-        else:
+        ext = ""
+        
+        if save:
             options = QFileDialog.Options()
             options |= QFileDialog.DontUseNativeDialog
             fileName, ext = QFileDialog.getSaveFileName(target, text, "", pattern, options = options)
-        
-        if len(fileName) > 0:
-            target.setText(fileName)
+            ext = ext[-4:]
+            ext = ext[:3]                
+        else:
+            if pattern == "dir":
+                fileName = QFileDialog.getExistingDirectory(target, text)
+            elif len(pattern) > 0 :
+                options = QFileDialog.Options()
+                options |= QFileDialog.DontUseNativeDialog
+                fileName, ext = QFileDialog.getOpenFileName(target, text, "", pattern, options = options)   
+                ext = ext[-4:]
+                ext = ext[:3]                
+                
+            if len(fileName) > 0:
+                target.setText(fileName)
+            
+        return fileName, ext
     
     def show_results(self, e_sqd_log):
         if e_sqd_log is None:
@@ -630,13 +643,7 @@ class TutorialTool(ToolInstance):
         if not self.mol:
             return;
         
-        options = QFileDialog.Options()
-        options |= QFileDialog.DontUseNativeDialog
-        fileName, ext = QFileDialog.getSaveFileName(self.view, 
-            "Save File", "", "CIF Files(*.cif);;PDB Files (*.pdb)", options = options)
-            
-        ext = ext[-4:]
-        ext = ext[:3]
+        fileName, ext = self.select_clicked("Save File", self.view, True, "CIF Files(*.cif);;PDB Files (*.pdb)")           
         
         self.save_structure(fileName, ext)
     
