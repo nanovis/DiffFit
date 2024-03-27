@@ -565,42 +565,7 @@ class TutorialTool(ToolInstance):
             self.progress.setMinimum(1)
             self.progress.setMaximum(N_iter)
             self.progress.setValue(N_iter)            
-    
-    def run_button_clicked(self):
-        #import sys
-        #sys.path.append('D:\\GIT\\DiffFitViewer\\src')
-        print("Running the computation...")
-
-        #target_vol_path = "D:\\GIT\\DiffFitViewer\dev_data\input\domain_fit_demo_3domains\density2.mrc"
-        #output_folder = "D:\\GIT\\DiffFitViewer\dev_data\output"                
         
-        e_sqd_log = diff_atom_comp(
-        target_vol_path = self.settings.target_vol_path, 
-        target_surface_threshold = self.settings.target_surface_threshold, 
-        min_cluster_size = self.settings.min_cluster_size, 
-        structures_dir = self.settings.structures_directory, 
-        structures_sim_map_dir = self.settings.structures_sim_map_dir, 
-        N_shifts = self.settings.N_shifts,
-        N_quaternions = self.settings.N_quaternions,
-        negative_space_value = self.settings.negative_space_value,
-        exp_name = self.settings.exp_name,
-        learning_rate = self.settings.learning_rate,
-        n_iters = self.settings.N_iters,
-        out_dir = self.settings.output_directory, 
-        out_dir_exist_ok = self.settings.out_dir_exist_ok,       
-        conv_loops = self.settings.conv_loops,
-        conv_kernel_sizes = self.settings.conv_kernel_sizes,
-        conv_weights = self.settings.conv_weights
-        )
-                
-        # copy the directories
-        #self.view_target_vol_path = self.settings.target_vol_path
-        #self.view_structures_directory = self.settings.structures_directory
-        #print(self.settings)
-        
-        # output is tensor
-        self.show_results(e_sqd_log.detach().cpu().numpy())
-    
     def select_clicked(self, text, target, save = False, pattern = "dir"):
         fileName = ""
         ext = ""
@@ -657,7 +622,42 @@ class TutorialTool(ToolInstance):
         self.cluster_idx = 0
         look_at_cluster(self.e_sqd_clusters_ordered, self.mol_folder, self.cluster_idx, self.session)
         
-    
+    def run_button_clicked(self):
+        #import sys
+        #sys.path.append('D:\\GIT\\DiffFitViewer\\src')
+        print("Running the computation...")
+
+        #target_vol_path = "D:\\GIT\\DiffFitViewer\dev_data\input\domain_fit_demo_3domains\density2.mrc"
+        #output_folder = "D:\\GIT\\DiffFitViewer\dev_data\output"                
+        
+        e_sqd_log = diff_atom_comp(
+        target_vol_path = self.settings.target_vol_path, 
+        target_surface_threshold = self.settings.target_surface_threshold, 
+        min_cluster_size = self.settings.min_cluster_size, 
+        structures_dir = self.settings.structures_directory, 
+        structures_sim_map_dir = self.settings.structures_sim_map_dir, 
+        N_shifts = self.settings.N_shifts,
+        N_quaternions = self.settings.N_quaternions,
+        negative_space_value = self.settings.negative_space_value,
+        exp_name = self.settings.exp_name,
+        learning_rate = self.settings.learning_rate,
+        n_iters = self.settings.N_iters,
+        out_dir = self.settings.output_directory, 
+        out_dir_exist_ok = self.settings.out_dir_exist_ok,       
+        conv_loops = self.settings.conv_loops,
+        conv_kernel_sizes = self.settings.conv_kernel_sizes,
+        conv_weights = self.settings.conv_weights
+        )
+                
+        # copy the directories
+        self.target_vol.setText(self.settings.target_vol_path)     
+        self.structures_folder.setText(self.settings.structures_directory)
+        self.dataset_folder.setText("{0}\{1}".format(self.settings.output_directory, self.settings.exp_name))            
+        #print(self.settings)
+        
+        # output is tensor
+        self.show_results(e_sqd_log.detach().cpu().numpy())
+        
     def init_button_clicked(self):            
         if self.settings is None:
             return
