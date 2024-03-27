@@ -59,9 +59,6 @@ class DiffFitSettings:
         self.conv_loops: int = 10
         self.conv_kernel_sizes: list = [5, 5, 5, 5, 5, 5, 5, 5, 5, 5]
         self.conv_weights: list = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
-    
-        print(self)
-        print(self.conv_kernel_sizes)
 
 
 class TutorialTool(ToolInstance):
@@ -132,7 +129,7 @@ class TutorialTool(ToolInstance):
         tab_widget.addTab(view_group, "View")
         
         # TODO: place where to update the settings
-        self.load_settings(self.settings)
+        self.load_settings()
         
         # Set the layout as the contents of our window        
         layout = QVBoxLayout()                
@@ -143,40 +140,41 @@ class TutorialTool(ToolInstance):
         # main window
         self.tool_window.manage('side')
 
-    def load_settings(self, settings):
+    def load_settings(self):
         print("loading settings...")
         
         self.settings.loading = True
     
         #compute
-        self.target_vol_path.setText(settings.target_vol_path)
-        self.structures_dir.setText(settings.structures_directory)
-        self.structures_sim_map_dir.setText(settings.structures_sim_map_dir)
-        self.out_dir.setText(settings.output_directory)
-        self.exp_name.setText(settings.exp_name)        
-        self.target_surface_threshold.setValue(settings.target_surface_threshold)
-        self.min_cluster_size.setValue(settings.min_cluster_size)
-        self.n_iters.setValue(settings.N_iters)
-        self.n_shifts.setValue(settings.N_shifts)
-        self.n_quaternions.setValue(settings.N_quaternions)        
-        self.negative_space_value.setValue(settings.negative_space_value)
-        self.learning_rate.setValue(settings.learning_rate)
-        self.conv_loops.setValue(settings.conv_loops)
-        self.conv_kernel_sizes.setText("[{0}]".format(','.join(map(str, settings.conv_kernel_sizes))))
-        self.conv_weights.setText("[{0}]".format(','.join(map(str, settings.conv_weights))))
+        self.target_vol_path.setText(self.settings.target_vol_path)
+        self.structures_dir.setText(self.settings.structures_directory)
+        self.structures_sim_map_dir.setText(self.settings.structures_sim_map_dir)
+        self.out_dir.setText(self.settings.output_directory)
+        self.exp_name.setText(self.settings.exp_name)        
+        self.target_surface_threshold.setValue(self.settings.target_surface_threshold)
+        self.min_cluster_size.setValue(self.settings.min_cluster_size)
+        self.n_iters.setValue(self.settings.N_iters)
+        self.n_shifts.setValue(self.settings.N_shifts)
+        self.n_quaternions.setValue(self.settings.N_quaternions)        
+        self.negative_space_value.setValue(self.settings.negative_space_value)
+        self.learning_rate.setValue(self.settings.learning_rate)
+        self.conv_loops.setValue(self.settings.conv_loops)
+        self.conv_kernel_sizes.setText("[{0}]".format(','.join(map(str, self.settings.conv_kernel_sizes))))
+        self.conv_weights.setText("[{0}]".format(','.join(map(str, self.settings.conv_weights))))
         
         # view
-        self.dataset_folder.setText(settings.view_output_directory)        
-        self.structures_folder.setText(settings.view_structures_directory)        
-        self.target_vol.setText(settings.view_target_vol_path)     
+        self.target_vol.setText(self.settings.view_target_vol_path)     
+        self.dataset_folder.setText(self.settings.view_output_directory)        
+        self.structures_folder.setText(self.settings.view_structures_directory)        
+        
         
         self.settings.loading = False
     
     def store_settings(self):    
+        print("settings changed...")
+        
         if self.settings.loading :
             return
-        
-        #print("settings changed...")
         
         #compute
         self.settings.target_vol_path = self.target_vol_path.text()
@@ -202,7 +200,10 @@ class TutorialTool(ToolInstance):
         #view
         self.settings.view_output_directory = self.dataset_folder.text()
         self.settings.view_structures_directory = self.structures_folder.text()
-        self.settings.view_target_vol = self.target_vol.text()
+        self.settings.view_target_vol_path = self.target_vol.text()
+        
+        #print(self.settings)
+        #print(self.settings.view_target_vol_path)
         
     
     def build_compute_ui(self, layout):
@@ -213,7 +214,7 @@ class TutorialTool(ToolInstance):
         self.target_vol_path = QLineEdit()
         self.target_vol_path.textChanged.connect(lambda: self.store_settings())                
         target_vol_path_select = QPushButton("Select")        
-        target_vol_path_select.clicked.connect(lambda: self.select_clicked("Target Volume", self.target_vol_path, False, "MRC Files(*.mrc)"))        
+        target_vol_path_select.clicked.connect(lambda: self.select_clicked("Target Volume", self.target_vol_path, False, "MRC Files(*.mrc);;MAP Files(*.map)"))        
         layout.addWidget(target_vol_path_label, row, 0)
         layout.addWidget(self.target_vol_path, row, 1)
         layout.addWidget(target_vol_path_select, row, 2)
@@ -376,7 +377,7 @@ class TutorialTool(ToolInstance):
         
         button = QPushButton()
         button.setText("Run!")
-        button.clicked.connect(self.run_button_clicked)        
+        button.clicked.connect(lambda: self.run_button_clicked())        
         layout.addWidget(button, row, 1, 1, 2)        
 
 
@@ -388,7 +389,7 @@ class TutorialTool(ToolInstance):
         self.target_vol = QLineEdit()        
         self.target_vol.textChanged.connect(lambda: self.store_settings())
         target_vol_select = QPushButton("Select")        
-        target_vol_select.clicked.connect(lambda: self.select_clicked("Target Volume", self.target_vol, False, "MRC Files(*.mrc)"))        
+        target_vol_select.clicked.connect(lambda: self.select_clicked("Target Volume", self.target_vol, False, "MRC Files(*.mrc);;MAP Files(*.map)"))        
         layout.addWidget(target_vol_label, row, 0)
         layout.addWidget(self.target_vol, row, 1)
         layout.addWidget(target_vol_select, row, 2)
@@ -419,7 +420,7 @@ class TutorialTool(ToolInstance):
         # init button                
         button = QPushButton()
         button.setText("Load")
-        button.clicked.connect(self.init_button_clicked)        
+        button.clicked.connect(lambda: self.init_button_clicked())        
         layout.addWidget(button, row, 1, 1, 2)
         row = row + 1        
 
@@ -536,7 +537,7 @@ class TutorialTool(ToolInstance):
     def run_button_clicked(self):
         #import sys
         #sys.path.append('D:\\GIT\\DiffFitViewer\\src')
-        
+        print("Running the computation...")
 
         #target_vol_path = "D:\\GIT\\DiffFitViewer\dev_data\input\domain_fit_demo_3domains\density2.mrc"
         #output_folder = "D:\\GIT\\DiffFitViewer\dev_data\output"                
@@ -559,12 +560,11 @@ class TutorialTool(ToolInstance):
         conv_kernel_sizes = self.settings.conv_kernel_sizes,
         conv_weights = self.settings.conv_weights
         )
-        
-        print(e_sqd_log)
-        
+                
         # copy the directories
-        self.view_target_vol_path = self.settings.target_vol_path
-        self.view_structures_directory = self.settings.structures_directory
+        #self.view_target_vol_path = self.settings.target_vol_path
+        #self.view_structures_directory = self.settings.structures_directory
+        #print(self.settings)
         
         # output is tensor
         self.show_results(e_sqd_log.detach().cpu().numpy())
@@ -590,6 +590,8 @@ class TutorialTool(ToolInstance):
                 ext = ext[:3]                
                 
             if len(fileName) > 0:
+                print("settings to GUI")
+                print(fileName)
                 target.setText(fileName)
             
         return fileName, ext
@@ -598,12 +600,13 @@ class TutorialTool(ToolInstance):
         if e_sqd_log is None:
             return
             
-        print("opening the volume")
-        vol_path = self.settings.view_target_vol_path
-        self.vol = run(self.session, f"open {vol_path}")[0]
+        print("opening the volume...")
+        #print(self.settings)
+        print(self.settings.view_target_vol_path)
+        self.vol = run(self.session, "open {0}".format(self.settings.view_target_vol_path))[0]
         
-        self.e_sqd_log = e_sqd_log
-        self.e_sqd_clusters_ordered = cluster_and_sort_sqd(self.e_sqd_log)
+        #self.e_sqd_log = e_sqd_log
+        self.e_sqd_clusters_ordered = cluster_and_sort_sqd(e_sqd_log)
         
         self.model = TableModel(self.e_sqd_clusters_ordered)
         self.proxyModel = QSortFilterProxyModel()
