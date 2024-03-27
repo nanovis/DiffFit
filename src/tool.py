@@ -18,6 +18,7 @@ from Qt.QtCore import QSortFilterProxyModel, Qt
 
 from chimerax.core.tools import ToolInstance
 from chimerax.core.commands import run
+from chimerax.map.volume import volume_list
 from chimerax.atomic import AtomicStructure
 from chimerax.geometry import Place
 from chimerax.ui import MainToolWindow
@@ -596,6 +597,12 @@ class TutorialTool(ToolInstance):
     def show_results(self, e_sqd_log):
         if e_sqd_log is None:
             return
+
+        print("clear the volumes from the scene")
+
+        vlist = volume_list(self.session)
+        for v in vlist:
+            v.delete()
             
         print("opening the volume...")
         #print(self.settings)
