@@ -709,7 +709,8 @@ class TutorialTool(ToolInstance):
             return
             
         MQS = self.e_sqd_clusters_ordered[self.cluster_idx][0, 0:3].astype(int)
-        zero_cluster_density(self.session, self.mol_vol, self.mol, self.vol, MQS)
+        work_vol = zero_cluster_density(self.session, self.mol_vol, self.mol, self.vol, MQS)
+        self.vol = work_vol
         return
     
     def progress_value_changed(self):
