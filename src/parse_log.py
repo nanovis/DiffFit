@@ -165,34 +165,18 @@ def simulate_volume(session, vol, e_sqd_clusters_ordered, mol_folder, cluster_id
     # TODO: Manually change the surface threshold
 
 def zero_cluster_density(session, mol_vol, mol, vol, MQS, zero_iter=0):
-    mol_vol_matrix = mol_vol.data.matrix()
-    vol_matrix = vol.data.matrix().copy()
-    eligible_indices = np.where(mol_vol_matrix > mol_vol.maximum_surface_level)
-    eligible_indices_list = list(zip(*eligible_indices))
-
-    xyz_in_mol = [mol_vol.data.ijk_to_xyz(idx_in_mol_vol) for idx_in_mol_vol in eligible_indices_list]
-    idx_in_vol = [vol.data.xyz_to_ijk(xyz).astype(int).tolist() for xyz in xyz_in_mol]
-
-    for idx in idx_in_vol:
-        try:
-            vol_matrix[*idx] = 0.0
-        except IndexError:
-            # if idx_in_vol is out of bounds
-            continue
-
-    r = vol.subregion(step = [1, 1, 1])
-    g = vol.region_grid(r)
-    g.array[:, :, :] = vol_matrix
-    g.name = vol.name + f"zero_{zero_iter}"
-
-    from chimerax.map.volume import volume_from_grid_data
-    v_zeroed = volume_from_grid_data(g, session)
-    v_zeroed.copy_settings_from(vol, copy_region=False, copy_colors=True)
+    work_vol = run(session, f"volume subtract #{vol.id[0]} #{mol_vol.id[0]} scaleFactors  1.0,1000.0")
+    matrix = work_vol.data.matrix()
+    matrix[matrix < 0] = 0
+    work_vol.update_drawings()
+    work_vol.name = "working volume"
 
     mol_vol.delete()
     mol.delete()
 
     session.logger.info(f"Zeroing density for MQS: {MQS}")
+
+    return work_vol
 
 
 
