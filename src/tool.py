@@ -391,6 +391,11 @@ class TutorialTool(ToolInstance):
         button.clicked.connect(lambda: self.run_button_clicked())        
         layout.addWidget(button, row, 1, 1, 2)        
 
+    def attrib_exists(self, obj, attrib_name):
+        if attrib_name in dir(obj):
+            return True
+            
+        return False
 
     def build_view_ui(self, layout):
         row = 0
@@ -588,8 +593,8 @@ class TutorialTool(ToolInstance):
                 ext = ext[:3]                
                 
             if len(fileName) > 0:
-                print("settings to GUI")
-                print(fileName)
+                #print("settings to GUI")
+                #print(fileName)
                 target.setText(fileName)
             
         return fileName, ext
@@ -675,11 +680,14 @@ class TutorialTool(ToolInstance):
             print("Specify the datasetoutput folder first!")
             return
                 
-        print("loading data...")
-        e_sqd_log = np.load("{0}\\e_sqd_log.npy".format(datasetoutput))
-        
-        #print(e_sqd_log)
-        self.show_results(e_sqd_log)
+        try:
+            print("loading data...")
+            e_sqd_log = np.load("{0}\\e_sqd_log.npy".format(datasetoutput))
+            
+            #print(e_sqd_log)
+            self.show_results(e_sqd_log)    
+        except: 
+            print("Cannot open '{0}' data.".format(datasetoutput))            
         
     def save_button_clicked(self):          
         if not self.mol:
@@ -694,18 +702,26 @@ class TutorialTool(ToolInstance):
         if len(targetpath) > 0 and self.mol:
             run(self.session, "save '{0}.{1}' models #{2}".format(targetpath, ext, self.mol.id[0]))
     
-    def simulate_volume_clicked(self): 
-        resolution = self.simulate_volume_resolution.value()
-        self.mol_vol = simulate_volume(self.session, self.vol, self.e_sqd_clusters_ordered, self.mol_folder, self.cluster_idx, resolution)        
+    def simulate_volume_clicked(self):         
+        try:
+            resolution = self.simulate_volume_resolution.value()
+            self.mol_vol = simulate_volume(self.session, self.vol, self.e_sqd_clusters_ordered, self.mol_folder, self.cluster_idx, resolution)        
+        except AttributeError:
+            print("Cannot perform the action. Initialize first!")
+            
         return
         
     def zero_density_button_clicked(self):      
-        if self.vol is None:
-            print("You have to select a row first!")
+        if not self.attrib_exists(self, "mol_vol") or self.mol_vol is None:
+            print("You have to simulate a volume first!")
             return
             
-        if self.mol_vol is None:
-            print("You have to simulate a volume first!")
+        if not self.attrib_exists(self, "mol") or self.mol is None:
+            print("You have to select a structure in the row first!")
+            return
+            
+        if not self.attrib_exists(self, "vol") or self.vol is None:
+            print("You have to select a row first!")
             return
             
         MQS = self.e_sqd_clusters_ordered[self.cluster_idx][0, 0:3].astype(int)
