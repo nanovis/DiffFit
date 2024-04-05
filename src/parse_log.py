@@ -221,7 +221,7 @@ def cluster_and_sort_sqd(e_sqd_log, shift_tolerance: float = 3.0, angle_toleranc
     return the ordered cluster
 
     e_sqd_clusters contents
-    e_sqd_clusters[0] = [[mol_idx, quat_idx, shift_idx, shift 3, quat 4, corr],
+    e_sqd_clusters[0] = [[mol_idx, quat_idx, shift_idx, shift 3, quat 4, corr 4],
                          ...
                          [mol_idx, quat_idx, shift_idx, shift 3, quat 4, corr 4]]
     with corr, e_sqd_cluster[0][:, -1] is sorted in descending order
