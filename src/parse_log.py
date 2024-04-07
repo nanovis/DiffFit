@@ -133,7 +133,7 @@ def look_at_cluster(e_sqd_clusters_ordered, mol_folder, cluster_idx, session, cl
             structure.delete()
 
     mol_files = os.listdir(mol_folder)
-    # mol_files[idx] pairs with e_sqd_clusters_ordered[:][:, idx]
+    # mol_files[idx] pairs with e_sqd_log[idx]
 
     look_at_mol_idx, transformation = get_transformation_at_idx(e_sqd_clusters_ordered, cluster_idx)
 
@@ -168,14 +168,12 @@ def look_at_record(e_sqd_log, mol_folder, mol_idx, record_idx, iter_idx, session
     return mol
 
 
-def simulate_volume(session, vol, e_sqd_clusters_ordered, mol_folder, cluster_idx, res=4.0):
+def simulate_volume(session, vol, mol_folder, mol_idx, transformation, res=4.0):
 
     mol_files = os.listdir(mol_folder)
-    # mol_files[idx] pairs with e_sqd_clusters_ordered[:][:, idx]
+    # mol_files[idx] pairs with e_sqd_log[idx]
 
-    look_at_mol_idx, transformation = get_transformation_at_idx(e_sqd_clusters_ordered, cluster_idx)
-
-    mol_path = os.path.join(mol_folder, mol_files[look_at_mol_idx])
+    mol_path = os.path.join(mol_folder, mol_files[mol_idx])
     mol = run(session, f"open {mol_path}")[0]
 
     mol.atoms.transform(transformation)
@@ -184,7 +182,7 @@ def simulate_volume(session, vol, e_sqd_clusters_ordered, mol_folder, cluster_id
     mol_vol = molecule_map(session, mol.atoms, res, grid_spacing=vol.data_origin_and_step()[1][0] / 3)
 
     return mol_vol
-    # TODO: Manually change the surface threshold
+
 
 def zero_cluster_density(session, mol_vol, mol, vol, MQS, zero_iter=0):
     work_vol = run(session, f"volume subtract #{vol.id[0]} #{mol_vol.id[0]} scaleFactors  1.0,1000.0")

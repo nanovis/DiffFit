@@ -695,7 +695,7 @@ class TutorialTool(ToolInstance):
     
     def simulate_volume_clicked(self): 
         resolution = self.simulate_volume_resolution.value()
-        self.mol_vol = simulate_volume(self.session, self.vol, self.e_sqd_clusters_ordered, self.mol_folder, self.cluster_idx, resolution)        
+        self.mol_vol = simulate_volume(self.session, self.vol, self.mol_folder, self.mol_idx, self.transformation, resolution)
         return
         
     def zero_density_button_clicked(self):      
@@ -717,6 +717,6 @@ class TutorialTool(ToolInstance):
         self.progress_label.setText("{0}/{1}".format(progress, self.progress.maximum()))
         
         if self.e_sqd_log is not None and self.mol is not None:
-            transformation = get_transformation_at_record(self.e_sqd_log, self.mol_idx, self.record_idx, progress - 1)
-            self.mol.scene_position = transformation        
+            self.transformation = get_transformation_at_record(self.e_sqd_log, self.mol_idx, self.record_idx, progress - 1)
+            self.mol.scene_position = self.transformation
     
