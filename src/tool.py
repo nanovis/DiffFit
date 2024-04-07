@@ -24,7 +24,7 @@ from chimerax.geometry import Place
 from chimerax.ui import MainToolWindow
 
 from .parse_log import look_at_record, look_at_cluster, look_at_MQS_idx, animate_MQS, animate_MQS_2
-from .parse_log import simulate_volume, get_transformation_at_MQS, get_transformation_at_idx, zero_cluster_density
+from .parse_log import simulate_volume, get_transformation_at_record, zero_cluster_density
 from .tablemodel import TableModel
 from .DiffAtomComp import diff_atom_comp, cluster_and_sort_sqd_fast
 
@@ -36,7 +36,7 @@ import os
 class DiffFitSettings:    
     def __init__(self):   
         # viewing
-        self.view_output_directory: str = "D:\\GIT\\DiffFitViewer\\dev_data\\output\\dev_comp_domain_fit_3_domains_10s20q"
+        self.view_output_directory: str = "D:\\GIT\\DiffFitViewer\\dev_data\\output\\dev_comp_domain_fit_3_domains_10s20q_new_q"
         self.view_target_vol_path: str = "D:\\GIT\\DiffFitViewer\\dev_data\\input\\domain_fit_demo_3domains\\density2.mrc"        
         self.view_structures_directory: str = "D:\\GIT\\DiffFitViewer\dev_data\input\domain_fit_demo_3domains\subunits_cif"
         
@@ -716,9 +716,7 @@ class TutorialTool(ToolInstance):
         progress = self.progress.value()
         self.progress_label.setText("{0}/{1}".format(progress, self.progress.maximum()))
         
-        if self.e_sqd_clusters_ordered and self.mol :
-            MQS = self.e_sqd_clusters_ordered[self.cluster_idx][0, 0:3].astype(int).tolist()
-                 
-            _, transformation = get_transformation_at_MQS(self.e_sqd_log, MQS, progress - 1)
+        if self.e_sqd_log is not None and self.mol is not None:
+            transformation = get_transformation_at_record(self.e_sqd_log, self.mol_idx, self.record_idx, progress - 1)
             self.mol.scene_position = transformation        
     
