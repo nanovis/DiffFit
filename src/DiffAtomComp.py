@@ -26,8 +26,6 @@ import math
 # Ignore PDBConstructionWarning for unrecognized 'END' record
 warnings.filterwarnings("ignore", message="Ignoring unrecognized record 'END'", category=PDBConstructionWarning)
 
-timer_start = None
-
 
 def q2_unit_coord(Q):
     rotations = [R.from_quat(q) for q in Q]
@@ -594,6 +592,7 @@ def diff_atom_comp(target_vol_path: str,
                    conv_kernel_sizes: list = (5, 5, 5, 5, 5, 5, 5, 5, 5, 5),
                    conv_weights: list = (1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0),
                    ):
+    timer_start = datetime.now()
     # ======= load target volume to fit into
 
     target_no_negative, target_steps, target_origin = mrc_to_npy(target_vol_path)
@@ -730,7 +729,7 @@ def diff_atom_comp(target_vol_path: str,
                     log_file.write(f"Epoch: {epoch + 1:05d}, "
                                    f"loss = {loss:.4f}\n")
 
-    global timer_start
+
     timer_stop = datetime.now()
 
     with open(f"{exp_out_dir}/log.log", "a") as log_file:
