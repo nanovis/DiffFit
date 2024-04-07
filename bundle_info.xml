@@ -35,7 +35,7 @@ will be displayed without the ChimeraX- prefix.
 
   <!-- Non-Python files that are part of package -->
   <DataFiles>
-    <DataFile>docs/user/tools/tutorial.html</DataFile>
+    <DataFile>docs/user/tools/DiffFit.html</DataFile>
   </DataFiles>
 
   <Classifiers>

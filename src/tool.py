@@ -76,7 +76,7 @@ class TutorialTool(ToolInstance):
 
     SESSION_ENDURING = False    # Does this instance persist when session closes
     SESSION_SAVE = True         # We do save/restore in sessions
-    help = "help:user/tools/tutorial.html"
+    help = "help:user/tools/DiffFit.html"
                                 # Let ChimeraX know about our help page
 
     def __init__(self, session, tool_name):
