@@ -148,6 +148,26 @@ def look_at_cluster(e_sqd_clusters_ordered, mol_folder, cluster_idx, session, cl
     return mol
 
 
+def look_at_record(e_sqd_log, mol_folder, mol_idx, record_idx, iter_idx, session, clean_scene=True):
+    if clean_scene:
+        # delete all other structures
+        structures = session.models.list(type=AtomicStructure)
+        for structure in structures:
+            structure.delete()
+
+    mol_files = os.listdir(mol_folder)
+    # mol_files[idx] pairs with e_sqd_log[idx]
+
+    transformation = get_transformation_at_record(e_sqd_log, mol_idx, record_idx, iter_idx)
+
+    mol_path = os.path.join(mol_folder, mol_files[mol_idx])
+    mol = run(session, f"open {mol_path}")[0]
+
+    mol.scene_position = transformation
+
+    return mol
+
+
 def simulate_volume(session, vol, e_sqd_clusters_ordered, mol_folder, cluster_idx, res=4.0):
 
     mol_files = os.listdir(mol_folder)
@@ -184,7 +204,7 @@ def zero_cluster_density(session, mol_vol, mol, vol, MQS, zero_iter=0):
 
 def get_transformation_at_MQS(e_sqd_log, MQS, iter_idx=-1):
     shift = e_sqd_log[*MQS, iter_idx][0:3]
-    quat = e_sqd_log[*MQS, iter_idx][3:7][[1, 2, 3, 0]]  # convert to x,y,z,w
+    quat = e_sqd_log[*MQS, iter_idx][3:7]
 
     R_matrix = R.from_quat(quat).as_matrix()
 
@@ -198,9 +218,23 @@ def get_transformation_at_MQS(e_sqd_log, MQS, iter_idx=-1):
     return mol_idx, transformation
 
 
+def get_transformation_at_record(e_sqd_log, mol_idx, record_idx, iter_idx):
+    shift = e_sqd_log[mol_idx, record_idx, iter_idx, :3]
+    quat = e_sqd_log[mol_idx, record_idx, iter_idx, 3:7]
+
+    R_matrix = R.from_quat(quat).as_matrix()
+
+    T_matrix = np.zeros([3, 4])
+    T_matrix[:, :3] = R_matrix
+    T_matrix[:, 3] = shift
+
+    transformation = Place(matrix=T_matrix)
+
+    return transformation
+
 def get_transformation_at_idx(e_sqd_clusters_ordered, look_at_idx=0):
     shift = e_sqd_clusters_ordered[look_at_idx][0, 3:6]
-    quat = e_sqd_clusters_ordered[look_at_idx][0, 6:10][[1, 2, 3, 0]]  # convert to x,y,z,w
+    quat = e_sqd_clusters_ordered[look_at_idx][0, 6:10]
 
     R_matrix = R.from_quat(quat).as_matrix()
 

@@ -23,10 +23,10 @@ from chimerax.atomic import AtomicStructure
 from chimerax.geometry import Place
 from chimerax.ui import MainToolWindow
 
-from .parse_log import cluster_and_sort_sqd, cluster_and_sort_sqd_fast, look_at_cluster, look_at_MQS_idx, animate_MQS, animate_MQS_2
+from .parse_log import look_at_record, look_at_cluster, look_at_MQS_idx, animate_MQS, animate_MQS_2
 from .parse_log import simulate_volume, get_transformation_at_MQS, get_transformation_at_idx, zero_cluster_density
 from .tablemodel import TableModel
-from .DiffAtomComp import diff_atom_comp
+from .DiffAtomComp import diff_atom_comp, cluster_and_sort_sqd_fast
 
 import sys
 import numpy as np        
@@ -550,25 +550,20 @@ class TutorialTool(ToolInstance):
             proxyIndex = self.proxyModel.index(item.row(), 0)
             sourceIndex = self.proxyModel.mapToSource(proxyIndex)
             self.cluster_idx = sourceIndex.row()
-            record_idx = int(self._sqd_cluster_data[index.row(), 1])
-            
-            #print(self.cluster_idx)
-            
-            #MQS = self.e_sqd_clusters_ordered[self.cluster_idx][0, 0:3].astype(int).tolist()
-            
-            #animate_MQS_2(self.e_sqd_log, self.mol_folder, MQS, self.session)
 
+            self.mol_idx = int(self.e_sqd_clusters_ordered[self.cluster_idx, 0])
+            self.record_idx = int(self.e_sqd_clusters_ordered[self.cluster_idx, 1])
 
-            self.mol = look_at_cluster(self.e_sqd_clusters_ordered, self.mol_folder, self.cluster_idx, self.session)
-            
-            MQS = self.e_sqd_clusters_ordered[self.cluster_idx][0, 0:3].astype(int).tolist()
-            print(MQS)
-            N_iter = len(self.e_sqd_log[MQS[0], MQS[1], MQS[2]])
-            print(N_iter)
-            
+            N_iter = len(self.e_sqd_log[self.mol_idx, self.record_idx])
+            iter_idx = int(self.e_sqd_clusters_ordered[self.cluster_idx, 2])
+
+            self.mol = look_at_record(self.e_sqd_log, self.mol_folder, self.mol_idx, self.record_idx, iter_idx, self.session)
+            self.session.logger.info(f"Cluster size: {int(self.e_sqd_clusters_ordered[self.cluster_idx, 3])}")
+            self.session.logger.info(f"Highest metric reached at iter : {iter_idx}")
+
             self.progress.setMinimum(1)
             self.progress.setMaximum(N_iter)
-            self.progress.setValue(N_iter)            
+            self.progress.setValue(iter_idx)
         
     def select_clicked(self, text, target, save = False, pattern = "dir"):
         fileName = ""
@@ -612,9 +607,9 @@ class TutorialTool(ToolInstance):
         print(self.settings.view_target_vol_path)
         self.vol = run(self.session, "open {0}".format(self.settings.view_target_vol_path))[0]
 
-        N_mol, N_quat, N_shift, N_iter, N_record = e_sqd_log.shape
-        self.e_sqd_log = e_sqd_log.reshape([N_mol, N_quat * N_shift, N_iter, N_record])
-        self.e_sqd_clusters_ordered = cluster_and_sort_sqd_fast(e_sqd_log, self.settings.clustering_shift_tolerance, self.settings.clustering_angle_tolerance)
+        N_mol, N_quat, N_shift, N_iter, N_metric = e_sqd_log.shape
+        self.e_sqd_log = e_sqd_log.reshape([N_mol, N_quat * N_shift, N_iter, N_metric])
+        self.e_sqd_clusters_ordered = cluster_and_sort_sqd_fast(self.e_sqd_log, self.settings.clustering_shift_tolerance, self.settings.clustering_angle_tolerance)
         
         self.model = TableModel(self.e_sqd_clusters_ordered, self.e_sqd_log)
         self.proxyModel = QSortFilterProxyModel()
