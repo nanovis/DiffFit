@@ -3,15 +3,14 @@ from Qt.QtCore import QAbstractTableModel, Qt, QModelIndex
 class TableModel(QAbstractTableModel):
     """A model to interface a Qt view with pandas dataframe """
 
-    def __init__(self, data, parent=None):
+    def __init__(self, sqd_cluster_data, sqd_data, parent=None):
         QAbstractTableModel.__init__(self, parent)
-        self._data = data
-        self._header = ["Id", "Hits",
-                        "Density", "Overlap", "Correlation", "Cam",
-                        "Mol Id", "Quat Id", "Shift Id",
-                        "x", "y", "z",
-                        "rw", "rx", "ry", "rz"]
-                            
+        self._sqd_data = sqd_data
+        self._sqd_cluster_data = sqd_cluster_data
+
+        self._header = ["Id", "Mol Id", "Hits",
+                        "Density", "Overlap", "Correlation", "Cam"]
+
         # mapping of columns (from view to data)
         # self._mapping = [-1, -1, 10, 11, 12, 13]
 
@@ -21,7 +20,7 @@ class TableModel(QAbstractTableModel):
         Return row count of the pandas DataFrame
         """
         if parent == QModelIndex():
-            return len(self._data)                
+            return len(self._sqd_cluster_data)
 
         return 0
 
@@ -31,10 +30,10 @@ class TableModel(QAbstractTableModel):
         Return column count of the pandas DataFrame
         """
         if parent == QModelIndex():
-            if len(self._data) == 0 or len(self._data[0]) == 0:
+            if len(self._sqd_cluster_data) == 0:
                return 0
             else:
-               return len(self._data[0][0]) + 2
+               return len(self._header)
 
     def data(self, index: QModelIndex, role=Qt.ItemDataRole):
         """Override method from QAbstractTableModel
@@ -46,17 +45,20 @@ class TableModel(QAbstractTableModel):
 
         if role == Qt.DisplayRole:
             column = index.column()
+
+            mol_idx = int(self._sqd_cluster_data[index.row(), 0])
+            record_idx = int(self._sqd_cluster_data[index.row(), 1])
+            iter_idx = int(self._sqd_cluster_data[index.row(), 2])
             
             if column == 0:
                 return int(index.row() + 1)
             elif column == 1:
-                return len(self._data[index.row()])            
-            elif 2 <= column <= 5:
-                return float(self._data[index.row()][0][index.column() + 8])
-            elif column <= 8:
-                return int(self._data[index.row()][0][index.column() - 6])
-            else:
-                return float(self._data[index.row()][0][index.column() - 6])
+                return mol_idx
+            elif column == 2:
+                return int(self._sqd_cluster_data[index.row(), 3])
+            elif 3 <= column <= 6:
+                record_row = self._sqd_data[mol_idx, record_idx, iter_idx]
+                return float(record_row[index.column() + 4])
 
         return None
 

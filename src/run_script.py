@@ -1,6 +1,6 @@
 import sys
-sys.path.append('D:\\Research\\IPM\\PoseEstimation\\DiffFitViewer\\src')
-from parse_log import cluster_and_sort_sqd, look_at_cluster, look_at_MQS_idx, animate_MQS, animate_cluster
+sys.path.append('D:\\GIT\\DiffFitViewer\\src')
+from parse_log import cluster_and_sort_sqd, cluster_and_sort_sqd_fast, look_at_cluster, look_at_MQS_idx, animate_MQS, animate_cluster
 from parse_log import zero_cluster_density
 import numpy as np
 from chimerax.core.commands import run
@@ -10,7 +10,8 @@ vol_path = "D:\Research\IPM\PoseEstimation\DiffFitViewer\dev_data\input\domain_f
 vol = run(session, f"open {vol_path}")[0]
 
 e_sqd_log = np.load("D:\Research\IPM\PoseEstimation\DiffFitViewer\dev_data\output\dev_comp_domain_fit_3_domains_10s20q\e_sqd_log.npy")
-e_sqd_clusters_ordered = cluster_and_sort_sqd(e_sqd_log)
+# e_sqd_clusters_ordered = cluster_and_sort_sqd(e_sqd_log)
+e_sqd_clusters_ordered = cluster_and_sort_sqd_fast(e_sqd_log)
 
 mol_folder = "D:\Research\IPM\PoseEstimation\DiffFitViewer\dev_data\input\domain_fit_demo_3domains\subunits_cif"
 

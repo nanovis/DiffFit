@@ -5,6 +5,8 @@ from chimerax.core.commands import run
 import os
 from chimerax.atomic import AtomicStructure
 import time
+from sklearn.cluster import Birch
+import math
 import asyncio
 
 def shift_difference(shift1, shift2):
@@ -280,5 +282,95 @@ def cluster_and_sort_sqd(e_sqd_log, shift_tolerance: float = 3.0, angle_toleranc
     e_sqd_clusters_ordered = [e_sqd_clusters_sorted[i] for i in clusters_order]
 
     # e_sqd_clusters_ordered_len = [len(cluster) for cluster in e_sqd_clusters_ordered]
+
+    return e_sqd_clusters_ordered
+
+
+def q2_unit_coord(Q):
+
+    rotations = [R.from_quat(q) for q in Q]
+
+    up = np.array([0, 1, 0])
+    right = np.array([1, 0, 0])
+
+    rotated_up = np.array([rot.apply(up) for rot in rotations])
+    rotated_right = np.array([rot.apply(right) for rot in rotations])
+
+    return np.concatenate((rotated_up, rotated_right), axis=-1)
+
+
+def cluster_and_sort_sqd_fast(e_sqd_log, shift_tolerance: float = 3.0, angle_tolerance: float = 6.0, sort_column_idx: int = 9):
+    """
+    Cluster the fitting results in sqd table by thresholding on shift and quaternion
+    Return the sorted cluster representatives
+
+    How it works briefly:
+    1. From all iterations, get the iteration with the highest correlation, or the metric at the sort_column_idx
+    2. For each molecule:
+        2.1. cluster the shift using half shift_tolerance as radius in Birch clustering algorithm
+        2.2. convert the quaternion by applying to [0, 1, 0] and [1, 0, 0] to form 6 dim coords
+        2.3. cluster the 6 dim coords using half secant calculated from half angle_tolerance as radius in Birch clustering algorithm
+        2.4. combine two clusters to form unique clusters
+        2.5. select a representative from each cluster as the one with the highest correlation, or the metric at the sort_column_idx
+        2.5. record [mol_idx, max_idx, iter_idx, cluster size, correlation] for each cluster's representative
+    3. sort the cluster table in descending order by correlation, or the metric at the sort_column_idx
+
+    @param e_sqd_log: fitting results in sqd table
+    @param shift_tolerance: shift tolerance in Angstrom
+    @param angle_tolerance: angle tolerance in degrees
+    @param sort_column_idx: the column to sort, 9-th column is the correlation
+    @return: cluster representative table sorted in descending order
+    """
+
+
+    # Convert angle tolerance to radians and then compute the sin of half the angle
+    q_coord_radius_tolerance = math.sin(math.radians(angle_tolerance / 2.0))
+
+    N_mol, N_quat, N_shift, N_iter, N_record = e_sqd_log.shape
+
+    e_sqd_log = e_sqd_log.reshape([N_mol, N_quat * N_shift, N_iter, N_record])
+
+    correlations = e_sqd_log[:, :, 1:22, sort_column_idx]  # remove the 0 iteration, which is before optimization
+    max_correlations_idx = np.argmax(correlations, axis=-1)
+
+    # Generate meshgrid for the dimensions you're not indexing through
+    dims_0, dims_1 = np.meshgrid(
+        np.arange(e_sqd_log.shape[0]),
+        np.arange(e_sqd_log.shape[1]),
+        indexing='ij'
+    )
+
+    # Use the generated meshgrid and max_correlations_idx to index into e_sqd_log
+    sqd_highest_corr_np = e_sqd_log[dims_0, dims_1, max_correlations_idx + 1]  # add back 0 iteration
+
+    sqd_clusters = []
+    for mol_idx in range(N_mol):
+        mol_shift = sqd_highest_corr_np[mol_idx, :, :3]
+        mol_q = sqd_highest_corr_np[mol_idx, :, 3:7]
+
+        cluster_shift = Birch(threshold=shift_tolerance/2.0, n_clusters=None).fit(mol_shift)
+        # mol_shift_cluster = np.concatenate([mol_shift, cluster_shift.labels_.reshape(-1, 1)], axis=-1)
+        # np.save(f"mol{mol_idx}_shift_cluster.npy", mol_shift_cluster)
+
+        mol_q_coord = q2_unit_coord(mol_q)
+        cluster_q = Birch(threshold=q_coord_radius_tolerance, n_clusters=None).fit(mol_q_coord)
+        # mol_q_coord_cluster = np.concatenate([mol_q_coord, cluster_q.labels_.reshape(-1, 1)], axis=-1)
+        # np.save(f"mol{mol_idx}_q_coord_cluster.npy", mol_q_coord_cluster)
+
+        mol_transforma_label = np.concatenate((cluster_shift.labels_.reshape([-1, 1]), cluster_q.labels_.reshape([-1, 1])),
+                                              axis=-1)
+        unique_labels, indices, counts = np.unique(mol_transforma_label, axis=0, return_inverse=True, return_counts=True)
+
+        for cluster_idx in range(len(unique_labels)):
+            sqd_idx = np.argwhere(indices == cluster_idx).reshape([-1])
+            max_idx = sqd_idx[np.argsort(-sqd_highest_corr_np[mol_idx, sqd_idx, sort_column_idx])[0]]
+
+            # [mol_idx, max_idx (in e_sqd_log), iter_idx (giving the largest correlation),
+            #  cluster size, correlation]
+            sqd_clusters.append([mol_idx, max_idx, max_correlations_idx[mol_idx, max_idx],
+                                 counts[cluster_idx], sqd_highest_corr_np[mol_idx, max_idx, sort_column_idx]])
+
+    sqd_clusters = np.array(sqd_clusters)
+    e_sqd_clusters_ordered = sqd_clusters[np.argsort(-sqd_clusters[:, -1])]
 
     return e_sqd_clusters_ordered

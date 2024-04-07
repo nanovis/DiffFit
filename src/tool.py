@@ -23,7 +23,7 @@ from chimerax.atomic import AtomicStructure
 from chimerax.geometry import Place
 from chimerax.ui import MainToolWindow
 
-from .parse_log import cluster_and_sort_sqd, look_at_cluster, look_at_MQS_idx, animate_MQS, animate_MQS_2
+from .parse_log import cluster_and_sort_sqd, cluster_and_sort_sqd_fast, look_at_cluster, look_at_MQS_idx, animate_MQS, animate_MQS_2
 from .parse_log import simulate_volume, get_transformation_at_MQS, get_transformation_at_idx, zero_cluster_density
 from .tablemodel import TableModel
 from .DiffAtomComp import diff_atom_comp
@@ -550,12 +550,15 @@ class TutorialTool(ToolInstance):
             proxyIndex = self.proxyModel.index(item.row(), 0)
             sourceIndex = self.proxyModel.mapToSource(proxyIndex)
             self.cluster_idx = sourceIndex.row()
+            record_idx = int(self._sqd_cluster_data[index.row(), 1])
             
             #print(self.cluster_idx)
             
             #MQS = self.e_sqd_clusters_ordered[self.cluster_idx][0, 0:3].astype(int).tolist()
             
             #animate_MQS_2(self.e_sqd_log, self.mol_folder, MQS, self.session)
+
+
             self.mol = look_at_cluster(self.e_sqd_clusters_ordered, self.mol_folder, self.cluster_idx, self.session)
             
             MQS = self.e_sqd_clusters_ordered[self.cluster_idx][0, 0:3].astype(int).tolist()
@@ -608,11 +611,12 @@ class TutorialTool(ToolInstance):
         #print(self.settings)
         print(self.settings.view_target_vol_path)
         self.vol = run(self.session, "open {0}".format(self.settings.view_target_vol_path))[0]
+
+        N_mol, N_quat, N_shift, N_iter, N_record = e_sqd_log.shape
+        self.e_sqd_log = e_sqd_log.reshape([N_mol, N_quat * N_shift, N_iter, N_record])
+        self.e_sqd_clusters_ordered = cluster_and_sort_sqd_fast(e_sqd_log, self.settings.clustering_shift_tolerance, self.settings.clustering_angle_tolerance)
         
-        self.e_sqd_log = e_sqd_log
-        self.e_sqd_clusters_ordered = cluster_and_sort_sqd(e_sqd_log, self.settings.clustering_shift_tolerance, self.settings.clustering_angle_tolerance)
-        
-        self.model = TableModel(self.e_sqd_clusters_ordered)
+        self.model = TableModel(self.e_sqd_clusters_ordered, self.e_sqd_log)
         self.proxyModel = QSortFilterProxyModel()
         self.proxyModel.setSourceModel(self.model)
         
@@ -627,7 +631,7 @@ class TutorialTool(ToolInstance):
         print("showing the first cluster")
         self.mol_folder = self.settings.view_structures_directory
         self.cluster_idx = 0
-        look_at_cluster(self.e_sqd_clusters_ordered, self.mol_folder, self.cluster_idx, self.session)
+        # look_at_cluster(self.e_sqd_clusters_ordered, self.mol_folder, self.cluster_idx, self.session)
         
     def run_button_clicked(self):
         #import sys
