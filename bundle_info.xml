@@ -23,7 +23,7 @@ will be displayed without the ChimeraX- prefix.
 
   <!-- Categories is a list where this bundle should appear -->
   <Categories>
-    <Category name="General"/>
+    <Category name="Volume Data"/>
   </Categories>
 
   <!-- Dependencies on other ChimeraX/Python packages -->
@@ -45,7 +45,7 @@ will be displayed without the ChimeraX- prefix.
     <!-- ChimeraX classifiers describe supplied functionality -->
     <!-- Register a graphical interface tool -->
     <ChimeraXClassifier>ChimeraX :: Tool :: DiffFit ::
-      General :: Graphical interface example</ChimeraXClassifier>
+      Volume Data :: Differentiable Fit in Map</ChimeraXClassifier>
   </Classifiers>
 
 </BundleInfo>
