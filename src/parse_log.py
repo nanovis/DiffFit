@@ -184,7 +184,7 @@ def simulate_volume(session, vol, mol_folder, mol_idx, transformation, res=4.0):
     return mol_vol
 
 
-def zero_cluster_density(session, mol_vol, mol, vol, MQS, zero_iter=0):
+def zero_cluster_density(session, mol_vol, mol, vol, cluster_idx, zero_iter=0):
     work_vol = run(session, f"volume subtract #{vol.id[0]} #{mol_vol.id[0]} scaleFactors  1.0,1000.0")
     matrix = work_vol.data.matrix()
     matrix[matrix < 0] = 0
@@ -194,7 +194,7 @@ def zero_cluster_density(session, mol_vol, mol, vol, MQS, zero_iter=0):
     mol_vol.delete()
     mol.delete()
 
-    session.logger.info(f"Zeroing density for MQS: {MQS}")
+    session.logger.info(f"Zeroing density for cluster: {cluster_idx}")
 
     return work_vol
 

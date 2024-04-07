@@ -706,9 +706,8 @@ class TutorialTool(ToolInstance):
         if self.mol_vol is None:
             print("You have to simulate a volume first!")
             return
-            
-        MQS = self.e_sqd_clusters_ordered[self.cluster_idx][0, 0:3].astype(int)
-        work_vol = zero_cluster_density(self.session, self.mol_vol, self.mol, self.vol, MQS)
+
+        work_vol = zero_cluster_density(self.session, self.mol_vol, self.mol, self.vol, self.cluster_idx)
         self.vol = work_vol
         return
     
