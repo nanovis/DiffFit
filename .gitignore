@@ -9,3 +9,4 @@ _info.txt
 *.pyc
 DiffFitViewerTool.egg-info/
 dev_data/output/
+case_study_data
