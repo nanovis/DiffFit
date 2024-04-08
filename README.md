@@ -1,6 +1,6 @@
 **DiffFit**: Visually-Guided **Diff**erentiable **Fit**ting of Molecule Structures to Cryo-EM Map
 
-IEEE VIS 2024 Submission [Video](https://youtu.be/dWcHDWT9_mw), [OSF repo](https://osf.io/5tx4q/)
+IEEE VIS 2024 Submission [arXiv preprint](https://arxiv.org/abs/2404.02465), [Video](https://youtu.be/dWcHDWT9_mw), [OSF repo](https://osf.io/5tx4q/)
 
 ## Install 
 
@@ -35,7 +35,7 @@ Right-click in the panel to access DiffFit's help page.
    3. put the files (`8jgf.cif` and `emd_36232.map`) under, for example, `D:\GIT\DiffFitViewer\run\input\8JGF` 
 2. Drop both files into ChimeraX, 
    1. take a note for the `pixel` value from the log, which represents the grid spacing for this volume, which is `1.04` in this case
-   2. move and rotate the molecule and then save it as `8JGF_transformed.cif`. This step is only for demo purpose and is not necessary for real use cases
+   2. move and rotate the molecule and then save it (select it, choose "Save selected atoms only", uncheck "Use untransformed coordinates") as `8JGF_transformed.cif`. This step is only for demo purpose and is not necessary for real use cases
 3. Put `8JGF_transformed.cif` under `D:\GIT\DiffFitViewer\run\input\8JGF\subunits_cif`
 4. Simulate a map for the molecule
    1. Create two folders, `subunits_mrc` and `subunits_npy`, under `D:\GIT\DiffFitViewer\run\input\8JGF\`
@@ -48,7 +48,7 @@ Right-click in the panel to access DiffFit's help page.
    5. Experiment name: `fit_single_demo`
    6. Target surface threshold: `0.20`. Or use the author recommended contour level `0.162`. DiffFit is very robust against this parameter, a value between 0.02 - 0.4 is fine in this case.
    7. Leave the rest as default and hit `Run!`
-6. After freezing for a few seconds (less than 15 seconds on RTX 4090), ChimeraX should be back and responsive to you. Click the `View` tab to examine the results.
+6. After freezing for a couple of seconds (less than 15 seconds on one RTX 4090), ChimeraX should be back and responsive to you. Click the `View` tab to examine the results.
    1. Save the molecule if desired
    2. You may take a look at the optimization steps
 7. If you want to change the cluster tolerance, or if you run Compute on a cluster, or if you accidentally close ChimeraX after _Compute_ run, you can _View_ the results by the following parameter settings
@@ -62,6 +62,41 @@ Right-click in the panel to access DiffFit's help page.
 
 ### Scenario 2: Composite multiple structures
 
+1. Download [PDB-8SMK](https://www.rcsb.org/structure/8SMK) and [EMD-40589](https://www.ebi.ac.uk/emdb/EMD-40589) 
+   1. note the resolution as `3.5`Å from the webpage
+   2. extract the map
+   3. put the files (`8smk.cif` and `emd_40589.map`) under, for example, `D:\GIT\DiffFitViewer\run\input\8SMK` 
+2. Drop both files into ChimeraX, 
+   1. take a note for the `pixel` value from the log, which represents the grid spacing for this volume, which is `0.835` in this case
+   2. move and rotate the molecule and then save it (select it, choose "Save selected atoms only", uncheck "Use untransformed coordinates") as `8SMK_transformed.cif`. This step is only for demo purpose and is not necessary for real use cases
+3. Create a folder `subunits` under `D:\GIT\DiffFitViewer\run\input\8SMK`
+4. Split the chains into individual .cif files and simulate a map for each chain
+   1. Open a new ChimeraX session and run `runscript "D:\GIT\DiffFitViewer\src\split_chains.py" "D:\GIT\DiffFitViewer\run\input\8SMK\8SMK_transformed.cif" "D:\GIT\DiffFitViewer\run\input\8SMK\subunits" 3.5 0.835`
+   2. Put all generated .cif files under `D:\GIT\DiffFitViewer\run\input\8SMK\subunits_cif`
+   3. Put all generated .mrc files under `D:\GIT\DiffFitViewer\run\input\8SMK\subunits_mrc`
+   4. Delete all generated .npy files, or put them under `D:\GIT\DiffFitViewer\run\input\8SMK\subunits_npy`
+   5. Keep only the unique chains (A, B, C) in `subunits_cif` and `subunits_mrc`
+5. Run DiffFit. Set the parameters as follows and hit `Run!`
+   1. Target volume: `D:\GIT\DiffFitViewer\run\input\8SMK\emd_40589.map`
+   2. Structures folder: `D:\GIT\DiffFitViewer\run\input\8SMK\subunits_cif`
+   3. Structures sim-map folder: `D:\GIT\DiffFitViewer\run\input\8SMK\subunits_mrc`
+   4. Output folder: `D:\GIT\DiffFitViewer\run\output\8SMK`
+   5. Experiment name: `composite_unique_chains`
+   6. Target surface threshold: `0.8`. Or use the author recommended contour level `5.0`. DiffFit is very robust against this parameter, a value between 0.1 - 5.0 is fine in this case.
+   7. \# shifts: `20`
+   8. \# quaternions: `200`
+   9. Leave the rest as default and hit `Run!`
+6. After freezing for a couple of seconds (less than 20 seconds on one RTX 4090), ChimeraX should be back and responsive to you. Click the `View` tab to examine the results.
+   1. WIP
+   2. Save the molecule if desired
+   2. You may take a look at the optimization steps
+7. If you want to change the cluster tolerance, or if you run Compute on a cluster, or if you accidentally close ChimeraX after _Compute_ run, you can _View_ the results by the following parameter settings
+   1. Target volume: `D:\GIT\DiffFitViewer\run\input\8SMK\emd_40589.map`
+   2. Structures folder: `D:\GIT\DiffFitViewer\run\input\8SMK\subunits_cif`
+   3. Data folder: `D:\GIT\DiffFitViewer\run\output\8JGF\fit_single_demo`
+   4. Clustering - Shift Tolerance: `0.5` or the value you desire
+   5. Clustering - Angle Tolerance: `0.5` or the value you desire
+   6. Hit `Load`
 
 ### Scenario 3: Identify unknown densities
 
