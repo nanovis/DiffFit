@@ -285,7 +285,7 @@ class TutorialTool(ToolInstance):
         row = row + 1
         
         min_cluster_size_label = QLabel()
-        min_cluster_size_label.setText("Min cluster size:")
+        min_cluster_size_label.setText("Min island size:")
         self.min_cluster_size = QSpinBox()
         self.min_cluster_size.setMinimum(1)
         self.min_cluster_size.setMaximum(500)
