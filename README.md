@@ -55,8 +55,8 @@ Right-click in the panel to access DiffFit's help page.
    1. Target volume: `D:\GIT\DiffFitViewer\run\input\8JGF\emd_36232.map`
    2. Structures folder: `D:\GIT\DiffFitViewer\run\input\8JGF\subunits_cif`
    3. Data folder: `D:\GIT\DiffFitViewer\run\output\8JGF\fit_single_demo`
-   4. Clustering - Shift Tolerance: `3.0` or the value you desire
-   5. Clustering - Angle Tolerance: `6.0` or the value you desire
+   4. Clustering - Shift Tolerance: `0.5` or the value you desire
+   5. Clustering - Angle Tolerance: `0.5` or the value you desire
    6. Hit `Load`
 
 
