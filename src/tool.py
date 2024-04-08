@@ -243,7 +243,7 @@ class TutorialTool(ToolInstance):
         row = row + 1
         
         structures_sim_map_dir_label = QLabel()
-        structures_sim_map_dir_label.setText("Structures sim-map Folder:")        
+        structures_sim_map_dir_label.setText("Structures sim-map Folder:")
         self.structures_sim_map_dir = QLineEdit()
         self.structures_sim_map_dir.textChanged.connect(lambda: self.store_settings())   
         structures_sim_map_dir_select = QPushButton("Select")        
@@ -276,8 +276,9 @@ class TutorialTool(ToolInstance):
         target_surface_threshold_label.setText("Target surface threshold:")
         self.target_surface_threshold = QDoubleSpinBox()
         self.target_surface_threshold.setMinimum(0.0)
-        self.target_surface_threshold.setMaximum(2.0)
-        self.target_surface_threshold.setSingleStep(0.1)
+        self.target_surface_threshold.setMaximum(20.0)
+        self.target_surface_threshold.setSingleStep(0.01)
+        self.target_surface_threshold.setDecimals(4)
         self.target_surface_threshold.valueChanged.connect(lambda: self.store_settings())        
         layout.addWidget(target_surface_threshold_label, row, 0)
         layout.addWidget(self.target_surface_threshold, row, 1, 1, 2)
@@ -637,24 +638,24 @@ class TutorialTool(ToolInstance):
         #output_folder = "D:\\GIT\\DiffFitViewer\dev_data\output"                
         
         e_sqd_log = diff_atom_comp(
-        target_vol_path = self.settings.target_vol_path, 
-        target_surface_threshold = self.settings.target_surface_threshold, 
-        min_cluster_size = self.settings.min_cluster_size, 
-        structures_dir = self.settings.structures_directory, 
-        structures_sim_map_dir = self.settings.structures_sim_map_dir, 
-        N_shifts = self.settings.N_shifts,
-        N_quaternions = self.settings.N_quaternions,
-        negative_space_value = self.settings.negative_space_value,
-        exp_name = self.settings.exp_name,
-        learning_rate = self.settings.learning_rate,
-        n_iters = self.settings.N_iters,
-        out_dir = self.settings.output_directory, 
-        out_dir_exist_ok = self.settings.out_dir_exist_ok,       
-        conv_loops = self.settings.conv_loops,
-        conv_kernel_sizes = self.settings.conv_kernel_sizes,
-        conv_weights = self.settings.conv_weights
+            target_vol_path=self.settings.target_vol_path,
+            target_surface_threshold=self.settings.target_surface_threshold,
+            min_cluster_size=self.settings.min_cluster_size,
+            structures_dir=self.settings.structures_directory,
+            structures_sim_map_dir=self.settings.structures_sim_map_dir,
+            N_shifts=self.settings.N_shifts,
+            N_quaternions=self.settings.N_quaternions,
+            negative_space_value=self.settings.negative_space_value,
+            exp_name=self.settings.exp_name,
+            learning_rate=self.settings.learning_rate,
+            n_iters=self.settings.N_iters,
+            out_dir=self.settings.output_directory,
+            out_dir_exist_ok=self.settings.out_dir_exist_ok,
+            conv_loops=self.settings.conv_loops,
+            conv_kernel_sizes=self.settings.conv_kernel_sizes,
+            conv_weights=self.settings.conv_weights
         )
-                
+
         # copy the directories
         self.target_vol.setText(self.settings.target_vol_path)     
         self.structures_folder.setText(self.settings.structures_directory)
