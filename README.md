@@ -86,17 +86,28 @@ Right-click in the panel to access DiffFit's help page.
    7. \# shifts: `20`
    8. \# quaternions: `200`
    9. Leave the rest as default and hit `Run!`
-6. After freezing for a couple of seconds (less than 20 seconds on one RTX 4090), ChimeraX should be back and responsive to you. Click the `View` tab to examine the results.
-   1. WIP
-   2. Save the molecule if desired
-   2. You may take a look at the optimization steps
-7. If you want to change the cluster tolerance, or if you run Compute on a cluster, or if you accidentally close ChimeraX after _Compute_ run, you can _View_ the results by the following parameter settings
-   1. Target volume: `D:\GIT\DiffFitViewer\run\input\8SMK\emd_40589.map`
-   2. Structures folder: `D:\GIT\DiffFitViewer\run\input\8SMK\subunits_cif`
-   3. Data folder: `D:\GIT\DiffFitViewer\run\output\8JGF\fit_single_demo`
-   4. Clustering - Shift Tolerance: `0.5` or the value you desire
-   5. Clustering - Angle Tolerance: `0.5` or the value you desire
-   6. Hit `Load`
+6. After freezing for a couple of seconds (less than 30 seconds on one RTX 4090), ChimeraX should be back and responsive to you. Click the `View` tab to examine the results.
+   1. Examine the fit, sort by a different metric
+   2. If you want to change the cluster tolerance, or if you run Compute on a cluster, or if you accidentally close ChimeraX after _Compute_ run, you can _View_ the results by the following parameter settings
+      1. Target volume: `D:\GIT\DiffFitViewer\run\input\8SMK\emd_40589.map`
+      2. Structures folder: `D:\GIT\DiffFitViewer\run\input\8SMK\subunits_cif`
+      3. Data folder: `D:\GIT\DiffFitViewer\run\output\8SMK\composite_unique_chains`
+      4. Clustering - Shift Tolerance: `6` or the value you desire
+      5. Clustering - Angle Tolerance: `15` or the value you desire
+      6. Hit `Load`
+   3. Save a molecule if desired
+   4. Set the Resolution as `3.5`, and click `Simulate volume`
+   5. Change the surface level threshold for the simulated volume if necessary
+   6. Click `Zero density`
+   7. Repeat the last 4 steps (Save, Simulate, Zero) for the same `Mol Id` at a different place, or for a different `Mol Id` until there is no good fit
+   8. Save the last `working volume` by `File > Save > Files of type as MRC > Map as the desired one` as a new name, for example, `emd_40589_subtracted_1.mrc`  
+7. Repeat Step 5-6 until satisfied with the whole compositing
+   1. Change the Target volume as: `D:\GIT\DiffFitViewer\run\input\8SMK\emd_40589_subtracted_1.mrc`
+   2. Take out the already fitted chains from `subunits_cif` and `subunits_mrc`
+   3. Give a new Experiment name: `composite_chains_round_2`
+   4. You may lower the \# shifts, for example, to `10`, and the \# quaternions to `100`
+   5. Hit `Run!`
+   
 
 ### Scenario 3: Identify unknown densities
 
