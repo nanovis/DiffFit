@@ -148,7 +148,7 @@ def look_at_cluster(e_sqd_clusters_ordered, mol_folder, cluster_idx, session, cl
     return mol
 
 
-def look_at_record(e_sqd_log, mol_folder, mol_idx, record_idx, iter_idx, session, clean_scene=True):
+def look_at_record(mol_folder, mol_idx, transformation, session, clean_scene=True):
     if clean_scene:
         # delete all other structures
         structures = session.models.list(type=AtomicStructure)
@@ -157,8 +157,6 @@ def look_at_record(e_sqd_log, mol_folder, mol_idx, record_idx, iter_idx, session
 
     mol_files = os.listdir(mol_folder)
     # mol_files[idx] pairs with e_sqd_log[idx]
-
-    transformation = get_transformation_at_record(e_sqd_log, mol_idx, record_idx, iter_idx)
 
     mol_path = os.path.join(mol_folder, mol_files[mol_idx])
     mol = run(session, f"open {mol_path}")[0]

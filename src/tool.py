@@ -558,7 +558,9 @@ class TutorialTool(ToolInstance):
             N_iter = len(self.e_sqd_log[self.mol_idx, self.record_idx])
             iter_idx = int(self.e_sqd_clusters_ordered[self.cluster_idx, 2])
 
-            self.mol = look_at_record(self.e_sqd_log, self.mol_folder, self.mol_idx, self.record_idx, iter_idx, self.session)
+            self.transformation = get_transformation_at_record(self.e_sqd_log, self.mol_idx, self.record_idx, iter_idx)
+            self.mol = look_at_record(self.mol_folder, self.mol_idx, self.transformation, self.session)
+
             self.session.logger.info(f"Cluster size: {int(self.e_sqd_clusters_ordered[self.cluster_idx, 3])}")
             self.session.logger.info(f"Highest metric reached at iter : {iter_idx}")
 
