@@ -7,6 +7,9 @@ _info.txt
 /.venv
 *.pyc
 DiffFitViewerTool.egg-info/
-dev_data/output/
+dev_data/output/*
+!dev_data/output/dev_comp_domain_fit_3_domains_10s20q_new_q
+!dev_data/output/dev_comp_domain_fit_3_domains
+!dev_data/output/dev_comp_domain_fit_3_domains_10s20q
 case_study_data
 run
