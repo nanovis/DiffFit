@@ -120,7 +120,7 @@ Right-click in the panel to access DiffFit's help page.
 
 ### Scenario 3: Identify unknown densities
 
-The whole procedure is the same as in Scenario 1: Fit a single structure, 
+The whole procedure is the same as in [Scenario 1: Fit a single structure](https://github.com/nanovis/DiffFitViewer?tab=readme-ov-file#scenario-1-fit-a-single-structure), 
 only that there will be multiple structures under `subunits_cif`. 
 
 There is a demo data set with one volume map and three structures to search against.
