@@ -6,7 +6,7 @@ IEEE VIS 2024 Submission [arXiv preprint](https://arxiv.org/abs/2404.02465), [Vi
 ## YouTube tutorial videos (coming soon)
 
 1. [Install](https://youtu.be/aYqNZ0SNUfk)
-2. Demo Usage Scenario 1: Fit a single structure
+2. Demo Usage [Scenario 1: Fit a single structure](https://youtu.be/dHquT2Lsh54)
 3. Demo Usage Scenario 2: Composite multiple structures
 4. Demo Usage Scenario 3: Identify unknown densities
 
