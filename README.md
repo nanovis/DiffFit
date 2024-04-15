@@ -109,9 +109,9 @@ Right-click in the panel to access DiffFit's help page.
    5. Change the surface level threshold for the simulated volume if necessary
    6. Click `Zero density`
    7. Repeat the last 4 steps (Save, Simulate, Zero) for the same `Mol Id` at a different place, or for a different `Mol Id` until there is no good fit
-   8. Save the last `working volume` by `File > Save > Files of type as MRC > Map as the desired one` as a new name, for example, `emd_40589_subtracted_1.mrc`  
+   8. Save the last `working volume` by `File > Save > Files of type as MRC > Map as the desired one` as a new name, for example, `emd_40589_round_1.mrc`  
 7. Repeat Step 5-6 until satisfied with the whole compositing
-   1. Change the Target volume as: `D:\GIT\DiffFitViewer\run\input\8SMK\emd_40589_subtracted_1.mrc`
+   1. Change the Target volume as: `D:\GIT\DiffFitViewer\run\input\8SMK\emd_40589_round_1.mrc`
    2. If needed, take out the already fitted chains from `subunits_cif` and `subunits_mrc`
    3. Give a new Experiment name: `round2`
    4. You may lower the \# shifts, for example, to `10`, and the \# quaternions to `100`
