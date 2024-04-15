@@ -90,10 +90,10 @@ Right-click in the panel to access DiffFit's help page.
    2. Structures folder: `D:\GIT\DiffFitViewer\run\input\8SMK\subunits_cif`
    3. Structures sim-map folder: `D:\GIT\DiffFitViewer\run\input\8SMK\subunits_mrc`
    4. Output folder: `D:\GIT\DiffFitViewer\run\output\8SMK`
-   5. Experiment name: `composite_unique_chains`
+   5. Experiment name: `round1`
    6. Target surface threshold: `0.8`. Or use the author recommended contour level `5.0`. DiffFit is very robust against this parameter, a value between 0.1 - 5.0 is fine in this case.
-   7. \# shifts: `20`
-   8. \# quaternions: `200`
+   7. \# shifts: `30`
+   8. \# quaternions: `300`
    9. Leave the rest as default and hit `Run!`
 6. After freezing for a couple of seconds (less than 30 seconds on one RTX 4090), ChimeraX should be back and responsive to you. Click the `View` tab to examine the results.
    1. Examine the fit, sort by a different metric
@@ -112,8 +112,8 @@ Right-click in the panel to access DiffFit's help page.
    8. Save the last `working volume` by `File > Save > Files of type as MRC > Map as the desired one` as a new name, for example, `emd_40589_subtracted_1.mrc`  
 7. Repeat Step 5-6 until satisfied with the whole compositing
    1. Change the Target volume as: `D:\GIT\DiffFitViewer\run\input\8SMK\emd_40589_subtracted_1.mrc`
-   2. Take out the already fitted chains from `subunits_cif` and `subunits_mrc`
-   3. Give a new Experiment name: `composite_chains_round_2`
+   2. If needed, take out the already fitted chains from `subunits_cif` and `subunits_mrc`
+   3. Give a new Experiment name: `round2`
    4. You may lower the \# shifts, for example, to `10`, and the \# quaternions to `100`
    5. Hit `Run!`
    
