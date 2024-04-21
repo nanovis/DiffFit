@@ -65,7 +65,7 @@ class DiffFitSettings:
         self.clustering_angle_tolerance : float = 6.0
 
 
-class TutorialTool(ToolInstance):
+class DiffFitTool(ToolInstance):
 
     # Inheriting from ToolInstance makes us known to the ChimeraX tool mangager,
     # so we can be notified and take appropriate action when sessions are closed,
@@ -117,7 +117,14 @@ class TutorialTool(ToolInstance):
         
         tab_widget = QTabWidget()
         tab_widget.setTabPosition(QTabWidget.West)
-        
+
+        # single fit GUI
+        single_fit_group = QGroupBox()
+        single_fit_group_layout = QGridLayout()
+        single_fit_group.setLayout(single_fit_group_layout)
+        self.build_compute_ui(single_fit_group_layout)
+        tab_widget.addTab(single_fit_group, "Single")
+
         # computation GUI
         compute_group = QGroupBox()
         compute_group_layout = QGridLayout()

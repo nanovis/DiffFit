@@ -27,15 +27,15 @@ class _MyAPI(BundleAPI):
         # appropriate class from the ``tool`` module.
         if ti.name == "DiffFit":
             from . import tool
-            return tool.TutorialTool(session, ti.name)
+            return tool.DiffFitTool(session, ti.name)
         raise ValueError("trying to start unknown tool: %s" % ti.name)
 
     @staticmethod
     def get_class(class_name):
         # class_name will be a string
-        if class_name == "TutorialTool":
+        if class_name == "DiffFitTool":
             from . import tool
-            return tool.TutorialTool
+            return tool.DiffFitTool
         raise ValueError("Unknown class name '%s'" % class_name)
 
 # Create the ``bundle_api`` object that ChimeraX expects.
