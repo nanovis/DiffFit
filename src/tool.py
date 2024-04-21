@@ -11,7 +11,7 @@
 # or derivations thereof.
 # === UCSF ChimeraX Copyright ===
 
-from Qt.QtWidgets import QLabel, QPushButton, QLineEdit, QVBoxLayout, QHBoxLayout, QGridLayout
+from Qt.QtWidgets import QLabel, QPushButton, QLineEdit, QVBoxLayout, QHBoxLayout, QGridLayout, QComboBox
 from Qt.QtWidgets import QTableView, QSlider, QTabWidget, QGroupBox, QDoubleSpinBox, QSpinBox 
 from Qt.QtWidgets import QFileDialog
 from Qt.QtCore import QSortFilterProxyModel, Qt
@@ -122,7 +122,7 @@ class DiffFitTool(ToolInstance):
         single_fit_group = QGroupBox()
         single_fit_group_layout = QGridLayout()
         single_fit_group.setLayout(single_fit_group_layout)
-        self.build_compute_ui(single_fit_group_layout)
+        self.build_single_fit_ui(single_fit_group_layout)
         tab_widget.addTab(single_fit_group, "Single")
 
         # computation GUI
@@ -222,8 +222,19 @@ class DiffFitTool(ToolInstance):
         
         #print(self.settings)
         #print(self.settings.view_target_vol_path)
-        
-    
+
+    def build_single_fit_ui(self, layout):
+        row = 0
+
+        mol_label = QLabel()
+        mol_label.setText("Fit")
+        self.single_fit_mol_id = QComboBox()
+
+        layout.addWidget(mol_label, row, 0)
+        layout.addWidget(self.single_fit_mol_id, row, 1)
+        row = row + 1
+
+
     def build_compute_ui(self, layout):
         row = 0
                
