@@ -228,10 +228,28 @@ class DiffFitTool(ToolInstance):
 
         mol_label = QLabel()
         mol_label.setText("Fit")
-        self.single_fit_mol_id = QComboBox()
 
         layout.addWidget(mol_label, row, 0)
-        layout.addWidget(self.single_fit_mol_id, row, 1)
+
+        from chimerax.map import Volume
+        from chimerax.atomic import Structure
+        from chimerax.ui.widgets import ModelMenuButton
+        self._object_menu = om = ModelMenuButton(self.session, class_filter=Structure)
+        mlist = self.session.models.list(type=Structure)
+        vlist = self.session.models.list(type=Volume)
+        if mlist:
+            om.value = mlist[0]
+        # om.value_changed.connect(self._object_chosen)
+        layout.addWidget(om, row, 1)
+
+        iml = QLabel("in map")
+        layout.addWidget(iml, row, 2)
+
+        self._map_menu = mm = ModelMenuButton(self.session, class_filter=Volume)
+        if vlist:
+            mm.value = vlist[0]
+        layout.addWidget(mm, row, 3)
+
         row = row + 1
 
 
