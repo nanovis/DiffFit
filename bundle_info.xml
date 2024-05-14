@@ -16,7 +16,7 @@ will be displayed without the ChimeraX- prefix.
 
   <!-- Synopsis is a one-line description
        Description is a full multi-line description -->
-  <Synopsis>DiffFit ChimeraX plugin GUI</Synopsis>
+  <Synopsis>GPU-enabled Differentiable Fitting of Molecule Structures to Cryo-EM Map</Synopsis>
   <Description>
   Implements DiffFit ChimeraX plugin.
   </Description>

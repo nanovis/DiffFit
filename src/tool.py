@@ -11,7 +11,7 @@
 # or derivations thereof.
 # === UCSF ChimeraX Copyright ===
 
-from Qt.QtWidgets import QLabel, QPushButton, QLineEdit, QVBoxLayout, QHBoxLayout, QGridLayout, QComboBox
+from Qt.QtWidgets import QLabel, QPushButton, QLineEdit, QVBoxLayout, QHBoxLayout, QGridLayout, QComboBox, QFrame
 from Qt.QtWidgets import QTableView, QSlider, QTabWidget, QGroupBox, QDoubleSpinBox, QSpinBox 
 from Qt.QtWidgets import QFileDialog
 from Qt.QtCore import QSortFilterProxyModel, Qt
@@ -120,7 +120,7 @@ class DiffFitTool(ToolInstance):
 
         # single fit GUI
         single_fit_group = QGroupBox()
-        single_fit_group_layout = QGridLayout()
+        single_fit_group_layout = QHBoxLayout()
         single_fit_group.setLayout(single_fit_group_layout)
         self.build_single_fit_ui(single_fit_group_layout)
         tab_widget.addTab(single_fit_group, "Single")
@@ -224,12 +224,11 @@ class DiffFitTool(ToolInstance):
         #print(self.settings.view_target_vol_path)
 
     def build_single_fit_ui(self, layout):
-        row = 0
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(2)
 
-        mol_label = QLabel()
-        mol_label.setText("Fit")
-
-        layout.addWidget(mol_label, row, 0)
+        mol_label = QLabel("Fit")
+        layout.addWidget(mol_label)
 
         from chimerax.map import Volume
         from chimerax.atomic import Structure
@@ -240,17 +239,15 @@ class DiffFitTool(ToolInstance):
         if mlist:
             om.value = mlist[0]
         # om.value_changed.connect(self._object_chosen)
-        layout.addWidget(om, row, 1)
+        layout.addWidget(om)
 
         iml = QLabel("in map")
-        layout.addWidget(iml, row, 2)
+        layout.addWidget(iml)
 
         self._map_menu = mm = ModelMenuButton(self.session, class_filter=Volume)
         if vlist:
             mm.value = vlist[0]
-        layout.addWidget(mm, row, 3)
-
-        row = row + 1
+        layout.addWidget(mm)
 
 
     def build_compute_ui(self, layout):
