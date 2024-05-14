@@ -5,14 +5,14 @@ When uploaded to the ChimeraX toolshed, the bundle
 will be displayed without the ChimeraX- prefix.
 -->
 
-<BundleInfo name="DiffFitViewerTool"
+<BundleInfo name="DiffFit"
 	    version="0.1" package="chimerax.difffit"
   	    minSessionVersion="1" maxSessionVersion="1">
 
   <!-- Additional information about bundle source -->
   <Author>Deng "Roden" Luo</Author>
   <Email>deng.luo@kaust.edu.sa</Email>
-  <URL>https://www.rbvi.ucsf.edu/chimerax/</URL>
+  <URL>https://github.com/nanovis/DiffFitViewer</URL>
 
   <!-- Synopsis is a one-line description
        Description is a full multi-line description -->
@@ -27,10 +27,13 @@ will be displayed without the ChimeraX- prefix.
   </Categories>
 
   <!-- Dependencies on other ChimeraX/Python packages -->
-  <!-- This example uses functionality from the Tutorial_Command bundle -->
   <Dependencies>
     <Dependency name="ChimeraX-Core" version="~=1.1"/>
     <Dependency name="ChimeraX-UI" version="~=1.0"/>
+    <Dependency name="torch"/>
+    <Dependency name="scikit-learn"/>
+    <Dependency name="biopython"/>
+    <Dependency name="mrcfile"/>
   </Dependencies>
 
   <!-- Non-Python files that are part of package -->
