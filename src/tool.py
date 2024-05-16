@@ -26,7 +26,7 @@ from chimerax.ui import MainToolWindow
 from .parse_log import look_at_record, look_at_cluster, look_at_MQS_idx, animate_MQS, animate_MQS_2
 from .parse_log import simulate_volume, get_transformation_at_record, zero_cluster_density
 from .tablemodel import TableModel
-from .DiffAtomComp import diff_atom_comp, cluster_and_sort_sqd_fast
+from .DiffAtomComp import diff_atom_comp, cluster_and_sort_sqd_fast, diff_fit
 
 import sys
 import numpy as np        
@@ -681,6 +681,8 @@ class DiffFitTool(ToolInstance):
         vol = self._map_menu.value
         vol_matrix = vol.full_matrix()
         print("Map shape: ", vol_matrix.shape)
+
+        diff_fit(vol_matrix, vol.maximum_surface_level)
 
 
     def run_button_clicked(self):

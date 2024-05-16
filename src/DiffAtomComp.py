@@ -575,6 +575,15 @@ def calculate_correlation(render, elements_sim_density):
     return torch.stack((overlap_mean, correlation, cam), dim=-1)
 
 
+def diff_fit(target_vol: np.ndarray,
+             target_surface_threshold: float,
+             ):
+    print("Entering diff_fit function")
+    print(f"Vol shape: {target_vol.shape}")
+    print(f"Surface threshold: {target_surface_threshold}")
+
+
+
 def diff_atom_comp(target_vol_path: str,
                    target_surface_threshold: float,
                    min_cluster_size: float,
