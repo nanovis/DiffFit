@@ -249,6 +249,11 @@ class DiffFitTool(ToolInstance):
             mm.value = vlist[0]
         layout.addWidget(mm)
 
+        button = QPushButton()
+        button.setText("Fit")
+        button.clicked.connect(lambda: self.single_fit_button_clicked())
+        layout.addWidget(button)
+
 
     def build_compute_ui(self, layout):
         row = 0
@@ -663,7 +668,21 @@ class DiffFitTool(ToolInstance):
         self.mol_folder = self.settings.view_structures_directory
         self.cluster_idx = 0
         # look_at_cluster(self.e_sqd_clusters_ordered, self.mol_folder, self.cluster_idx, self.session)
-        
+
+
+    def single_fit_button_clicked(self):
+        print("Single fit clicked")
+        print("Object value: ", self._object_menu.value)
+        print("Map value: ", self._map_menu.value)
+
+        mol = self._object_menu.value
+        print("Mol # atoms: ", mol.num_atoms)
+
+        vol = self._map_menu.value
+        vol_matrix = vol.full_matrix()
+        print("Map shape: ", vol_matrix.shape)
+
+
     def run_button_clicked(self):
         #import sys
         #sys.path.append('D:\\GIT\\DiffFitViewer\\src')
