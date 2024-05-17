@@ -682,6 +682,20 @@ class DiffFitTool(ToolInstance):
         vol_matrix = vol.full_matrix()
         print("Map shape: ", vol_matrix.shape)
 
+        vol_copy = vol.writable_copy()
+        vol_copy_matrix = vol_copy.data.matrix()
+        vol_copy_matrix[vol_copy_matrix < vol.maximum_surface_level] = 0
+        vol_copy.matrix_changed()
+
+        # From here on, there are three strategies for utilizing gaussian smooth
+        # 1. with increasing sDev on the same input volume
+        # 2. with the same sDev iteratively
+        # Combine 1 & 2
+        # Need to do experiment to see which one is better
+
+        vol_gaussian = run(self.session, f"volume gaussian #{vol_copy.id[0]} sdev 2")
+
+
         diff_fit(vol_matrix, vol.maximum_surface_level)
 
 
