@@ -693,8 +693,18 @@ class DiffFitTool(ToolInstance):
         # Combine 1 & 2
         # Need to do experiment to see which one is better
 
-        vol_gaussian = run(self.session, f"volume gaussian #{vol_copy.id[0]} sdev 2")
+        conv_loops = 10
+        volume_conv_list = [None] * (conv_loops + 1)
+        volume_conv_list[0] = vol_copy_matrix
+        for conv_idx in range(1, conv_loops + 1):
+            vol_gaussian = run(self.session, f"volume gaussian #{vol_copy.id[0]} sDev {conv_idx}")
+            volume_conv_list[conv_idx] = vol_gaussian.full_matrix()
+            vol_gaussian.delete()
+        vol_copy.delete()
 
+        print("conv idx:\tmatrix shape\tsum")
+        for conv_idx in range(0, conv_loops + 1):
+            print(f"{conv_idx}\t{volume_conv_list[conv_idx].shape}\t{volume_conv_list[conv_idx].sum()}")
 
         diff_fit(vol_matrix, vol.maximum_surface_level)
 
