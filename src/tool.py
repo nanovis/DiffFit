@@ -702,11 +702,25 @@ class DiffFitTool(ToolInstance):
             vol_gaussian.delete()
         vol_copy.delete()
 
-        print("conv idx:\tmatrix shape\tsum")
+        print("Conv idx:\tmatrix shape\tsum")
         for conv_idx in range(0, conv_loops + 1):
             print(f"{conv_idx}\t{volume_conv_list[conv_idx].shape}\t{volume_conv_list[conv_idx].sum()}")
 
-        diff_fit(vol_matrix, vol.maximum_surface_level)
+
+        sim_resolution = 3.46
+        from chimerax.map.molmap import molecule_map
+        mol_vol = molecule_map(self.session, mol.atoms, sim_resolution, grid_spacing=vol.data.step[0])
+
+        print(f"Mol coords shape:\t {mol.atoms.coords.shape}")
+        print(f"Mol Map shape: \t{mol_vol.full_matrix().shape}")
+
+        diff_fit(volume_conv_list,
+                 vol.data.step,
+                 vol.data.origin,
+                 10,
+                 [mol.atoms.coords],
+                 [(mol_vol.full_matrix(), mol_vol.data.step, mol_vol.data.origin)],
+                 )
 
 
     def run_button_clicked(self):
