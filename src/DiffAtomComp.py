@@ -746,7 +746,9 @@ def diff_fit(volume_list: list,
     q_norms = torch.linalg.vector_norm(e_sqd_log[:, :, :, :, 3:7], dim=-1, keepdim=True)
     e_sqd_log[:, :, :, :, 3:7] /= q_norms
 
-    np.save(f"{exp_out_dir}/e_sqd_log.npy", e_sqd_log.detach().cpu().numpy())
+    e_sqd_log_np = e_sqd_log.detach().cpu().numpy()
+
+    np.save(f"{exp_out_dir}/e_sqd_log.npy", e_sqd_log_np)
     np.save(f"{exp_out_dir}/sampled_coords.npy", sampled_coords)
 
     # e_sqd_log_np = e_sqd_log.detach().cpu().numpy()
@@ -756,7 +758,7 @@ def diff_fit(volume_list: list,
 
     # Each record is in length of 11 as [shift 3, quat 4, quality metric 4]
     # quality metric: occupied_density_avg (idx: 7), overlap (idx: 8), correlation (idx: 9), cam (idx: 10)
-    return e_sqd_log
+    return e_sqd_log_np
 
 
 def diff_atom_comp(target_vol_path: str,

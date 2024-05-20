@@ -109,7 +109,12 @@ class DiffFitTool(ToolInstance):
         # the code right here, but for any kind of even moderately complex
         # interface, it is probably better to put the code in a method so
         # that this __init__ method remains readable.
-        self._build_ui()        
+        self._build_ui()
+
+        self.fit_input_mode = "disk_file"
+
+        self.fit_result_ready = False
+        self.fit_result = None
 
     def _build_ui(self):
         
@@ -597,7 +602,12 @@ class DiffFitTool(ToolInstance):
             iter_idx = int(self.e_sqd_clusters_ordered[self.cluster_idx, 2])
 
             self.transformation = get_transformation_at_record(self.e_sqd_log, self.mol_idx, self.record_idx, iter_idx)
-            self.mol = look_at_record(self.mol_folder, self.mol_idx, self.transformation, self.session)
+
+            if self.fit_input_mode == "interactive":
+                self.mol = self.fit_mol_list[self.mol_idx]
+                self.mol.scene_position = self.transformation
+            elif self.fit_input_mode == "disk_file":
+                self.mol = look_at_record(self.mol_folder, self.mol_idx, self.transformation, self.session)
 
             self.session.logger.info(f"Cluster size: {int(self.e_sqd_clusters_ordered[self.cluster_idx, 3])}")
             self.session.logger.info(f"Highest metric reached at iter : {iter_idx}")
@@ -637,16 +647,19 @@ class DiffFitTool(ToolInstance):
         if e_sqd_log is None:
             return
 
-        print("clear the volumes from the scene")
+        if self.fit_input_mode == "disk_file":
+            print("clear the volumes from the scene")
 
-        vlist = volume_list(self.session)
-        for v in vlist:
-            v.delete()
-            
-        print("opening the volume...")
-        #print(self.settings)
-        print(self.settings.view_target_vol_path)
-        self.vol = run(self.session, "open {0}".format(self.settings.view_target_vol_path))[0]
+            vlist = volume_list(self.session)
+            for v in vlist:
+                v.delete()
+
+            print("opening the volume...")
+            #print(self.settings)
+            print(self.settings.view_target_vol_path)
+            self.vol = run(self.session, "open {0}".format(self.settings.view_target_vol_path))[0]
+        elif self.fit_input_mode == "interactive":
+            self.vol = self.fit_vol
 
         N_mol, N_quat, N_shift, N_iter, N_metric = e_sqd_log.shape
         self.e_sqd_log = e_sqd_log.reshape([N_mol, N_quat * N_shift, N_iter, N_metric])
@@ -676,15 +689,16 @@ class DiffFitTool(ToolInstance):
         print("Map value: ", self._map_menu.value)
 
         mol = self._object_menu.value
+        self.fit_mol_list = [mol]
         print("Mol # atoms: ", mol.num_atoms)
 
-        vol = self._map_menu.value
-        vol_matrix = vol.full_matrix()
+        self.fit_vol = self._map_menu.value
+        vol_matrix = self.fit_vol.full_matrix()
         print("Map shape: ", vol_matrix.shape)
 
-        vol_copy = vol.writable_copy()
+        vol_copy = self.fit_vol.writable_copy()
         vol_copy_matrix = vol_copy.data.matrix()
-        vol_copy_matrix[vol_copy_matrix < vol.maximum_surface_level] = 0
+        vol_copy_matrix[vol_copy_matrix < self.fit_vol.maximum_surface_level] = 0
         vol_copy.matrix_changed()
 
         # From here on, there are three strategies for utilizing gaussian smooth
@@ -709,18 +723,24 @@ class DiffFitTool(ToolInstance):
 
         sim_resolution = 3.46
         from chimerax.map.molmap import molecule_map
-        mol_vol = molecule_map(self.session, mol.atoms, sim_resolution, grid_spacing=vol.data.step[0])
+        mol_vol = molecule_map(self.session, mol.atoms, sim_resolution, grid_spacing=self.fit_vol.data.step[0])
 
         print(f"Mol coords shape:\t {mol.atoms.coords.shape}")
         print(f"Mol Map shape: \t{mol_vol.full_matrix().shape}")
 
-        diff_fit(volume_conv_list,
-                 vol.data.step,
-                 vol.data.origin,
-                 10,
-                 [mol.atoms.coords],
-                 [(mol_vol.full_matrix(), mol_vol.data.step, mol_vol.data.origin)],
-                 )
+        self.fit_result = diff_fit(volume_conv_list,
+                                   self.fit_vol.data.step,
+                                   self.fit_vol.data.origin,
+                                   10,
+                                   [mol.atoms.coords],
+                                   [(mol_vol.full_matrix(), mol_vol.data.step, mol_vol.data.origin)],
+                                   out_dir_exist_ok=True
+                                   )
+        mol_vol.delete()
+
+        self.fit_input_mode = "interactive"
+        self.fit_result_ready = True
+        self.show_results(self.fit_result)
 
 
     def run_button_clicked(self):
@@ -759,7 +779,11 @@ class DiffFitTool(ToolInstance):
         # output is tensor
         self.show_results(e_sqd_log.detach().cpu().numpy())
         
-    def init_button_clicked(self):            
+    def init_button_clicked(self):
+        if self.fit_result_ready:
+            self.show_results(self.fit_result)
+            return
+
         if self.settings is None:
             return
             
