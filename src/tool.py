@@ -13,7 +13,7 @@
 
 from Qt.QtWidgets import QLabel, QPushButton, QLineEdit, QVBoxLayout, QHBoxLayout, QGridLayout, QComboBox, QFrame
 from Qt.QtWidgets import QTableView, QSlider, QTabWidget, QGroupBox, QDoubleSpinBox, QSpinBox 
-from Qt.QtWidgets import QFileDialog
+from Qt.QtWidgets import QFileDialog, QSpacerItem
 from Qt.QtCore import QSortFilterProxyModel, Qt
 
 from chimerax.core.tools import ToolInstance
@@ -125,7 +125,7 @@ class DiffFitTool(ToolInstance):
 
         # single fit GUI
         single_fit_group = QGroupBox()
-        single_fit_group_layout = QHBoxLayout()
+        single_fit_group_layout = QVBoxLayout()
         single_fit_group.setLayout(single_fit_group_layout)
         self.build_single_fit_ui(single_fit_group_layout)
         tab_widget.addTab(single_fit_group, "Single")
@@ -136,14 +136,17 @@ class DiffFitTool(ToolInstance):
         compute_group.setLayout(compute_group_layout)
         self.build_compute_ui(compute_group_layout)
         tab_widget.addTab(compute_group, "Compute")
-    
+
         # view GUI
         view_group = QGroupBox()
         view_group_layout = QGridLayout()
         view_group.setLayout(view_group_layout)
         self.build_view_ui(view_group_layout)
         tab_widget.addTab(view_group, "View")
-        
+
+        self.tab_widget = tab_widget
+        self.tab_view_group = view_group
+
         # TODO: place where to update the settings
         self.load_settings()
         
@@ -232,8 +235,12 @@ class DiffFitTool(ToolInstance):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(2)
 
+
+        row = QHBoxLayout()
+        layout.addLayout(row)
+
         mol_label = QLabel("Fit")
-        layout.addWidget(mol_label)
+        row.addWidget(mol_label)
 
         from chimerax.map import Volume
         from chimerax.atomic import Structure
@@ -244,29 +251,33 @@ class DiffFitTool(ToolInstance):
         if mlist:
             om.value = mlist[0]
         # om.value_changed.connect(self._object_chosen)
-        layout.addWidget(om)
+        row.addWidget(om)
 
         iml = QLabel("in map")
-        layout.addWidget(iml)
+        row.addWidget(iml)
 
         self._map_menu = mm = ModelMenuButton(self.session, class_filter=Volume)
         if vlist:
             mm.value = vlist[0]
-        layout.addWidget(mm)
+        row.addWidget(mm)
 
         button_fit = QPushButton()
         button_fit.setText("Fit")
         button_fit.clicked.connect(lambda: self.single_fit_button_clicked())
-        layout.addWidget(button_fit)
+        row.addWidget(button_fit)
 
         button_options = QPushButton()
         button_options.setText("Options")
         button_options.clicked.connect(lambda: self._show_or_hide_options())
-        layout.addWidget(button_options)
+        row.addWidget(button_options)
+
+        row.addSpacerItem(QSpacerItem(0, 0))
 
         # Options panel
+        row2 = QVBoxLayout()
+        layout.addLayout(row2)
         options = self._create_options_gui(None)
-        layout.addWidget(options)
+        row2.addWidget(options)
 
     def _create_options_gui(self, parent):
 
@@ -765,6 +776,8 @@ class DiffFitTool(ToolInstance):
         self.fit_input_mode = "interactive"
         self.fit_result_ready = True
         self.show_results(self.fit_result)
+
+        self.tab_widget.setCurrentWidget(self.tab_view_group)
 
 
     def run_button_clicked(self):
