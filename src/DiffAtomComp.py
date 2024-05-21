@@ -584,10 +584,10 @@ def diff_fit(volume_list: list,
              N_shifts: int = 10,
              N_quaternions: int = 100,
              negative_space_value: float = -0.5,
-             exp_name: str = "dev_comp",
+             exp_name: str = "temp",
              learning_rate: float = 0.01,
              n_iters: int = 201,
-             out_dir: str = "C:\\Users\\luod\\Desktop\\out",
+             out_dir: str = "DiffFit_out",
              out_dir_exist_ok: bool = False,
              ):
     print("Entering diff_fit function")

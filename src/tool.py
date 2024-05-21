@@ -254,10 +254,34 @@ class DiffFitTool(ToolInstance):
             mm.value = vlist[0]
         layout.addWidget(mm)
 
-        button = QPushButton()
-        button.setText("Fit")
-        button.clicked.connect(lambda: self.single_fit_button_clicked())
-        layout.addWidget(button)
+        button_fit = QPushButton()
+        button_fit.setText("Fit")
+        button_fit.clicked.connect(lambda: self.single_fit_button_clicked())
+        layout.addWidget(button_fit)
+
+        button_options = QPushButton()
+        button_options.setText("Options")
+        button_options.clicked.connect(lambda: self._show_or_hide_options())
+        layout.addWidget(button_options)
+
+        # Options panel
+        options = self._create_options_gui(None)
+        layout.addWidget(options)
+
+    def _create_options_gui(self, parent):
+
+        from chimerax.ui.widgets import CollapsiblePanel
+        self._options_panel = p = CollapsiblePanel(parent, title=None)
+        f = p.content_area
+
+        from chimerax.ui.widgets import EntriesRow, radio_buttons
+
+        self.fit_result_save = EntriesRow(f, True, 'Save result')
+
+        return p
+
+    def _show_or_hide_options(self):
+        self._options_panel.toggle_panel_display()
 
 
     def build_compute_ui(self, layout):
