@@ -232,10 +232,6 @@ class DiffFitTool(ToolInstance):
         #print(self.settings.view_target_vol_path)
 
     def build_single_fit_ui(self, layout):
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(2)
-
-
         row = QHBoxLayout()
         layout.addLayout(row)
 
@@ -271,13 +267,15 @@ class DiffFitTool(ToolInstance):
         button_options.clicked.connect(lambda: self._show_or_hide_options())
         row.addWidget(button_options)
 
-        row.addSpacerItem(QSpacerItem(0, 0))
+        row.addStretch()  # This will add a stretchable space to the right
 
         # Options panel
         row2 = QVBoxLayout()
         layout.addLayout(row2)
         options = self._create_options_gui(None)
         row2.addWidget(options)
+
+        layout.addStretch()
 
     def _create_options_gui(self, parent):
 
