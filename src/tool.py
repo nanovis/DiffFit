@@ -277,11 +277,21 @@ class DiffFitTool(ToolInstance):
 
         layout.addStretch()
 
+    def _single_fit_set_preset(self, shifts=5, quat=20, gaussian=0):
+        self._single_fit_n_shifts.setValue(shifts)
+        self._single_fit_n_quaternions.setValue(quat)
+        self._single_fit_gaussian_loops.setValue(gaussian)
+
+    def _fit_result_save_checkbox_clicked(self):
+        self._single_fit_out_dir.setEnabled(self._fit_result_save_checkbox.isChecked())
+        self._single_fit_out_dir_select.setEnabled(self._fit_result_save_checkbox.isChecked())
+
     def _create_single_fit_options_gui(self, parent):
 
         from chimerax.ui.widgets import CollapsiblePanel
         self._single_fit_options_panel = p = CollapsiblePanel(parent, title=None)
         f = p.content_area
+
 
         # Preset row
         row_frame = QFrame()
@@ -293,6 +303,9 @@ class DiffFitTool(ToolInstance):
         preset_fast = QPushButton("Fast")
         preset_balanced = QPushButton("Balanced")
         preset_exhaustive = QPushButton("Exhaustive")
+        preset_fast.clicked.connect(lambda: self._single_fit_set_preset())
+        preset_balanced.clicked.connect(lambda: self._single_fit_set_preset(10, 50, 3))
+        preset_exhaustive.clicked.connect(lambda: self._single_fit_set_preset(10, 100, 10))
         row.addWidget(preset_fast)
         row.addWidget(preset_balanced)
         row.addWidget(preset_exhaustive)
@@ -307,27 +320,27 @@ class DiffFitTool(ToolInstance):
 
         n_shifts_label = QLabel("# shifts:")
         self._single_fit_n_shifts = QSpinBox()
+        self._single_fit_n_shifts.setValue(5)
         self._single_fit_n_shifts.setMinimum(1)
         self._single_fit_n_shifts.setMaximum(500)
-        # self._single_fit_n_shifts.valueChanged.connect(lambda: self.store_settings())
         row.addWidget(n_shifts_label)
         row.addWidget(self._single_fit_n_shifts)
 
         n_quaternions_label = QLabel("# quaternions:")
         self._single_fit_n_quaternions = QSpinBox()
+        self._single_fit_n_quaternions.setValue(20)
         self._single_fit_n_quaternions.setMinimum(1)
         self._single_fit_n_quaternions.setMaximum(500)
-        # self._single_fit_n_quaternions.valueChanged.connect(lambda: self.store_settings())
         row.addWidget(n_quaternions_label)
         row.addWidget(self._single_fit_n_quaternions)
 
-        convs_loops_label = QLabel("Conv. loops:")
-        self._single_fit_conv_loops = QSpinBox()
-        self._single_fit_conv_loops.setMinimum(1)
-        self._single_fit_conv_loops.setMaximum(500)
-        # self._single_fit_conv_loops.valueChanged.connect(lambda: self.store_settings())
+        convs_loops_label = QLabel("Gaussian loops:")
+        self._single_fit_gaussian_loops = QSpinBox()
+        self._single_fit_gaussian_loops.setValue(0)
+        self._single_fit_gaussian_loops.setMinimum(0)
+        self._single_fit_gaussian_loops.setMaximum(50)
         row.addWidget(convs_loops_label)
-        row.addWidget(self._single_fit_conv_loops)
+        row.addWidget(self._single_fit_gaussian_loops)
         row.addStretch()
 
 
@@ -339,17 +352,21 @@ class DiffFitTool(ToolInstance):
         row.setSpacing(5)
 
         self._fit_result_save_checkbox = QCheckBox()
+        self._fit_result_save_checkbox.clicked.connect(lambda: self._fit_result_save_checkbox_clicked())
         save_res_label = QLabel("Save result to")
         row.addWidget(self._fit_result_save_checkbox)
         row.addWidget(save_res_label)
 
         self._single_fit_out_dir = QLineEdit()
+        self._single_fit_out_dir.setDisabled(True)
         # self._single_fit_out_dir.textChanged.connect(lambda: self.store_settings())
-        out_dir_select = QPushButton("Select")
+        self._single_fit_out_dir_select = QPushButton("Select")
+        self._single_fit_out_dir.setText("DiffFit_out/single_fit")
+        self._single_fit_out_dir_select.setDisabled(True)
         # out_dir_select.clicked.connect(lambda: self.select_clicked("Output Folder", self.out_dir))
 
         row.addWidget(self._single_fit_out_dir)
-        row.addWidget(out_dir_select)
+        row.addWidget(self._single_fit_out_dir_select)
 
 
         return p
