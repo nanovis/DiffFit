@@ -584,9 +584,9 @@ def diff_fit(volume_list: list,
              N_shifts: int = 10,
              N_quaternions: int = 100,
              negative_space_value: float = -0.5,
-             exp_name: str = "temp",
              learning_rate: float = 0.01,
              n_iters: int = 201,
+             save_results: bool = False,
              out_dir: str = "DiffFit_out",
              out_dir_exist_ok: bool = False,
              ):
@@ -678,11 +678,11 @@ def diff_fit(volume_list: list,
         e_sqd_log[:, :, :, 0, 3:7] = e_quaternions
 
     log_idx = 0
-    exp_out_dir = f"{out_dir}/{exp_name}"
-    os.makedirs(exp_out_dir, exist_ok=out_dir_exist_ok)
 
-    with open(f"{exp_out_dir}/log.log", "a") as log_file:
-        log_file.write(f"Wall clock time: {datetime.now()}\n")
+    if save_results:
+        os.makedirs(out_dir, exist_ok=out_dir_exist_ok)
+        with open(f"{out_dir}/log.log", "a") as log_file:
+            log_file.write(f"Wall clock time: {datetime.now()}\n")
 
     # Create the optimizer with different learning rates
     optimizer = torch.optim.Adam([
@@ -729,14 +729,16 @@ def diff_fit(volume_list: list,
                 e_sqd_log[:, :, :, log_idx, 7] = occupied_density_sum
                 e_sqd_log[:, :, :, log_idx, 8:11] = correlation_table
 
-                with open(f"{exp_out_dir}/log.log", "a") as log_file:
-                    log_file.write(f"Epoch: {epoch + 1:05d}, "
-                                   f"loss = {loss:.4f}\n")
+                if save_results:
+                    with open(f"{out_dir}/log.log", "a") as log_file:
+                        log_file.write(f"Epoch: {epoch + 1:05d}, "
+                                       f"loss = {loss:.4f}\n")
 
     timer_stop = datetime.now()
 
-    with open(f"{exp_out_dir}/log.log", "a") as log_file:
-        log_file.write(f"Time elapsed: {timer_stop - timer_start}\n\n")
+    if save_results:
+        with open(f"{out_dir}/log.log", "a") as log_file:
+            log_file.write(f"Time elapsed: {timer_stop - timer_start}\n\n")
 
     # convert quaternion to ChimeraX, Houdini, scipy system and normalize it
 
@@ -748,8 +750,9 @@ def diff_fit(volume_list: list,
 
     e_sqd_log_np = e_sqd_log.detach().cpu().numpy()
 
-    np.save(f"{exp_out_dir}/e_sqd_log.npy", e_sqd_log_np)
-    np.save(f"{exp_out_dir}/sampled_coords.npy", sampled_coords)
+    if save_results:
+        np.save(f"{out_dir}/e_sqd_log.npy", e_sqd_log_np)
+        np.save(f"{out_dir}/sampled_coords.npy", sampled_coords)
 
     # e_sqd_log_np = e_sqd_log.detach().cpu().numpy()
     # N_mol, N_quat, N_shift, N_iter, N_metric = e_sqd_log_np

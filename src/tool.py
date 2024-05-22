@@ -282,9 +282,9 @@ class DiffFitTool(ToolInstance):
         self._single_fit_n_quaternions.setValue(quat)
         self._single_fit_gaussian_loops.setValue(gaussian)
 
-    def _fit_result_save_checkbox_clicked(self):
-        self._single_fit_out_dir.setEnabled(self._fit_result_save_checkbox.isChecked())
-        self._single_fit_out_dir_select.setEnabled(self._fit_result_save_checkbox.isChecked())
+    def _single_fit_result_save_checkbox_clicked(self):
+        self._single_fit_out_dir.setEnabled(self._single_fit_result_save_checkbox.isChecked())
+        self._single_fit_out_dir_select.setEnabled(self._single_fit_result_save_checkbox.isChecked())
 
     def _create_single_fit_options_gui(self, parent):
 
@@ -351,10 +351,10 @@ class DiffFitTool(ToolInstance):
         row.setContentsMargins(0, 20, 0, 0)
         row.setSpacing(5)
 
-        self._fit_result_save_checkbox = QCheckBox()
-        self._fit_result_save_checkbox.clicked.connect(lambda: self._fit_result_save_checkbox_clicked())
+        self._single_fit_result_save_checkbox = QCheckBox()
+        self._single_fit_result_save_checkbox.clicked.connect(lambda: self._single_fit_result_save_checkbox_clicked())
         save_res_label = QLabel("Save result to")
-        row.addWidget(self._fit_result_save_checkbox)
+        row.addWidget(self._single_fit_result_save_checkbox)
         row.addWidget(save_res_label)
 
         self._single_fit_out_dir = QLineEdit()
@@ -822,17 +822,17 @@ class DiffFitTool(ToolInstance):
         # Combine 1 & 2
         # Need to do experiment to see which one is better
 
-        conv_loops = 10
-        volume_conv_list = [None] * (conv_loops + 1)
+        gaussian_loops = self._single_fit_gaussian_loops.value()
+        volume_conv_list = [None] * (gaussian_loops + 1)
         volume_conv_list[0] = vol_copy_matrix
-        for conv_idx in range(1, conv_loops + 1):
+        for conv_idx in range(1, gaussian_loops + 1):
             vol_gaussian = run(self.session, f"volume gaussian #{vol_copy.id[0]} sDev {conv_idx}")
             volume_conv_list[conv_idx] = vol_gaussian.full_matrix()
             vol_gaussian.delete()
         vol_copy.delete()
 
         print("Conv idx:\tmatrix shape\tsum")
-        for conv_idx in range(0, conv_loops + 1):
+        for conv_idx in range(0, gaussian_loops + 1):
             print(f"{conv_idx}\t{volume_conv_list[conv_idx].shape}\t{volume_conv_list[conv_idx].sum()}")
 
 
@@ -849,6 +849,10 @@ class DiffFitTool(ToolInstance):
                                    10,
                                    [mol.atoms.coords],
                                    [(mol_vol.full_matrix(), mol_vol.data.step, mol_vol.data.origin)],
+                                   N_shifts=self._single_fit_n_shifts.value(),
+                                   N_quaternions=self._single_fit_n_quaternions.value(),
+                                   save_results=self._single_fit_result_save_checkbox.isChecked(),
+                                   out_dir=self._single_fit_out_dir.text(),
                                    out_dir_exist_ok=True
                                    )
         mol_vol.delete()
