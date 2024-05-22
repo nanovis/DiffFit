@@ -1,5 +1,5 @@
 # vim: set expandtab shiftwidth=4 softtabstop=4:
-
+from PyQt6.QtWidgets import QCheckBox
 # === UCSF ChimeraX Copyright ===
 # Copyright 2016 Regents of the University of California.
 # All rights reserved.  This software provided pursuant to a
@@ -272,25 +272,57 @@ class DiffFitTool(ToolInstance):
         # Options panel
         row2 = QVBoxLayout()
         layout.addLayout(row2)
-        options = self._create_options_gui(None)
+        options = self._create_single_fit_options_gui(None)
         row2.addWidget(options)
 
         layout.addStretch()
 
-    def _create_options_gui(self, parent):
+    def _create_single_fit_options_gui(self, parent):
 
         from chimerax.ui.widgets import CollapsiblePanel
-        self._options_panel = p = CollapsiblePanel(parent, title=None)
+        self._single_fit_options_panel = p = CollapsiblePanel(parent, title=None)
         f = p.content_area
 
-        from chimerax.ui.widgets import EntriesRow, radio_buttons
+        # Preset row
+        row_frame = QFrame()
+        f.layout().addWidget(row_frame)
+        row = QHBoxLayout(row_frame)
+        row.setContentsMargins(0, 10, 0, 0)
+        row.setSpacing(5)
 
-        self.fit_result_save = EntriesRow(f, True, 'Save result')
+        preset_fast = QPushButton("Fast")
+        preset_balanced = QPushButton("Balanced")
+        preset_exhaustive = QPushButton("Exhaustive")
+        row.addWidget(preset_fast)
+        row.addWidget(preset_balanced)
+        row.addWidget(preset_exhaustive)
+
+
+        # Save result row
+        row_frame = QFrame()
+        f.layout().addWidget(row_frame)
+        row = QHBoxLayout(row_frame)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(5)
+
+        self.fit_result_save_checkbox = QCheckBox()
+        save_res_label = QLabel("Save result to")
+        row.addWidget(self.fit_result_save_checkbox)
+        row.addWidget(save_res_label)
+
+        self.single_fit_out_dir = QLineEdit()
+        # self.single_fit_out_dir.textChanged.connect(lambda: self.store_settings())
+        out_dir_select = QPushButton("Select")
+        # out_dir_select.clicked.connect(lambda: self.select_clicked("Output Folder", self.out_dir))
+
+        row.addWidget(self.single_fit_out_dir)
+        row.addWidget(out_dir_select)
+
 
         return p
 
     def _show_or_hide_options(self):
-        self._options_panel.toggle_panel_display()
+        self._single_fit_options_panel.toggle_panel_display()
 
 
     def build_compute_ui(self, layout):
