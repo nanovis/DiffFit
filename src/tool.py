@@ -287,7 +287,7 @@ class DiffFitTool(ToolInstance):
         row_frame = QFrame()
         f.layout().addWidget(row_frame)
         row = QHBoxLayout(row_frame)
-        row.setContentsMargins(0, 10, 0, 0)
+        row.setContentsMargins(0, 20, 0, 0)
         row.setSpacing(5)
 
         preset_fast = QPushButton("Fast")
@@ -296,26 +296,59 @@ class DiffFitTool(ToolInstance):
         row.addWidget(preset_fast)
         row.addWidget(preset_balanced)
         row.addWidget(preset_exhaustive)
-
-
-        # Save result row
+        
+        
+        # Parameter row
         row_frame = QFrame()
         f.layout().addWidget(row_frame)
         row = QHBoxLayout(row_frame)
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(5)
 
-        self.fit_result_save_checkbox = QCheckBox()
+        n_shifts_label = QLabel("# shifts:")
+        self._single_fit_n_shifts = QSpinBox()
+        self._single_fit_n_shifts.setMinimum(1)
+        self._single_fit_n_shifts.setMaximum(500)
+        # self._single_fit_n_shifts.valueChanged.connect(lambda: self.store_settings())
+        row.addWidget(n_shifts_label)
+        row.addWidget(self._single_fit_n_shifts)
+
+        n_quaternions_label = QLabel("# quaternions:")
+        self._single_fit_n_quaternions = QSpinBox()
+        self._single_fit_n_quaternions.setMinimum(1)
+        self._single_fit_n_quaternions.setMaximum(500)
+        # self._single_fit_n_quaternions.valueChanged.connect(lambda: self.store_settings())
+        row.addWidget(n_quaternions_label)
+        row.addWidget(self._single_fit_n_quaternions)
+
+        convs_loops_label = QLabel("Conv. loops:")
+        self._single_fit_conv_loops = QSpinBox()
+        self._single_fit_conv_loops.setMinimum(1)
+        self._single_fit_conv_loops.setMaximum(500)
+        # self._single_fit_conv_loops.valueChanged.connect(lambda: self.store_settings())
+        row.addWidget(convs_loops_label)
+        row.addWidget(self._single_fit_conv_loops)
+        row.addStretch()
+
+
+        # Save result row
+        row_frame = QFrame()
+        f.layout().addWidget(row_frame)
+        row = QHBoxLayout(row_frame)
+        row.setContentsMargins(0, 20, 0, 0)
+        row.setSpacing(5)
+
+        self._fit_result_save_checkbox = QCheckBox()
         save_res_label = QLabel("Save result to")
-        row.addWidget(self.fit_result_save_checkbox)
+        row.addWidget(self._fit_result_save_checkbox)
         row.addWidget(save_res_label)
 
-        self.single_fit_out_dir = QLineEdit()
-        # self.single_fit_out_dir.textChanged.connect(lambda: self.store_settings())
+        self._single_fit_out_dir = QLineEdit()
+        # self._single_fit_out_dir.textChanged.connect(lambda: self.store_settings())
         out_dir_select = QPushButton("Select")
         # out_dir_select.clicked.connect(lambda: self.select_clicked("Output Folder", self.out_dir))
 
-        row.addWidget(self.single_fit_out_dir)
+        row.addWidget(self._single_fit_out_dir)
         row.addWidget(out_dir_select)
 
 
