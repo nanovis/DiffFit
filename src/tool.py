@@ -777,6 +777,7 @@ class DiffFitTool(ToolInstance):
             self.vol = run(self.session, "open {0}".format(self.settings.view_target_vol_path))[0]
         elif self.fit_input_mode == "interactive":
             self.vol = self.fit_vol
+            self.vol.display = True
 
         N_mol, N_quat, N_shift, N_iter, N_metric = e_sqd_log.shape
         self.e_sqd_log = e_sqd_log.reshape([N_mol, N_quat * N_shift, N_iter, N_metric])
