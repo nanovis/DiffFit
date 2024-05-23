@@ -1,4 +1,6 @@
 # vim: set expandtab shiftwidth=4 softtabstop=4:
+from datetime import datetime
+
 from PyQt6.QtWidgets import QCheckBox
 # === UCSF ChimeraX Copyright ===
 # Copyright 2016 Regents of the University of California.
@@ -799,18 +801,16 @@ class DiffFitTool(ToolInstance):
 
 
     def single_fit_button_clicked(self):
-        print("Single fit clicked")
-        print("Object value: ", self._object_menu.value)
-        print("Map value: ", self._map_menu.value)
+        single_fit_timer_start = datetime.now()
 
+        # Prepare mol anv vol
         mol = self._object_menu.value
         self.fit_mol_list = [mol]
-        print("Mol # atoms: ", mol.num_atoms)
 
         self.fit_vol = self._map_menu.value
         vol_matrix = self.fit_vol.full_matrix()
-        print("Map shape: ", vol_matrix.shape)
 
+        # Copy vol and make it clean after thresholding
         vol_copy = self.fit_vol.writable_copy()
         vol_copy_matrix = vol_copy.data.matrix()
         vol_copy_matrix[vol_copy_matrix < self.fit_vol.maximum_surface_level] = 0
@@ -831,18 +831,13 @@ class DiffFitTool(ToolInstance):
             vol_gaussian.delete()
         vol_copy.delete()
 
-        print("Conv idx:\tmatrix shape\tsum")
-        for conv_idx in range(0, gaussian_loops + 1):
-            print(f"{conv_idx}\t{volume_conv_list[conv_idx].shape}\t{volume_conv_list[conv_idx].sum()}")
-
-
+        # Simulate a map for the mol
         sim_resolution = 3.46
         from chimerax.map.molmap import molecule_map
         mol_vol = molecule_map(self.session, mol.atoms, sim_resolution, grid_spacing=self.fit_vol.data.step[0])
 
-        print(f"Mol coords shape:\t {mol.atoms.coords.shape}")
-        print(f"Mol Map shape: \t{mol_vol.full_matrix().shape}")
-
+        # Fit
+        timer_start = datetime.now()
         self.fit_result = diff_fit(volume_conv_list,
                                    self.fit_vol.data.step,
                                    self.fit_vol.data.origin,
@@ -855,6 +850,9 @@ class DiffFitTool(ToolInstance):
                                    out_dir=self._single_fit_out_dir.text(),
                                    out_dir_exist_ok=True
                                    )
+        timer_stop = datetime.now()
+        print(f"Fit time elapsed: {timer_stop - timer_start}\n\n")
+
         mol_vol.delete()
 
         self.fit_input_mode = "interactive"
@@ -862,6 +860,9 @@ class DiffFitTool(ToolInstance):
         self.show_results(self.fit_result)
 
         self.tab_widget.setCurrentWidget(self.tab_view_group)
+
+        timer_stop = datetime.now()
+        print(f"Single fit time elapsed: {timer_stop - single_fit_timer_start}\n\n")
 
 
     def run_button_clicked(self):
