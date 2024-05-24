@@ -113,10 +113,11 @@ class DiffFitTool(ToolInstance):
         # that this __init__ method remains readable.
         self._build_ui()
 
-        self.fit_input_mode = "disk_file"
+        self.fit_input_mode = "disk file"
 
         self.fit_result_ready = False
         self.fit_result = None
+
 
     def _build_ui(self):
         
@@ -555,38 +556,44 @@ class DiffFitTool(ToolInstance):
 
     def build_view_ui(self, layout):
         row = 0
-            
-        #self.view_target_vol_path: str = "..."        
+
+        view_input_mode_label = QLabel("Input mode:")
+        self._view_input_mode = QComboBox()
+        self._view_input_mode.addItems(["disk file", "interactive"])
+        self._view_input_mode.currentIndexChanged.connect(lambda: self._view_input_mode_changed())
+        layout.addWidget(view_input_mode_label, row, 0)
+        layout.addWidget(self._view_input_mode, row, 1, 1, 2)
+        row = row + 1
+
         target_vol_label = QLabel("Target Volume:")
         self.target_vol = QLineEdit()        
         self.target_vol.textChanged.connect(lambda: self.store_settings())
-        target_vol_select = QPushButton("Select")        
-        target_vol_select.clicked.connect(lambda: self.select_clicked("Target Volume", self.target_vol, False, "MRC Files(*.mrc);;MAP Files(*.map)"))        
+        self.target_vol_select = QPushButton("Select")
+        self.target_vol_select.clicked.connect(lambda: self.select_clicked("Target Volume", self.target_vol, False, "MRC Files(*.mrc);;MAP Files(*.map)"))
         layout.addWidget(target_vol_label, row, 0)
         layout.addWidget(self.target_vol, row, 1)
-        layout.addWidget(target_vol_select, row, 2)
+        layout.addWidget(self.target_vol_select, row, 2)
         row = row + 1
         
-        # self.view_structures_directory: str = "..."              
         structures_folder_label = QLabel("Structures Folder:")
         self.structures_folder = QLineEdit()
         self.structures_folder.textChanged.connect(lambda: self.store_settings()) 
-        structures_folder_select = QPushButton("Select")        
-        structures_folder_select.clicked.connect(lambda: self.select_clicked("Structures folder (containing *.cif)", self.structures_folder))                
+        self.structures_folder_select = QPushButton("Select")
+        self.structures_folder_select.clicked.connect(lambda: self.select_clicked("Structures folder (containing *.cif)", self.structures_folder))
         layout.addWidget(structures_folder_label, row, 0)
         layout.addWidget(self.structures_folder, row, 1)
-        layout.addWidget(structures_folder_select, row, 2)
+        layout.addWidget(self.structures_folder_select, row, 2)
         row = row + 1
         
         # data folder - where the data is stored
         dataset_folder_label = QLabel("Data Folder:")
         self.dataset_folder = QLineEdit()    
         self.dataset_folder.textChanged.connect(lambda: self.store_settings())                
-        dataset_folder_select = QPushButton("Select")        
-        dataset_folder_select.clicked.connect(lambda: self.select_clicked("Data Folder", self.dataset_folder))        
+        self.dataset_folder_select = QPushButton("Select")
+        self.dataset_folder_select.clicked.connect(lambda: self.select_clicked("Data Folder", self.dataset_folder))
         layout.addWidget(dataset_folder_label, row, 0)
         layout.addWidget(self.dataset_folder, row, 1)
-        layout.addWidget(dataset_folder_select, row, 2)
+        layout.addWidget(self.dataset_folder_select, row, 2)
         row = row + 1
         
         clustering_shift_tolerance_label = QLabel()
@@ -704,7 +711,27 @@ class DiffFitTool(ToolInstance):
         #clear_action = QAction("Clear", menu)
         #clear_action.triggered.connect(lambda *args: self.init_folder.clear())
         #menu.addAction(clear_action)
-        
+
+
+    def _view_input_mode_changed(self):
+        if self._view_input_mode.currentText() == "interactive":
+            self.fit_input_mode = "interactive"
+            self.target_vol.setEnabled(False)
+            self.target_vol_select.setEnabled(False)
+            self.structures_folder.setEnabled(False)
+            self.structures_folder_select.setEnabled(False)
+            self.dataset_folder.setEnabled(False)
+            self.dataset_folder_select.setEnabled(False)
+        elif self._view_input_mode.currentText() == "disk file":
+            self.fit_input_mode = "disk file"
+            self.target_vol.setEnabled(True)
+            self.target_vol_select.setEnabled(True)
+            self.structures_folder.setEnabled(True)
+            self.structures_folder_select.setEnabled(True)
+            self.dataset_folder.setEnabled(True)
+            self.dataset_folder_select.setEnabled(True)
+
+
     def table_row_clicked(self, item):        
     
         if item.row() != -1:
@@ -723,7 +750,7 @@ class DiffFitTool(ToolInstance):
             if self.fit_input_mode == "interactive":
                 self.mol = self.fit_mol_list[self.mol_idx]
                 self.mol.scene_position = self.transformation
-            elif self.fit_input_mode == "disk_file":
+            elif self.fit_input_mode == "disk file":
                 self.mol = look_at_record(self.mol_folder, self.mol_idx, self.transformation, self.session)
 
             self.session.logger.info(f"Cluster size: {int(self.e_sqd_clusters_ordered[self.cluster_idx, 3])}")
@@ -764,7 +791,7 @@ class DiffFitTool(ToolInstance):
         if e_sqd_log is None:
             return
 
-        if self.fit_input_mode == "disk_file":
+        if self.fit_input_mode == "disk file":
             print("clear the volumes from the scene")
 
             vlist = volume_list(self.session)
@@ -856,7 +883,8 @@ class DiffFitTool(ToolInstance):
 
         mol_vol.delete()
 
-        self.fit_input_mode = "interactive"
+        self._view_input_mode.setCurrentText("interactive")
+        self._view_input_mode_changed()
         self.fit_result_ready = True
         self.show_results(self.fit_result)
 
