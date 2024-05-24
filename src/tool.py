@@ -931,9 +931,14 @@ class DiffFitTool(ToolInstance):
         self.show_results(e_sqd_log.detach().cpu().numpy())
         
     def init_button_clicked(self):
-        if self.fit_result_ready:
-            self.show_results(self.fit_result)
-            return
+        if self.fit_input_mode == "interactive":
+            if self.fit_result_ready:
+                self.show_results(self.fit_result)
+                return
+            else:
+                from chimerax.log.cmd import log
+                log(self.session, text="Fitting is not performed yet.", error_dialog=True)
+                return
 
         if self.settings is None:
             return
