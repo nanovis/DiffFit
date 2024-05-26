@@ -749,6 +749,7 @@ class DiffFitTool(ToolInstance):
 
             if self.fit_input_mode == "interactive":
                 self.mol = self.fit_mol_list[self.mol_idx]
+                self.mol.display = True
                 self.mol.scene_position = self.transformation
             elif self.fit_input_mode == "disk file":
                 self.mol = look_at_record(self.mol_folder, self.mol_idx, self.transformation, self.session)
@@ -842,7 +843,7 @@ class DiffFitTool(ToolInstance):
         vol_copy = self.fit_vol.writable_copy()
         vol_copy_matrix = vol_copy.data.matrix()
         vol_copy_matrix[vol_copy_matrix < self.fit_vol.maximum_surface_level] = 0
-        vol_copy.matrix_changed()
+        vol_copy.data.values_changed()
 
         # From here on, there are three strategies for utilizing gaussian smooth
         # 1. with increasing sDev on the same input volume

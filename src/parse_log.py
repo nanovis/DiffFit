@@ -178,19 +178,29 @@ def simulate_volume(session, vol, mol_folder, mol_idx, transformation, res=4.0):
 
     from chimerax.map.molmap import molecule_map
     mol_vol = molecule_map(session, mol.atoms, res, grid_spacing=vol.data_origin_and_step()[1][0] / 3)
+    mol.delete()
 
     return mol_vol
 
 
-def zero_cluster_density(session, mol_vol, mol, vol, cluster_idx, zero_iter=0):
-    work_vol = run(session, f"volume subtract #{vol.id[0]} #{mol_vol.id[0]} scaleFactors  1.0,1000.0")
+def zero_cluster_density(session, mol_vol, mol, vol, cluster_idx, zero_iter=0, threshold=0.0):
+    from chimerax.map_data import grid_indices
+    from chimerax.geometry import identity
+    from numpy import float32
+
+    data_array, xyz_to_ijk_transform = vol.matrix_and_transform(identity(), subregion=None, step=1)
+    size = tuple(data_array.shape[::-1])
+    grid_points = grid_indices(size, float32)
+    xyz_to_ijk_transform.inverse().transform_points(grid_points, in_place=True)
+    density_values = mol_vol.interpolated_values(grid_points, identity(), subregion=None, step=None)
+
+    work_vol = vol.writable_copy()
     matrix = work_vol.data.matrix()
-    matrix[matrix < 0] = 0
-    work_vol.update_drawings()
+    matrix[density_values.reshape(matrix.shape) > threshold] = 0
+    work_vol.data.values_changed()
     work_vol.name = "working volume"
 
     mol_vol.delete()
-    mol.delete()
 
     session.logger.info(f"Zeroing density for cluster: {cluster_idx}")
 
