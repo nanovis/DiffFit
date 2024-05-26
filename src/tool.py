@@ -664,18 +664,33 @@ class DiffFitTool(ToolInstance):
         layout.addWidget(simulate_volume_label, row, 0)
         layout.addWidget(self.simulate_volume_resolution, row, 1)
         layout.addWidget(simulate_volume, row, 2)
-        row = row + 1        
-        
+        row = row + 1
+
+        zero_density_threshold_label = QLabel("Threshold:")
+        self.zero_density_threshold = QDoubleSpinBox()
+        self.zero_density_threshold.setMinimum(0.0)
+        self.zero_density_threshold.setMaximum(100.0)
+        self.zero_density_threshold.setSingleStep(0.0001)
+        self.zero_density_threshold.setValue(0.0)
         zero_density_button = QPushButton()
         zero_density_button.setText("Zero density")
         zero_density_button.clicked.connect(self.zero_density_button_clicked)
-        
+        layout.addWidget(zero_density_threshold_label, row, 0)
+        layout.addWidget(self.zero_density_threshold, row, 1)
+        layout.addWidget(zero_density_button, row, 2)
+        row = row + 1
+
         # saving currently selected object
-        save_button = QPushButton()
-        save_button.setText("Save")
-        save_button.clicked.connect(self.save_button_clicked)
-        layout.addWidget(zero_density_button, row, 1)
-        layout.addWidget(save_button, row, 2)
+        save_label = QLabel("Save:")
+        save_structure_button = QPushButton()
+        save_structure_button.setText("Structure")
+        save_structure_button.clicked.connect(self.save_structure_button_clicked)
+        save_working_vol_button = QPushButton()
+        save_working_vol_button.setText("Working volume")
+        save_working_vol_button.clicked.connect(self.save_working_vol_button_clicked)
+        layout.addWidget(save_label, row, 0)
+        layout.addWidget(save_working_vol_button, row, 1)
+        layout.addWidget(save_structure_button, row, 2)
         row = row + 1        
         
         # slider for animation
@@ -955,12 +970,20 @@ class DiffFitTool(ToolInstance):
         
         #print(e_sqd_log)
         self.show_results(e_sqd_log)
+
+    def save_working_vol_button_clicked(self):
+        if not self.vol:
+            return
+
+        fileName, ext = self.select_clicked("Save working vol", self.view, True, "MRC Density map(*.mrc);;CCP4 density map (*.map)")
+
+        self.save_working_volume(fileName, ext)
         
-    def save_button_clicked(self):          
+    def save_structure_button_clicked(self):
         if not self.mol:
             return
         
-        fileName, ext = self.select_clicked("Save File", self.view, True, "CIF Files(*.cif);;PDB Files (*.pdb)")           
+        fileName, ext = self.select_clicked("Save structure", self.view, True, "CIF Files(*.cif);;PDB Files (*.pdb)")
         
         self.save_structure(fileName, ext)
     
@@ -968,7 +991,12 @@ class DiffFitTool(ToolInstance):
         
         if len(targetpath) > 0 and self.mol:
             run(self.session, "save '{0}.{1}' models #{2}".format(targetpath, ext, self.mol.id[0]))
-    
+
+    def save_working_volume(self, targetpath, ext):
+
+        if len(targetpath) > 0 and self.vol:
+            run(self.session, "save '{0}.{1}' models #{2}".format(targetpath, ext, self.vol.id[0]))
+
     def simulate_volume_clicked(self): 
         resolution = self.simulate_volume_resolution.value()
         self.mol_vol = simulate_volume(self.session, self.vol, self.mol_folder, self.mol_idx, self.transformation, resolution)
