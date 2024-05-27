@@ -975,7 +975,7 @@ class DiffFitTool(ToolInstance):
         if not self.vol:
             return
 
-        fileName, ext = self.select_clicked("Save working vol", self.view, True, "MRC Density map(*.mrc);;CCP4 density map (*.map)")
+        fileName, ext = self.select_clicked(f"Save {self.vol.name} as", self.view, True, "MRC Density map(*.mrc);;CCP4 density map (*.map)")
 
         self.save_working_volume(fileName, ext)
         
@@ -983,7 +983,7 @@ class DiffFitTool(ToolInstance):
         if not self.mol:
             return
         
-        fileName, ext = self.select_clicked("Save structure", self.view, True, "CIF Files(*.cif);;PDB Files (*.pdb)")
+        fileName, ext = self.select_clicked(f"Save {self.mol.name} as", self.view, True, "CIF Files(*.cif);;PDB Files (*.pdb)")
         
         self.save_structure(fileName, ext)
     
@@ -997,9 +997,15 @@ class DiffFitTool(ToolInstance):
         if len(targetpath) > 0 and self.vol:
             run(self.session, "save '{0}.{1}' models #{2}".format(targetpath, ext, self.vol.id[0]))
 
-    def simulate_volume_clicked(self): 
-        resolution = self.simulate_volume_resolution.value()
-        self.mol_vol = simulate_volume(self.session, self.vol, self.mol_folder, self.mol_idx, self.transformation, resolution)
+    def simulate_volume_clicked(self):
+        res = self.simulate_volume_resolution.value()
+        if self.fit_input_mode == "disk file":
+            self.mol_vol = simulate_volume(self.session, self.vol, self.mol_folder, self.mol_idx, self.transformation,
+                                           res)
+        elif self.fit_input_mode == "interactive":
+            from chimerax.map.molmap import molecule_map
+            self.mol_vol = molecule_map(self.session, self.mol.atoms, res, grid_spacing=self.vol.data_origin_and_step()[1][0] / 3)
+
         return
         
     def zero_density_button_clicked(self):      
