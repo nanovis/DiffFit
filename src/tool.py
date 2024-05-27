@@ -688,6 +688,7 @@ class DiffFitTool(ToolInstance):
         self.zero_density_threshold.setMinimum(0.0)
         self.zero_density_threshold.setMaximum(100.0)
         self.zero_density_threshold.setSingleStep(0.0001)
+        self.zero_density_threshold.setDecimals(4)
         self.zero_density_threshold.setValue(0.0)
         zero_density_button = QPushButton()
         zero_density_button.setText("Zero density")
@@ -1033,7 +1034,8 @@ class DiffFitTool(ToolInstance):
             print("You have to simulate a volume first!")
             return
 
-        work_vol = zero_cluster_density(self.session, self.mol_vol, self.mol, self.vol, self.cluster_idx)
+        work_vol = zero_cluster_density(self.session, self.mol_vol, self.mol, self.vol, self.cluster_idx,
+                                        zero_iter=0, threshold=self.zero_density_threshold.value())
         self.vol = work_vol
         return
     
