@@ -296,6 +296,23 @@ class DiffFitTool(ToolInstance):
         f = p.content_area
 
 
+        # resolution row
+        row_frame = QFrame()
+        f.layout().addWidget(row_frame)
+        row = QHBoxLayout(row_frame)
+        row.setContentsMargins(0, 20, 0, 0)
+        row.setSpacing(5)
+        single_fit_res_label = QLabel("Use map simulated from atoms, resolution")
+        self._single_fit_res = QDoubleSpinBox()
+        self._single_fit_res.setValue(5.0)
+        self._single_fit_res.setMinimum(0.0001)
+        self._single_fit_res.setMaximum(100.0)
+        self._single_fit_res.setSingleStep(0.0001)
+        self._single_fit_res.setDecimals(4)
+        row.addWidget(single_fit_res_label)
+        row.addWidget(self._single_fit_res)
+
+
         # Preset row
         row_frame = QFrame()
         f.layout().addWidget(row_frame)
@@ -876,9 +893,8 @@ class DiffFitTool(ToolInstance):
         vol_copy.delete()
 
         # Simulate a map for the mol
-        sim_resolution = 3.46
         from chimerax.map.molmap import molecule_map
-        mol_vol = molecule_map(self.session, mol.atoms, sim_resolution, grid_spacing=self.fit_vol.data.step[0])
+        mol_vol = molecule_map(self.session, mol.atoms, self._single_fit_res.value(), grid_spacing=self.fit_vol.data.step[0])
 
         # Fit
         timer_start = datetime.now()
