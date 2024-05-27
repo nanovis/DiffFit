@@ -792,7 +792,7 @@ class DiffFitTool(ToolInstance):
 
             self.progress.setMinimum(1)
             self.progress.setMaximum(N_iter)
-            self.progress.setValue(iter_idx)
+            self.progress.setValue(iter_idx + 1)
         
     def select_clicked(self, text, target, save = False, pattern = "dir"):
         fileName = ""
