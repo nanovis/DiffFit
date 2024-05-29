@@ -33,6 +33,7 @@ from .DiffAtomComp import diff_atom_comp, cluster_and_sort_sqd_fast, diff_fit
 import sys
 import numpy as np        
 import os
+import torch
         
         
 class DiffFitSettings:    
@@ -139,6 +140,13 @@ class DiffFitTool(ToolInstance):
         compute_group.setLayout(compute_group_layout)
         self.build_compute_ui(compute_group_layout)
         tab_widget.addTab(compute_group, "Compute")
+
+        # device GUI
+        device_group = QGroupBox()
+        device_group_layout = QGridLayout()
+        device_group.setLayout(device_group_layout)
+        self.build_device_ui(device_group_layout)
+        tab_widget.addTab(device_group, "Device")
 
         # view GUI
         view_group = QGroupBox()
@@ -568,7 +576,22 @@ class DiffFitTool(ToolInstance):
         button = QPushButton()
         button.setText("Run!")
         button.clicked.connect(lambda: self.run_button_clicked())        
-        layout.addWidget(button, row, 1, 1, 2)        
+        layout.addWidget(button, row, 1, 1, 2)
+
+    def build_device_ui(self, layout):
+        row = 0
+
+        device_label = QLabel("Device")
+        self._device_combobox = QComboBox()
+        devices = []
+        if torch.cuda.is_available():
+            devices += [f"cuda:{i}" for i in range(torch.cuda.device_count())]
+        devices += ["cpu"]
+        self._device_combobox.addItems(devices)
+
+        layout.addWidget(device_label, row, 0)
+        layout.addWidget(self._device_combobox, row, 1)
+        row = row + 1
 
 
     def build_view_ui(self, layout):
