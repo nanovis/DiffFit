@@ -34,6 +34,8 @@ import sys
 import numpy as np        
 import os
 import torch
+import psutil
+import platform
         
         
 class DiffFitSettings:    
@@ -143,10 +145,11 @@ class DiffFitTool(ToolInstance):
 
         # device GUI
         device_group = QGroupBox()
-        device_group_layout = QGridLayout()
+        device_group_layout = QVBoxLayout()
         device_group.setLayout(device_group_layout)
         self.build_device_ui(device_group_layout)
         tab_widget.addTab(device_group, "Device")
+        self._device_changed()
 
         # view GUI
         view_group = QGroupBox()
@@ -579,19 +582,32 @@ class DiffFitTool(ToolInstance):
         layout.addWidget(button, row, 1, 1, 2)
 
     def build_device_ui(self, layout):
-        row = 0
+        row = QHBoxLayout()
+        layout.addLayout(row)
 
-        device_label = QLabel("Device")
-        self._device_combobox = QComboBox()
+        device_label = QLabel("Device:")
+        self._device = QComboBox()
         devices = []
         if torch.cuda.is_available():
             devices += [f"cuda:{i}" for i in range(torch.cuda.device_count())]
         devices += ["cpu"]
-        self._device_combobox.addItems(devices)
+        self._device.addItems(devices)
+        self._device.currentIndexChanged.connect(lambda: self._device_changed())
 
-        layout.addWidget(device_label, row, 0)
-        layout.addWidget(self._device_combobox, row, 1)
-        row = row + 1
+        row.addWidget(device_label)
+        row.addWidget(self._device)
+        row.addStretch()
+
+        row = QHBoxLayout()
+        layout.addLayout(row)
+
+        self._device_info_label = QLabel()
+        self._device_info_label.setWordWrap(True)
+        row.addWidget(self._device_info_label)
+
+        row.addStretch()
+
+        layout.addStretch()
 
 
     def build_view_ui(self, layout):
@@ -767,6 +783,43 @@ class DiffFitTool(ToolInstance):
         #clear_action = QAction("Clear", menu)
         #clear_action.triggered.connect(lambda *args: self.init_folder.clear())
         #menu.addAction(clear_action)
+
+
+    def _device_changed(self):
+        device = self._device.currentText()
+        info_text = ""
+
+        if device.startswith("cuda"):
+            device_index = int(device.split(":")[1])
+            device_name = torch.cuda.get_device_name(device_index)
+            total_memory = torch.cuda.get_device_properties(device_index).total_memory / 1024 ** 3  # Convert to GB
+            allocated_memory = torch.cuda.memory_allocated(device_index) / 1024 ** 3  # Convert to GB
+            cached_memory = torch.cuda.memory_reserved(device_index) / 1024 ** 3  # Convert to GB
+
+            info_text = (
+                f"Device: {device_name}\n"
+                f"Total Memory: {total_memory:.2f} GB\n"
+                f"Allocated Memory: {allocated_memory:.2f} GB\n"
+                f"Cached Memory: {cached_memory:.2f} GB"
+            )
+        elif device.startswith("cpu"):
+            cpu_name = platform.processor()
+            cpu_count = psutil.cpu_count(logical=True)
+            cpu_freq = psutil.cpu_freq()
+            total_memory = psutil.virtual_memory().total / 1024 ** 3  # Convert to GB
+            available_memory = psutil.virtual_memory().available / 1024 ** 3  # Convert to GB
+            used_memory = psutil.virtual_memory().used / 1024 ** 3  # Convert to GB
+
+            info_text = (
+                f"CPU Name: {cpu_name}\n"
+                f"CPU Count (Logical): {cpu_count}\n"
+                f"CPU Frequency: {cpu_freq.current:.2f} MHz\n"
+                f"Total Memory: {total_memory:.2f} GB\n"
+                f"Available Memory: {available_memory:.2f} GB\n"
+                f"Used Memory: {used_memory:.2f} GB"
+            )
+
+        self._device_info_label.setText(info_text)
 
 
     def _view_input_mode_changed(self):
