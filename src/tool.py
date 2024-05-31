@@ -375,6 +375,27 @@ class DiffFitTool(ToolInstance):
         row.addStretch()
 
 
+        # Gaussian row
+        row_frame = QFrame()
+        f.layout().addWidget(row_frame)
+        row = QHBoxLayout(row_frame)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(5)
+
+        smooth_by_label = QLabel("Smooth by:")
+        self._smooth_by = QComboBox()
+        smooth_methods = ["ChimeraX incremental Gaussian",
+                          "ChimeraX iterative Gaussian",
+                          "PyTorch iterative Gaussian"]
+        self._smooth_by.addItems(smooth_methods)
+        # self._smooth_by.currentIndexChanged.connect(lambda: self._device_changed())
+
+        row.addWidget(smooth_by_label)
+        row.addWidget(self._smooth_by)
+
+        row.addStretch()
+
+
         # Save result row
         row_frame = QFrame()
         f.layout().addWidget(row_frame)
@@ -937,6 +958,23 @@ class DiffFitTool(ToolInstance):
         self.cluster_idx = 0
         # look_at_cluster(self.e_sqd_clusters_ordered, self.mol_folder, self.cluster_idx, self.session)
 
+    def _create_volume_conv_list(self, vol, smooth_by, smooth_loops, session):
+        # From here on, there are three strategies for utilizing gaussian smooth
+        # 1. with increasing sDev on the same input volume
+        # 2. with the same sDev iteratively
+        # Combine 1 & 2
+        # Need to do experiment to see which one is better
+
+        volume_conv_list = [None] * (smooth_loops + 1)
+        volume_conv_list[0] = vol.full_matrix()
+
+        if smooth_by == "ChimeraX incremental Gaussian":
+            for conv_idx in range(1, smooth_loops + 1):
+                vol_gaussian = run(session, f"volume gaussian #{vol.id[0]} sDev {conv_idx}")
+                volume_conv_list[conv_idx] = vol_gaussian.full_matrix()
+                vol_gaussian.delete()
+        return volume_conv_list
+
 
     def single_fit_button_clicked(self):
         single_fit_timer_start = datetime.now()
@@ -954,19 +992,10 @@ class DiffFitTool(ToolInstance):
         vol_copy_matrix[vol_copy_matrix < self.fit_vol.maximum_surface_level] = 0
         vol_copy.data.values_changed()
 
-        # From here on, there are three strategies for utilizing gaussian smooth
-        # 1. with increasing sDev on the same input volume
-        # 2. with the same sDev iteratively
-        # Combine 1 & 2
-        # Need to do experiment to see which one is better
-
-        gaussian_loops = self._single_fit_gaussian_loops.value()
-        volume_conv_list = [None] * (gaussian_loops + 1)
-        volume_conv_list[0] = vol_copy_matrix
-        for conv_idx in range(1, gaussian_loops + 1):
-            vol_gaussian = run(self.session, f"volume gaussian #{vol_copy.id[0]} sDev {conv_idx}")
-            volume_conv_list[conv_idx] = vol_gaussian.full_matrix()
-            vol_gaussian.delete()
+        # Smooth the volume
+        smooth_loops = self._single_fit_gaussian_loops.value()
+        smooth_by = self._smooth_by.currentText()
+        volume_conv_list = self._create_volume_conv_list(vol_copy, smooth_by, smooth_loops, self.session)
         vol_copy.delete()
 
         # Simulate a map for the mol
