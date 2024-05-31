@@ -37,7 +37,16 @@ import torch
 import psutil
 import platform
         
-        
+
+def create_row(parent_layout, left=0, top=0, right=0, bottom=0, spacing=5):
+    row_frame = QFrame()
+    parent_layout.addWidget(row_frame)
+    row_layout = QHBoxLayout(row_frame)
+    row_layout.setContentsMargins(left, top, right, bottom)
+    row_layout.setSpacing(spacing)
+    return row_layout
+
+
 class DiffFitSettings:    
     def __init__(self):   
         # viewing
@@ -308,11 +317,7 @@ class DiffFitTool(ToolInstance):
 
 
         # resolution row
-        row_frame = QFrame()
-        f.layout().addWidget(row_frame)
-        row = QHBoxLayout(row_frame)
-        row.setContentsMargins(0, 20, 0, 0)
-        row.setSpacing(5)
+        row = create_row(f.layout(), top=20)
         single_fit_res_label = QLabel("Use map simulated from atoms, resolution")
         self._single_fit_res = QDoubleSpinBox()
         self._single_fit_res.setValue(5.0)
@@ -325,12 +330,7 @@ class DiffFitTool(ToolInstance):
 
 
         # Preset row
-        row_frame = QFrame()
-        f.layout().addWidget(row_frame)
-        row = QHBoxLayout(row_frame)
-        row.setContentsMargins(0, 20, 0, 0)
-        row.setSpacing(5)
-
+        row = create_row(f.layout(), top=20)
         preset_fast = QPushButton("Fast")
         preset_balanced = QPushButton("Balanced")
         preset_exhaustive = QPushButton("Exhaustive")
@@ -343,12 +343,7 @@ class DiffFitTool(ToolInstance):
         
         
         # Parameter row
-        row_frame = QFrame()
-        f.layout().addWidget(row_frame)
-        row = QHBoxLayout(row_frame)
-        row.setContentsMargins(0, 0, 0, 0)
-        row.setSpacing(5)
-
+        row = create_row(f.layout())
         n_shifts_label = QLabel("# shifts:")
         self._single_fit_n_shifts = QSpinBox()
         self._single_fit_n_shifts.setValue(5)
@@ -364,6 +359,20 @@ class DiffFitTool(ToolInstance):
         self._single_fit_n_quaternions.setMaximum(500)
         row.addWidget(n_quaternions_label)
         row.addWidget(self._single_fit_n_quaternions)
+        row.addStretch()
+
+
+        # Smooth by row
+        row = create_row(f.layout())
+        smooth_by_label = QLabel("Smooth by:")
+        self._smooth_by = QComboBox()
+        smooth_methods = ["ChimeraX incremental Gaussian",
+                          "ChimeraX iterative Gaussian",
+                          "PyTorch iterative Gaussian"]
+        self._smooth_by.addItems(smooth_methods)
+        # self._smooth_by.currentIndexChanged.connect(lambda: self._device_changed())
+        row.addWidget(smooth_by_label)
+        row.addWidget(self._smooth_by)
 
         convs_loops_label = QLabel("Gaussian loops:")
         self._single_fit_gaussian_loops = QSpinBox()
@@ -375,34 +384,30 @@ class DiffFitTool(ToolInstance):
         row.addStretch()
 
 
-        # Gaussian row
-        row_frame = QFrame()
-        f.layout().addWidget(row_frame)
-        row = QHBoxLayout(row_frame)
-        row.setContentsMargins(0, 0, 0, 0)
-        row.setSpacing(5)
+        # Smooth kernel size row
+        row = create_row(f.layout())
+        smooth_kernel_sizes_label = QLabel()
+        smooth_kernel_sizes_label.setText("Kernel sizes [list]:")
+        self.smooth_kernel_sizes = QLineEdit()
+        self.smooth_kernel_sizes.setText("[5, 5, 5, 5, 5, 5, 5, 5, 5, 5]")
+        # self.conv_kernel_sizes.textChanged.connect(lambda: self.store_settings())
+        row.addWidget(smooth_kernel_sizes_label)
+        row.addWidget(self.smooth_kernel_sizes)
+        row.addStretch()
 
-        smooth_by_label = QLabel("Smooth by:")
-        self._smooth_by = QComboBox()
-        smooth_methods = ["ChimeraX incremental Gaussian",
-                          "ChimeraX iterative Gaussian",
-                          "PyTorch iterative Gaussian"]
-        self._smooth_by.addItems(smooth_methods)
-        # self._smooth_by.currentIndexChanged.connect(lambda: self._device_changed())
-
-        row.addWidget(smooth_by_label)
-        row.addWidget(self._smooth_by)
-
+        row = create_row(f.layout())
+        smooth_weights_label = QLabel()
+        smooth_weights_label.setText("Smooth weights [list]:")
+        self.smooth_weights = QLineEdit()
+        self.smooth_weights.setText("[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]")
+        # self.smooth_weights.textChanged.connect(lambda: self.store_settings())
+        row.addWidget(smooth_weights_label)
+        row.addWidget(self.smooth_weights)
         row.addStretch()
 
 
         # Save result row
-        row_frame = QFrame()
-        f.layout().addWidget(row_frame)
-        row = QHBoxLayout(row_frame)
-        row.setContentsMargins(0, 20, 0, 0)
-        row.setSpacing(5)
-
+        row = create_row(f.layout(), top=20)
         self._single_fit_result_save_checkbox = QCheckBox()
         self._single_fit_result_save_checkbox.clicked.connect(lambda: self._single_fit_result_save_checkbox_clicked())
         save_res_label = QLabel("Save result to")
