@@ -985,7 +985,8 @@ class DiffFitTool(ToolInstance):
                                    N_quaternions=self._single_fit_n_quaternions.value(),
                                    save_results=self._single_fit_result_save_checkbox.isChecked(),
                                    out_dir=self._single_fit_out_dir.text(),
-                                   out_dir_exist_ok=True
+                                   out_dir_exist_ok=True,
+                                   device=self._device.currentText()
                                    )
         timer_stop = datetime.now()
         print(f"Fit time elapsed: {timer_stop - timer_start}\n\n")

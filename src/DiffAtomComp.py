@@ -589,6 +589,7 @@ def diff_fit(volume_list: list,
              save_results: bool = False,
              out_dir: str = "DiffFit_out",
              out_dir_exist_ok: bool = False,
+             device: str = "cpu"
              ):
     timer_start = datetime.now()
 
@@ -611,7 +612,6 @@ def diff_fit(volume_list: list,
     sampled_coords = np.array([np.array(idx) * np.array(target_steps) for idx in sampled_indices])
     sampled_coords = sampled_coords[:, [2, 1, 0]] + target_origin  # convert to [x, y, z] and then shift
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     target_no_negative, target_dim = numpy2tensor(target_no_negative, device)
     # target as [1, 1, z, y, x]
     # target_dim as [z, y, x]
