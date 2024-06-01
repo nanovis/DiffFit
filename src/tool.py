@@ -309,6 +309,10 @@ class DiffFitTool(ToolInstance):
         self._single_fit_out_dir.setEnabled(self._single_fit_result_save_checkbox.isChecked())
         self._single_fit_out_dir_select.setEnabled(self._single_fit_result_save_checkbox.isChecked())
 
+    def _update_smooth_fields(self, value):
+        self.smooth_kernel_sizes.setText(str([5] * value))
+        self.smooth_weights.setText(str([1.0] * value))
+
     def _create_single_fit_options_gui(self, parent):
 
         from chimerax.ui.widgets import CollapsiblePanel
@@ -366,19 +370,19 @@ class DiffFitTool(ToolInstance):
         row = create_row(f.layout())
         smooth_by_label = QLabel("Smooth by:")
         self._smooth_by = QComboBox()
-        smooth_methods = ["ChimeraX incremental Gaussian",
-                          "ChimeraX iterative Gaussian",
-                          "PyTorch iterative Gaussian"]
+        smooth_methods = ["PyTorch iterative Gaussian",
+                          "ChimeraX incremental Gaussian",
+                          "ChimeraX iterative Gaussian"]
         self._smooth_by.addItems(smooth_methods)
-        # self._smooth_by.currentIndexChanged.connect(lambda: self._device_changed())
         row.addWidget(smooth_by_label)
         row.addWidget(self._smooth_by)
 
-        convs_loops_label = QLabel("Gaussian loops:")
+        convs_loops_label = QLabel("Smooth loops:")
         self._single_fit_gaussian_loops = QSpinBox()
         self._single_fit_gaussian_loops.setValue(0)
         self._single_fit_gaussian_loops.setMinimum(0)
         self._single_fit_gaussian_loops.setMaximum(50)
+        self._single_fit_gaussian_loops.valueChanged.connect(self._update_smooth_fields)
         row.addWidget(convs_loops_label)
         row.addWidget(self._single_fit_gaussian_loops)
         row.addStretch()
@@ -389,8 +393,7 @@ class DiffFitTool(ToolInstance):
         smooth_kernel_sizes_label = QLabel()
         smooth_kernel_sizes_label.setText("Kernel sizes [list]:")
         self.smooth_kernel_sizes = QLineEdit()
-        self.smooth_kernel_sizes.setText("[5, 5, 5, 5, 5, 5, 5, 5, 5, 5]")
-        # self.conv_kernel_sizes.textChanged.connect(lambda: self.store_settings())
+        self.smooth_kernel_sizes.setText("[]")
         row.addWidget(smooth_kernel_sizes_label)
         row.addWidget(self.smooth_kernel_sizes)
         row.addStretch()
@@ -399,8 +402,7 @@ class DiffFitTool(ToolInstance):
         smooth_weights_label = QLabel()
         smooth_weights_label.setText("Smooth weights [list]:")
         self.smooth_weights = QLineEdit()
-        self.smooth_weights.setText("[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]")
-        # self.smooth_weights.textChanged.connect(lambda: self.store_settings())
+        self.smooth_weights.setText("[]")
         row.addWidget(smooth_weights_label)
         row.addWidget(self.smooth_weights)
         row.addStretch()
@@ -416,11 +418,9 @@ class DiffFitTool(ToolInstance):
 
         self._single_fit_out_dir = QLineEdit()
         self._single_fit_out_dir.setDisabled(True)
-        # self._single_fit_out_dir.textChanged.connect(lambda: self.store_settings())
         self._single_fit_out_dir_select = QPushButton("Select")
         self._single_fit_out_dir.setText("DiffFit_out/single_fit")
         self._single_fit_out_dir_select.setDisabled(True)
-        # out_dir_select.clicked.connect(lambda: self.select_clicked("Output Folder", self.out_dir))
 
         row.addWidget(self._single_fit_out_dir)
         row.addWidget(self._single_fit_out_dir_select)
