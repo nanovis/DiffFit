@@ -975,10 +975,9 @@ class DiffFitTool(ToolInstance):
         volume_conv_list = [None] * (smooth_loops + 1)
         volume_conv_list[0] = vol.full_matrix()
 
-        volume_conv_list[0], _ = numpy2tensor(volume_conv_list[0], self._device.currentText())
-        volume_conv_list[0] = linear_norm_tensor(volume_conv_list[0])
-
         if smooth_by == "PyTorch iterative Gaussian":
+            volume_conv_list[0], _ = numpy2tensor(volume_conv_list[0], self._device.currentText())
+            volume_conv_list[0] = linear_norm_tensor(volume_conv_list[0])
             volume_conv_list = conv_volume(volume_conv_list[0],
                                            self._device.currentText(),
                                            smooth_loops,
