@@ -28,7 +28,8 @@ from chimerax.ui import MainToolWindow
 from .parse_log import look_at_record, look_at_cluster, look_at_MQS_idx, animate_MQS, animate_MQS_2
 from .parse_log import simulate_volume, get_transformation_at_record, zero_cluster_density
 from .tablemodel import TableModel
-from .DiffAtomComp import diff_atom_comp, cluster_and_sort_sqd_fast, diff_fit
+from .DiffAtomComp import diff_atom_comp, cluster_and_sort_sqd_fast, diff_fit, conv_volume, numpy2tensor, \
+    linear_norm_tensor
 
 import sys
 import numpy as np        
@@ -36,6 +37,7 @@ import os
 import torch
 import psutil
 import platform
+import ast
         
 
 def create_row(parent_layout, left=0, top=0, right=0, bottom=0, spacing=5):
@@ -973,7 +975,18 @@ class DiffFitTool(ToolInstance):
         volume_conv_list = [None] * (smooth_loops + 1)
         volume_conv_list[0] = vol.full_matrix()
 
-        if smooth_by == "ChimeraX incremental Gaussian":
+        volume_conv_list[0], _ = numpy2tensor(volume_conv_list[0], self._device.currentText())
+        volume_conv_list[0] = linear_norm_tensor(volume_conv_list[0])
+
+        if smooth_by == "PyTorch iterative Gaussian":
+            volume_conv_list = conv_volume(volume_conv_list[0],
+                                           self._device.currentText(),
+                                           smooth_loops,
+                                           ast.literal_eval(self.smooth_kernel_sizes.text()),
+                                           negative_space_value=-0.5,
+                                           kernel_type="Gaussian")
+            volume_conv_list = [v.squeeze().detach().cpu().numpy() for v in volume_conv_list]
+        elif smooth_by == "ChimeraX incremental Gaussian":
             for conv_idx in range(1, smooth_loops + 1):
                 vol_gaussian = run(session, f"volume gaussian #{vol.id[0]} sDev {conv_idx}")
                 volume_conv_list[conv_idx] = vol_gaussian.full_matrix()
