@@ -965,7 +965,7 @@ class DiffFitTool(ToolInstance):
         self.cluster_idx = 0
         # look_at_cluster(self.e_sqd_clusters_ordered, self.mol_folder, self.cluster_idx, self.session)
 
-    def _create_volume_conv_list(self, vol, smooth_by, smooth_loops, session):
+    def _create_volume_conv_list(self, vol, smooth_by, smooth_loops, session, negative_space_value=-0.5):
         # From here on, there are three strategies for utilizing gaussian smooth
         # 1. with increasing sDev on the same input volume
         # 2. with the same sDev iteratively
@@ -982,14 +982,44 @@ class DiffFitTool(ToolInstance):
                                            self._device.currentText(),
                                            smooth_loops,
                                            ast.literal_eval(self.smooth_kernel_sizes.text()),
-                                           negative_space_value=-0.5,
+                                           negative_space_value=negative_space_value,
                                            kernel_type="Gaussian")
             volume_conv_list = [v.squeeze().detach().cpu().numpy() for v in volume_conv_list]
         elif smooth_by == "ChimeraX incremental Gaussian":
             for conv_idx in range(1, smooth_loops + 1):
                 vol_gaussian = run(session, f"volume gaussian #{vol.id[0]} sDev {conv_idx}")
-                volume_conv_list[conv_idx] = vol_gaussian.full_matrix()
+
+                vol_device, _ = numpy2tensor(vol_gaussian.full_matrix(), self._device.currentText())
+                vol_device = linear_norm_tensor(vol_device)
+
+                eligible_volume_tensor = vol_device > 0.0
+                vol_device[~eligible_volume_tensor] = negative_space_value
+
+                volume_conv_list[conv_idx] = vol_device.squeeze().detach().cpu().numpy()
+
                 vol_gaussian.delete()
+        elif smooth_by == "ChimeraX iterative Gaussian":
+            kernel_sizes = ast.literal_eval(self.smooth_kernel_sizes.text())
+            vol_current = vol
+            for conv_idx in range(1, smooth_loops + 1):
+                vol_gaussian = run(session, f"volume gaussian #{vol_current.id[0]} sDev {kernel_sizes[conv_idx - 1]}")
+
+                if conv_idx > 1:
+                    vol_current.delete()
+
+                vol_device, _ = numpy2tensor(vol_gaussian.full_matrix(), self._device.currentText())
+                vol_device = linear_norm_tensor(vol_device)
+
+                eligible_volume_tensor = vol_device > 0.0
+                vol_device[~eligible_volume_tensor] = negative_space_value
+
+                volume_conv_list[conv_idx] = vol_device.squeeze().detach().cpu().numpy()
+
+                vol_current = vol_gaussian
+
+            vol_current.delete()
+
+
         return volume_conv_list
 
 
