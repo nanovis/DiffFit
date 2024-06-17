@@ -24,6 +24,8 @@ from chimerax.map.volume import volume_list
 from chimerax.atomic import AtomicStructure
 from chimerax.geometry import Place
 from chimerax.ui import MainToolWindow
+from chimerax.core.models import Model
+from chimerax.core.selection import SELECTION_CHANGED
 
 from .parse_log import look_at_record, look_at_cluster, look_at_MQS_idx, animate_MQS, animate_MQS_2
 from .parse_log import simulate_volume, get_transformation_at_record, zero_cluster_density
@@ -47,7 +49,6 @@ def create_row(parent_layout, left=0, top=0, right=0, bottom=0, spacing=5):
     row_layout.setContentsMargins(left, top, right, bottom)
     row_layout.setSpacing(spacing)
     return row_layout
-
 
 class DiffFitSettings:    
     def __init__(self):   
@@ -78,7 +79,7 @@ class DiffFitSettings:
         self.conv_weights: list = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
         
         self.clustering_shift_tolerance : float = 3.0
-        self.clustering_angle_tolerance : float = 6.0
+        self.clustering_angle_tolerance : float = 6.0         
 
 
 class DiffFitTool(ToolInstance):
@@ -130,8 +131,11 @@ class DiffFitTool(ToolInstance):
         self.fit_input_mode = "disk file"
 
         self.fit_result_ready = False
-        self.fit_result = None
+        self.fit_result = None   
 
+        # Register the selection change callback
+        self.session.triggers.add_handler(SELECTION_CHANGED, self.selection_callback)             
+        
 
     def _build_ui(self):
         
@@ -799,6 +803,12 @@ class DiffFitTool(ToolInstance):
         layout.addWidget(progress_label, row, 2)
         row = row + 1        
         
+        test_spheres = QPushButton()
+        test_spheres.setText("Add spheres")
+        test_spheres.clicked.connect(self.add_spheres_clicked)                        
+        layout.addWidget(test_spheres, row, 0)
+        row = row + 1
+
     #def fill_context_menu(self, menu, x, y):
         # Add any tool-specific items to the given context menu (a QMenu instance).
         # The menu will then be automatically filled out with generic tool-related actions
@@ -872,31 +882,49 @@ class DiffFitTool(ToolInstance):
     def table_row_clicked(self, item):        
     
         if item.row() != -1:
-            proxyIndex = self.proxyModel.index(item.row(), 0)
-            sourceIndex = self.proxyModel.mapToSource(proxyIndex)
-            self.cluster_idx = sourceIndex.row()
+            self.select_table_item(item.row())
+                    
+        return
 
-            self.mol_idx = int(self.e_sqd_clusters_ordered[self.cluster_idx, 0])
-            self.record_idx = int(self.e_sqd_clusters_ordered[self.cluster_idx, 1])
+    def get_table_item_transformation(self, cluster_idx):
+        mol_idx = int(self.e_sqd_clusters_ordered[cluster_idx, 0])
+        record_idx = int(self.e_sqd_clusters_ordered[cluster_idx, 1])
 
-            N_iter = len(self.e_sqd_log[self.mol_idx, self.record_idx])
-            iter_idx = int(self.e_sqd_clusters_ordered[self.cluster_idx, 2])
+        N_iter = len(self.e_sqd_log[mol_idx, record_idx])
+        iter_idx = int(self.e_sqd_clusters_ordered[cluster_idx, 2])
 
-            self.transformation = get_transformation_at_record(self.e_sqd_log, self.mol_idx, self.record_idx, iter_idx)
+        return get_transformation_at_record(self.e_sqd_log, mol_idx, record_idx, iter_idx)
 
-            if self.fit_input_mode == "interactive":
-                self.mol = self.fit_mol_list[self.mol_idx]
-                self.mol.display = True
-                self.mol.scene_position = self.transformation
-            elif self.fit_input_mode == "disk file":
-                self.mol = look_at_record(self.mol_folder, self.mol_idx, self.transformation, self.session)
+    def select_table_item(self, index):
+        proxyIndex = self.proxyModel.index(index, 0)
+        sourceIndex = self.proxyModel.mapToSource(proxyIndex)
 
-            self.session.logger.info(f"Cluster size: {int(self.e_sqd_clusters_ordered[self.cluster_idx, 3])}")
-            self.session.logger.info(f"Highest metric reached at iter : {iter_idx}")
+        self.cluster_idx = sourceIndex.row()        
+        self.mol_idx = int(self.e_sqd_clusters_ordered[self.cluster_idx, 0])
+        self.record_idx = int(self.e_sqd_clusters_ordered[self.cluster_idx, 1])
 
-            self.progress.setMinimum(1)
-            self.progress.setMaximum(N_iter)
-            self.progress.setValue(iter_idx + 1)
+        N_iter = len(self.e_sqd_log[self.mol_idx, self.record_idx])
+        iter_idx = int(self.e_sqd_clusters_ordered[self.cluster_idx, 2])
+
+        #self.transformation = get_transformation_at_record(self.e_sqd_log, self.mol_idx, self.record_idx, iter_idx)
+        self.transformation = self.get_table_item_transformation(self.cluster_idx)
+
+        if self.fit_input_mode == "interactive":
+            self.mol = self.fit_mol_list[self.mol_idx]
+            self.mol.display = True
+            self.mol.scene_position = self.transformation
+        elif self.fit_input_mode == "disk file":
+            self.mol = look_at_record(self.mol_folder, self.mol_idx, self.transformation, self.session)
+
+        self.session.logger.info(f"Cluster size: {int(self.e_sqd_clusters_ordered[self.cluster_idx, 3])}")
+        self.session.logger.info(f"Highest metric reached at iter : {iter_idx}")
+
+        self.progress.setMinimum(1)
+        self.progress.setMaximum(N_iter)
+        self.progress.setValue(iter_idx + 1)
+
+        # spheres interaction
+        self.activate_sphere(self.cluster_idx)
         
     def select_clicked(self, text, target, save = False, pattern = "dir"):
         fileName = ""
@@ -1200,3 +1228,74 @@ class DiffFitTool(ToolInstance):
             self.transformation = get_transformation_at_record(self.e_sqd_log, self.mol_idx, self.record_idx, progress - 1)
             self.mol.scene_position = self.transformation
     
+    
+    # point cloud controlling
+    def get_model_by_id(self, model_id):
+        from chimerax.atomic import Structure
+
+        models = self.session.models.list(type=Structure)
+        for model in models:
+            if model.id == model_id:
+                return model
+                
+        return None
+
+    def get_model_by_name(self, model_name):
+        from chimerax.atomic import Structure
+
+        models = self.session.models.list(type=Structure)
+        for model in models:
+            if model.name == model_name:
+                return model
+                
+        return None   
+
+    def selection_callback(self, trigger, changes):        
+        selected_models = self.session.selection.models()
+                
+        # Print the selected models
+        if selected_models:
+            for model in selected_models:
+                if model.name == "sphere":
+                    self.select_table_item(model.id[1] - 1)        
+        
+    def activate_sphere(self, cluster_idx):
+        #N_iter = len(self.e_sqd_log[self.mol_idx, self.record_idx])
+        parent = self.get_model_by_name("spheres")
+        print(parent)
+
+        # TODO: select command {parent.id}.{cluster_idx}
+
+    # coloring of the sphere
+    def get_sphere_color(self, idx, count):
+        # TODO: based on some feature
+        g = 255 * (1 - (idx / (count - 1)))
+        r = 255 * (idx / (count - 1))
+        b = 0
+
+        return [r, g, b]
+
+    def add_spheres_clicked(self):       
+
+        spheres = Model("spheres", self.session)
+        self.session.models.add([spheres])
+
+        entries_count = self.proxyModel.rowCount()
+        
+        offset_x = 100
+        sphere_size = 0.3
+        parent_id = spheres.id[0]
+        
+        for entry_id in range(1, entries_count + 1):    
+            place = self.get_table_item_transformation(entry_id - 1)
+            translation = place.matrix[:3, 3]            
+            x = translation[0] + offset_x
+            y = translation[1]
+            z = translation[2]
+            color = self.get_sphere_color(entry_id - 1, entries_count)
+            command = 'shape sphere radius {0} center {1},{2},{3} color {4},{5},{6} modelId #{7}.{8}'.format(sphere_size, x, y, z, color[0], color[1], color[2], parent_id, entry_id)
+            run(self.session, command)        
+        
+        self.spheres = spheres
+
+        return
