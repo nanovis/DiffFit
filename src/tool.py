@@ -804,7 +804,7 @@ class DiffFitTool(ToolInstance):
         row = row + 1        
         
         test_spheres = QPushButton()
-        test_spheres.setText("Add spheres")
+        test_spheres.setText("Point cloud visualization")
         test_spheres.clicked.connect(self.add_spheres_clicked)                        
         layout.addWidget(test_spheres, row, 0)
         row = row + 1
@@ -883,6 +883,9 @@ class DiffFitTool(ToolInstance):
     
         if item.row() != -1:
             self.select_table_item(item.row())
+
+            # spheres interaction
+            self.activate_sphere(item.row())
                     
         return
 
@@ -921,10 +924,7 @@ class DiffFitTool(ToolInstance):
 
         self.progress.setMinimum(1)
         self.progress.setMaximum(N_iter)
-        self.progress.setValue(iter_idx + 1)
-
-        # spheres interaction
-        self.activate_sphere(self.cluster_idx)
+        self.progress.setValue(iter_idx + 1)        
         
     def select_clicked(self, text, target, save = False, pattern = "dir"):
         fileName = ""
@@ -1228,27 +1228,30 @@ class DiffFitTool(ToolInstance):
             self.transformation = get_transformation_at_record(self.e_sqd_log, self.mol_idx, self.record_idx, progress - 1)
             self.mol.scene_position = self.transformation
     
-    
-    # point cloud controlling
-    def get_model_by_id(self, model_id):
-        from chimerax.atomic import Structure
 
-        models = self.session.models.list(type=Structure)
-        for model in models:
-            if model.id == model_id:
-                return model
-                
-        return None
-
+    # point cloud visualization    
     def get_model_by_name(self, model_name):
         from chimerax.atomic import Structure
 
-        models = self.session.models.list(type=Structure)
-        for model in models:
+        models = self.session.models.list()
+        for model in models:            
             if model.name == model_name:
                 return model
                 
         return None   
+
+    def focus_table_row(self, idx):
+        selection_model = self.view.selectionModel()
+
+        index = self.proxyModel.index(idx, 0)
+        selection_model.clear()
+        selection_model.select(
+            index,
+            selection_model.Select
+        )
+
+        self.view.scrollTo(index, QTableView.PositionAtCenter)        
+        self.view.setFocus()
 
     def selection_callback(self, trigger, changes):        
         selected_models = self.session.selection.models()
@@ -1256,21 +1259,26 @@ class DiffFitTool(ToolInstance):
         # Print the selected models
         if selected_models:
             for model in selected_models:
-                if model.name == "sphere":
-                    self.select_table_item(model.id[1] - 1)        
+                if model.name == "sphere":                    
+                    self.focus_table_row(model.id[1] - 1)
+                    self.select_table_item(model.id[1] - 1)  
+                    
+
         
     def activate_sphere(self, cluster_idx):
-        #N_iter = len(self.e_sqd_log[self.mol_idx, self.record_idx])
         parent = self.get_model_by_name("spheres")
-        print(parent)
-
-        # TODO: select command {parent.id}.{cluster_idx}
+        
+        if parent:
+            command = 'select #{0}.{1}'.format(parent.id[0], cluster_idx + 1)
+            run(self.session, command)             
 
     # coloring of the sphere
     def get_sphere_color(self, idx, count):
         # TODO: based on some feature
-        g = 255 * (1 - (idx / (count - 1)))
-        r = 255 * (idx / (count - 1))
+        value = idx / (count - 1)
+
+        g = 255 * (1 - value)
+        r = 255 * value
         b = 0
 
         return [r, g, b]
