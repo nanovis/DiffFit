@@ -1289,14 +1289,18 @@ class DiffFitTool(ToolInstance):
         self.session.models.add([spheres])
 
         entries_count = self.proxyModel.rowCount()
-        
+
+        # map_x_length = abs(self.vol.xyz_bounds()[1][0] - self.vol.xyz_bounds()[0][0])
+
         offset_x = 100
         sphere_size = 0.3
         parent_id = spheres.id[0]
+
+        mol_center = self.mol.atoms.coords.mean(axis=0)
         
         for entry_id in range(1, entries_count + 1):    
             place = self.get_table_item_transformation(entry_id - 1)
-            translation = place.matrix[:3, 3]            
+            translation = place * mol_center
             x = translation[0] + offset_x
             y = translation[1]
             z = translation[2]
