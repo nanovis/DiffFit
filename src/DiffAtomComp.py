@@ -413,7 +413,7 @@ def quaternion_to_matrix_batch(quaternions):
     return rotation_matrices
 
 
-def filter_volume(volume_np, threshold, min_cluster_size):
+def filter_volume(volume_np, threshold, min_island_size):
     # Step 1: Threshold the volume
     binary_volume = volume_np > threshold
 
@@ -424,7 +424,7 @@ def filter_volume(volume_np, threshold, min_cluster_size):
     # Calculate the size of each component
     component_sizes = np.bincount(labeled_volume.ravel())
     # Identify components that meet the size threshold
-    eligible_components = component_sizes > min_cluster_size
+    eligible_components = component_sizes > min_island_size
     eligible_components[0] = False  # Skip background
     # Use the eligibility array to filter the labeled_volume directly
     eligible_volume = eligible_components[labeled_volume]
@@ -573,6 +573,189 @@ def calculate_correlation(render, elements_sim_density):
     correlation = overlap / (render_norm * elements_sim_density_norm)
 
     return torch.stack((overlap_mean, correlation, cam), dim=-1)
+
+
+def diff_fit(volume_list: list,
+             volume_steps: list,
+             volume_origin: list,
+             min_island_size: int,
+             mol_coords: list,
+             mol_sim_maps: list,
+             N_shifts: int = 10,
+             N_quaternions: int = 100,
+             negative_space_value: float = -0.5,
+             learning_rate: float = 0.01,
+             n_iters: int = 201,
+             save_results: bool = False,
+             out_dir: str = "DiffFit_out",
+             out_dir_exist_ok: bool = False,
+             device: str = "cpu"
+             ):
+    timer_start = datetime.now()
+
+    if save_results:
+        os.makedirs(out_dir, exist_ok=out_dir_exist_ok)
+        with open(f"{out_dir}/log.log", "a") as log_file:
+            log_file.write(f"Wall clock time: {datetime.now()}\n")
+
+    # ======= load target volume to fit into
+    target_no_negative = volume_list[0]
+    target_steps = volume_steps
+    target_origin = volume_origin
+    # target steps is in [z, y, x]
+    # target_origin is in [x, y, z]
+
+    target_no_negative, eligible_volume, cluster_center_indices = filter_volume(target_no_negative, 0, min_island_size)
+
+    sampled_indices = random_sample_indices(eligible_volume, N_shifts)
+    # convert sampled_indices to angstrom space coords
+    sampled_coords = np.array([np.array(idx) * np.array(target_steps) for idx in sampled_indices])
+    sampled_coords = sampled_coords[:, [2, 1, 0]] + target_origin  # convert to [x, y, z] and then shift
+
+    target_no_negative, target_dim = numpy2tensor(target_no_negative, device)
+    # target as [1, 1, z, y, x]
+    # target_dim as [z, y, x]
+
+    target_size = np.array(list(map(operator.mul, target_dim, target_steps)))  # in [z, y, x]
+
+    target_no_negative = linear_norm_tensor(target_no_negative)
+    #  ### np.save(f"{os.path.dirname(target_vol_path)}/target_filtered_normalized.npy",
+    #  ###         target_no_negative.squeeze().detach().cpu().numpy())
+
+    # negative space in target volume
+    eligible_volume_tensor = torch.tensor(eligible_volume, device=device).unsqueeze_(0).unsqueeze_(0)
+    target = target_no_negative.clone()
+    target[~eligible_volume_tensor] = negative_space_value
+    # target[~eligible_volume_tensor] = -target[eligible_volume_tensor].mean()
+
+    # ======= create convoluted target volumes
+    conv_loops = len(volume_list) - 1
+    conv_weights = [1.0] * conv_loops
+
+    target_gaussian_conv_list = [numpy2tensor(vol_np, device)[0] for vol_np in volume_list]
+
+    # ======= get atom coords
+    atom_coords_list = mol_coords  # atom coords as [x, y, z]
+    atom_centers_list = [np.mean(coords, axis=0) for coords in atom_coords_list]
+    num_molecules = len(atom_coords_list)
+
+    # read simulated map
+    sim_map_list = mol_sim_maps
+    elements_sim_density_list = sample_sim_map(atom_coords_list, sim_map_list, num_molecules, device)
+
+    # ======= optimization
+
+    # Init params
+
+    e_quaternions = generate_random_quaternions(N_quaternions * N_shifts)
+
+    rotated_centers_array = np.array(rotate_centers(atom_centers_list, e_quaternions))
+
+    e_shifts = sampled_coords - rotated_centers_array.reshape([num_molecules, N_quaternions, N_shifts, 3])
+
+    e_quaternions = e_quaternions.reshape([N_quaternions, N_shifts, 4])
+    e_quaternions = np.repeat(e_quaternions[np.newaxis, :, :, :], num_molecules, axis=0)
+
+    e_shifts = torch.tensor(e_shifts, device=device).float().detach().requires_grad_(True)
+    e_quaternions = torch.tensor(e_quaternions, device=device).float().detach().requires_grad_(True)
+
+    # coordinates is in [x, y, z]
+    # target_size is in [z, y, x]
+    target_size_x_y_z = [target_size[2], target_size[1], target_size[0]]
+    target_size_x_y_z_tensor = torch.tensor(target_size_x_y_z, device=device).float()
+    target_origin_tensor = torch.tensor(target_origin, device=device).float()
+
+    # Training loop
+    log_every = 10
+
+    e_sqd_log = torch.zeros([num_molecules, N_quaternions, N_shifts, int(n_iters / 10) + 2, 11], device=device)
+    # [x, y, z, w, -x, -y, -z, occupied_density_sum]
+
+    with torch.no_grad():
+        e_sqd_log[:, :, :, 0, 0:3] = e_shifts
+        e_sqd_log[:, :, :, 0, 3:7] = e_quaternions
+
+    log_idx = 0
+
+
+    # Create the optimizer with different learning rates
+    optimizer = torch.optim.Adam([
+        {'params': [e_shifts], 'lr': target_size.mean() * 0.01},
+        {'params': [e_quaternions], 'lr': learning_rate}
+    ])
+
+    for epoch in range(n_iters):
+        # Forward pass
+
+        occupied_density_sum = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device)
+        correlation_table = torch.zeros([num_molecules, N_quaternions, N_shifts, 3], device=device)
+
+        for mol_idx in range(num_molecules):
+            grid = transform_coords(atom_coords_list[mol_idx],
+                                    e_quaternions[mol_idx],
+                                    e_shifts[mol_idx],
+                                    target_size_x_y_z_tensor, target_origin_tensor, device)
+            render = torch.nn.functional.grid_sample(target, grid, 'bilinear', 'border', align_corners=True)
+
+            correlation_table[mol_idx] = calculate_correlation(render, elements_sim_density_list[mol_idx])
+
+            occupied_density_sum[mol_idx] = torch.sum(render, dim=-1).squeeze()
+
+            add_conv_density(conv_loops, target_gaussian_conv_list, conv_weights, grid, occupied_density_sum[mol_idx])
+
+            occupied_density_sum[mol_idx] /= len(atom_coords_list[mol_idx])
+
+        # loss
+        loss = -torch.sum(occupied_density_sum)
+        # gradients
+        loss.backward()
+
+        # update weights
+        optimizer.step()
+        optimizer.zero_grad()
+
+        # log
+        if (epoch - 1) % log_every == (log_every - 1):
+            with torch.no_grad():
+                log_idx += 1
+                e_sqd_log[:, :, :, log_idx, 0:3] = e_shifts
+                e_sqd_log[:, :, :, log_idx, 3:7] = e_quaternions
+                e_sqd_log[:, :, :, log_idx, 7] = occupied_density_sum
+                e_sqd_log[:, :, :, log_idx, 8:11] = correlation_table
+
+                if save_results:
+                    with open(f"{out_dir}/log.log", "a") as log_file:
+                        log_file.write(f"Epoch: {epoch + 1:05d}, "
+                                       f"loss = {loss:.4f}\n")
+
+    timer_stop = datetime.now()
+
+    if save_results:
+        with open(f"{out_dir}/log.log", "a") as log_file:
+            log_file.write(f"Time elapsed: {timer_stop - timer_start}\n\n")
+
+    # convert quaternion to ChimeraX, Houdini, scipy system and normalize it
+
+    e_sqd_ChimeraX_q = torch.cat([-e_sqd_log[..., 4:7], e_sqd_log[..., 3].unsqueeze(-1)], dim=-1)
+    e_sqd_log[:, :, :, :, 3:7] = e_sqd_ChimeraX_q
+
+    q_norms = torch.linalg.vector_norm(e_sqd_log[:, :, :, :, 3:7], dim=-1, keepdim=True)
+    e_sqd_log[:, :, :, :, 3:7] /= q_norms
+
+    e_sqd_log_np = e_sqd_log.detach().cpu().numpy()
+
+    if save_results:
+        np.save(f"{out_dir}/e_sqd_log.npy", e_sqd_log_np)
+        np.save(f"{out_dir}/sampled_coords.npy", sampled_coords)
+
+    # e_sqd_log_np = e_sqd_log.detach().cpu().numpy()
+    # N_mol, N_quat, N_shift, N_iter, N_metric = e_sqd_log_np
+    # e_sqd_log_np = e_sqd_log_np.reshape([N_mol, N_quat * N_shift, N_iter, N_metric])
+    # e_sqd_clusters_ordered = cluster_and_sort_sqd_fast(e_sqd_log_np, shift_tolerance=3.0, angle_tolerance=6.0)
+
+    # Each record is in length of 11 as [shift 3, quat 4, quality metric 4]
+    # quality metric: occupied_density_avg (idx: 7), overlap (idx: 8), correlation (idx: 9), cam (idx: 10)
+    return e_sqd_log_np
 
 
 def diff_atom_comp(target_vol_path: str,

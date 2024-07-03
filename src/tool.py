@@ -1,5 +1,7 @@
 # vim: set expandtab shiftwidth=4 softtabstop=4:
+from datetime import datetime
 
+from PyQt6.QtWidgets import QCheckBox
 # === UCSF ChimeraX Copyright ===
 # Copyright 2016 Regents of the University of California.
 # All rights reserved.  This software provided pursuant to a
@@ -11,9 +13,9 @@
 # or derivations thereof.
 # === UCSF ChimeraX Copyright ===
 
-from Qt.QtWidgets import QLabel, QPushButton, QLineEdit, QVBoxLayout, QHBoxLayout, QGridLayout, QComboBox
+from Qt.QtWidgets import QLabel, QPushButton, QLineEdit, QVBoxLayout, QHBoxLayout, QGridLayout, QComboBox, QFrame
 from Qt.QtWidgets import QTableView, QSlider, QTabWidget, QGroupBox, QDoubleSpinBox, QSpinBox 
-from Qt.QtWidgets import QFileDialog
+from Qt.QtWidgets import QFileDialog, QSpacerItem
 from Qt.QtCore import QSortFilterProxyModel, Qt
 
 from chimerax.core.tools import ToolInstance
@@ -22,17 +24,32 @@ from chimerax.map.volume import volume_list
 from chimerax.atomic import AtomicStructure
 from chimerax.geometry import Place
 from chimerax.ui import MainToolWindow
+from chimerax.core.models import Model
+from chimerax.core.selection import SELECTION_CHANGED
 
 from .parse_log import look_at_record, look_at_cluster, look_at_MQS_idx, animate_MQS, animate_MQS_2
 from .parse_log import simulate_volume, get_transformation_at_record, zero_cluster_density
 from .tablemodel import TableModel
-from .DiffAtomComp import diff_atom_comp, cluster_and_sort_sqd_fast
+from .DiffAtomComp import diff_atom_comp, cluster_and_sort_sqd_fast, diff_fit, conv_volume, numpy2tensor, \
+    linear_norm_tensor
 
 import sys
 import numpy as np        
 import os
+import torch
+import psutil
+import platform
+import ast
         
-        
+
+def create_row(parent_layout, left=0, top=0, right=0, bottom=0, spacing=5):
+    row_frame = QFrame()
+    parent_layout.addWidget(row_frame)
+    row_layout = QHBoxLayout(row_frame)
+    row_layout.setContentsMargins(left, top, right, bottom)
+    row_layout.setSpacing(spacing)
+    return row_layout
+
 class DiffFitSettings:    
     def __init__(self):   
         # viewing
@@ -62,7 +79,7 @@ class DiffFitSettings:
         self.conv_weights: list = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
         
         self.clustering_shift_tolerance : float = 3.0
-        self.clustering_angle_tolerance : float = 6.0
+        self.clustering_angle_tolerance : float = 6.0         
 
 
 class DiffFitTool(ToolInstance):
@@ -109,7 +126,16 @@ class DiffFitTool(ToolInstance):
         # the code right here, but for any kind of even moderately complex
         # interface, it is probably better to put the code in a method so
         # that this __init__ method remains readable.
-        self._build_ui()        
+        self._build_ui()
+
+        self.fit_input_mode = "disk file"
+
+        self.fit_result_ready = False
+        self.fit_result = None   
+
+        # Register the selection change callback
+        self.session.triggers.add_handler(SELECTION_CHANGED, self.selection_callback)             
+        
 
     def _build_ui(self):
         
@@ -120,7 +146,7 @@ class DiffFitTool(ToolInstance):
 
         # single fit GUI
         single_fit_group = QGroupBox()
-        single_fit_group_layout = QGridLayout()
+        single_fit_group_layout = QVBoxLayout()
         single_fit_group.setLayout(single_fit_group_layout)
         self.build_single_fit_ui(single_fit_group_layout)
         tab_widget.addTab(single_fit_group, "Single")
@@ -131,14 +157,25 @@ class DiffFitTool(ToolInstance):
         compute_group.setLayout(compute_group_layout)
         self.build_compute_ui(compute_group_layout)
         tab_widget.addTab(compute_group, "Compute")
-    
+
+        # device GUI
+        device_group = QGroupBox()
+        device_group_layout = QVBoxLayout()
+        device_group.setLayout(device_group_layout)
+        self.build_device_ui(device_group_layout)
+        tab_widget.addTab(device_group, "Device")
+        self._device_changed()
+
         # view GUI
         view_group = QGroupBox()
         view_group_layout = QGridLayout()
         view_group.setLayout(view_group_layout)
         self.build_view_ui(view_group_layout)
         tab_widget.addTab(view_group, "View")
-        
+
+        self.tab_widget = tab_widget
+        self.tab_view_group = view_group
+
         # TODO: place where to update the settings
         self.load_settings()
         
@@ -224,12 +261,11 @@ class DiffFitTool(ToolInstance):
         #print(self.settings.view_target_vol_path)
 
     def build_single_fit_ui(self, layout):
-        row = 0
+        row = QHBoxLayout()
+        layout.addLayout(row)
 
-        mol_label = QLabel()
-        mol_label.setText("Fit")
-
-        layout.addWidget(mol_label, row, 0)
+        mol_label = QLabel("Fit")
+        row.addWidget(mol_label)
 
         from chimerax.map import Volume
         from chimerax.atomic import Structure
@@ -240,17 +276,166 @@ class DiffFitTool(ToolInstance):
         if mlist:
             om.value = mlist[0]
         # om.value_changed.connect(self._object_chosen)
-        layout.addWidget(om, row, 1)
+        row.addWidget(om)
 
         iml = QLabel("in map")
-        layout.addWidget(iml, row, 2)
+        row.addWidget(iml)
 
         self._map_menu = mm = ModelMenuButton(self.session, class_filter=Volume)
         if vlist:
             mm.value = vlist[0]
-        layout.addWidget(mm, row, 3)
+        row.addWidget(mm)
 
-        row = row + 1
+        button_fit = QPushButton()
+        button_fit.setText("Fit")
+        button_fit.clicked.connect(lambda: self.single_fit_button_clicked())
+        row.addWidget(button_fit)
+
+        button_options = QPushButton()
+        button_options.setText("Options")
+        button_options.clicked.connect(lambda: self._show_or_hide_options())
+        row.addWidget(button_options)
+
+        row.addStretch()  # This will add a stretchable space to the right
+
+        # Options panel
+        row2 = QVBoxLayout()
+        layout.addLayout(row2)
+        options = self._create_single_fit_options_gui(None)
+        row2.addWidget(options)
+
+        layout.addStretch()
+
+    def _single_fit_set_preset(self, shifts=5, quat=20, gaussian=0):
+        self._single_fit_n_shifts.setValue(shifts)
+        self._single_fit_n_quaternions.setValue(quat)
+        self._single_fit_gaussian_loops.setValue(gaussian)
+
+    def _single_fit_result_save_checkbox_clicked(self):
+        self._single_fit_out_dir.setEnabled(self._single_fit_result_save_checkbox.isChecked())
+        self._single_fit_out_dir_select.setEnabled(self._single_fit_result_save_checkbox.isChecked())
+
+    def _update_smooth_fields(self, value):
+        self.smooth_kernel_sizes.setText(str([5] * value))
+        self.smooth_weights.setText(str([1.0] * value))
+
+    def _create_single_fit_options_gui(self, parent):
+
+        from chimerax.ui.widgets import CollapsiblePanel
+        self._single_fit_options_panel = p = CollapsiblePanel(parent, title=None)
+        f = p.content_area
+
+
+        # resolution row
+        row = create_row(f.layout(), top=20)
+        single_fit_res_label = QLabel("Use map simulated from atoms, resolution")
+        self._single_fit_res = QDoubleSpinBox()
+        self._single_fit_res.setValue(5.0)
+        self._single_fit_res.setMinimum(0.0001)
+        self._single_fit_res.setMaximum(100.0)
+        self._single_fit_res.setSingleStep(0.0001)
+        self._single_fit_res.setDecimals(4)
+        row.addWidget(single_fit_res_label)
+        row.addWidget(self._single_fit_res)
+
+
+        # Preset row
+        row = create_row(f.layout(), top=20)
+        preset_fast = QPushButton("Fast")
+        preset_balanced = QPushButton("Balanced")
+        preset_exhaustive = QPushButton("Exhaustive")
+        preset_fast.clicked.connect(lambda: self._single_fit_set_preset())
+        preset_balanced.clicked.connect(lambda: self._single_fit_set_preset(10, 50, 3))
+        preset_exhaustive.clicked.connect(lambda: self._single_fit_set_preset(10, 100, 10))
+        row.addWidget(preset_fast)
+        row.addWidget(preset_balanced)
+        row.addWidget(preset_exhaustive)
+        
+        
+        # Parameter row
+        row = create_row(f.layout())
+        n_shifts_label = QLabel("# shifts:")
+        self._single_fit_n_shifts = QSpinBox()
+        self._single_fit_n_shifts.setValue(5)
+        self._single_fit_n_shifts.setMinimum(1)
+        self._single_fit_n_shifts.setMaximum(500)
+        row.addWidget(n_shifts_label)
+        row.addWidget(self._single_fit_n_shifts)
+
+        n_quaternions_label = QLabel("# quaternions:")
+        self._single_fit_n_quaternions = QSpinBox()
+        self._single_fit_n_quaternions.setValue(20)
+        self._single_fit_n_quaternions.setMinimum(1)
+        self._single_fit_n_quaternions.setMaximum(500)
+        row.addWidget(n_quaternions_label)
+        row.addWidget(self._single_fit_n_quaternions)
+        row.addStretch()
+
+
+        # Smooth by row
+        row = create_row(f.layout())
+        smooth_by_label = QLabel("Smooth by:")
+        self._smooth_by = QComboBox()
+        smooth_methods = ["PyTorch iterative Gaussian",
+                          "ChimeraX incremental Gaussian",
+                          "ChimeraX iterative Gaussian"]
+        self._smooth_by.addItems(smooth_methods)
+        row.addWidget(smooth_by_label)
+        row.addWidget(self._smooth_by)
+
+        convs_loops_label = QLabel("Smooth loops:")
+        self._single_fit_gaussian_loops = QSpinBox()
+        self._single_fit_gaussian_loops.setValue(0)
+        self._single_fit_gaussian_loops.setMinimum(0)
+        self._single_fit_gaussian_loops.setMaximum(50)
+        self._single_fit_gaussian_loops.valueChanged.connect(self._update_smooth_fields)
+        row.addWidget(convs_loops_label)
+        row.addWidget(self._single_fit_gaussian_loops)
+        row.addStretch()
+
+
+        # Smooth kernel size row
+        row = create_row(f.layout())
+        smooth_kernel_sizes_label = QLabel()
+        smooth_kernel_sizes_label.setText("Kernel sizes [list]:")
+        self.smooth_kernel_sizes = QLineEdit()
+        self.smooth_kernel_sizes.setText("[]")
+        row.addWidget(smooth_kernel_sizes_label)
+        row.addWidget(self.smooth_kernel_sizes)
+        row.addStretch()
+
+        row = create_row(f.layout())
+        smooth_weights_label = QLabel()
+        smooth_weights_label.setText("Smooth weights [list]:")
+        self.smooth_weights = QLineEdit()
+        self.smooth_weights.setText("[]")
+        row.addWidget(smooth_weights_label)
+        row.addWidget(self.smooth_weights)
+        row.addStretch()
+
+
+        # Save result row
+        row = create_row(f.layout(), top=20)
+        self._single_fit_result_save_checkbox = QCheckBox()
+        self._single_fit_result_save_checkbox.clicked.connect(lambda: self._single_fit_result_save_checkbox_clicked())
+        save_res_label = QLabel("Save result to")
+        row.addWidget(self._single_fit_result_save_checkbox)
+        row.addWidget(save_res_label)
+
+        self._single_fit_out_dir = QLineEdit()
+        self._single_fit_out_dir.setDisabled(True)
+        self._single_fit_out_dir_select = QPushButton("Select")
+        self._single_fit_out_dir.setText("DiffFit_out/single_fit")
+        self._single_fit_out_dir_select.setDisabled(True)
+
+        row.addWidget(self._single_fit_out_dir)
+        row.addWidget(self._single_fit_out_dir_select)
+
+
+        return p
+
+    def _show_or_hide_options(self):
+        self._single_fit_options_panel.toggle_panel_display()
 
 
     def build_compute_ui(self, layout):
@@ -426,43 +611,77 @@ class DiffFitTool(ToolInstance):
         button = QPushButton()
         button.setText("Run!")
         button.clicked.connect(lambda: self.run_button_clicked())        
-        layout.addWidget(button, row, 1, 1, 2)        
+        layout.addWidget(button, row, 1, 1, 2)
+
+    def build_device_ui(self, layout):
+        row = QHBoxLayout()
+        layout.addLayout(row)
+
+        device_label = QLabel("Device:")
+        self._device = QComboBox()
+        devices = []
+        if torch.cuda.is_available():
+            devices += [f"cuda:{i}" for i in range(torch.cuda.device_count())]
+        devices += ["cpu"]
+        self._device.addItems(devices)
+        self._device.currentIndexChanged.connect(lambda: self._device_changed())
+
+        row.addWidget(device_label)
+        row.addWidget(self._device)
+        row.addStretch()
+
+        row = QHBoxLayout()
+        layout.addLayout(row)
+
+        self._device_info_label = QLabel()
+        self._device_info_label.setWordWrap(True)
+        row.addWidget(self._device_info_label)
+
+        row.addStretch()
+
+        layout.addStretch()
 
 
     def build_view_ui(self, layout):
         row = 0
-            
-        #self.view_target_vol_path: str = "..."        
+
+        view_input_mode_label = QLabel("Input mode:")
+        self._view_input_mode = QComboBox()
+        self._view_input_mode.addItems(["disk file", "interactive"])
+        self._view_input_mode.currentIndexChanged.connect(lambda: self._view_input_mode_changed())
+        layout.addWidget(view_input_mode_label, row, 0)
+        layout.addWidget(self._view_input_mode, row, 1, 1, 2)
+        row = row + 1
+
         target_vol_label = QLabel("Target Volume:")
         self.target_vol = QLineEdit()        
         self.target_vol.textChanged.connect(lambda: self.store_settings())
-        target_vol_select = QPushButton("Select")        
-        target_vol_select.clicked.connect(lambda: self.select_clicked("Target Volume", self.target_vol, False, "MRC Files(*.mrc);;MAP Files(*.map)"))        
+        self.target_vol_select = QPushButton("Select")
+        self.target_vol_select.clicked.connect(lambda: self.select_clicked("Target Volume", self.target_vol, False, "MRC Files(*.mrc);;MAP Files(*.map)"))
         layout.addWidget(target_vol_label, row, 0)
         layout.addWidget(self.target_vol, row, 1)
-        layout.addWidget(target_vol_select, row, 2)
+        layout.addWidget(self.target_vol_select, row, 2)
         row = row + 1
         
-        # self.view_structures_directory: str = "..."              
         structures_folder_label = QLabel("Structures Folder:")
         self.structures_folder = QLineEdit()
         self.structures_folder.textChanged.connect(lambda: self.store_settings()) 
-        structures_folder_select = QPushButton("Select")        
-        structures_folder_select.clicked.connect(lambda: self.select_clicked("Structures folder (containing *.cif)", self.structures_folder))                
+        self.structures_folder_select = QPushButton("Select")
+        self.structures_folder_select.clicked.connect(lambda: self.select_clicked("Structures folder (containing *.cif)", self.structures_folder))
         layout.addWidget(structures_folder_label, row, 0)
         layout.addWidget(self.structures_folder, row, 1)
-        layout.addWidget(structures_folder_select, row, 2)
+        layout.addWidget(self.structures_folder_select, row, 2)
         row = row + 1
         
         # data folder - where the data is stored
         dataset_folder_label = QLabel("Data Folder:")
         self.dataset_folder = QLineEdit()    
         self.dataset_folder.textChanged.connect(lambda: self.store_settings())                
-        dataset_folder_select = QPushButton("Select")        
-        dataset_folder_select.clicked.connect(lambda: self.select_clicked("Data Folder", self.dataset_folder))        
+        self.dataset_folder_select = QPushButton("Select")
+        self.dataset_folder_select.clicked.connect(lambda: self.select_clicked("Data Folder", self.dataset_folder))
         layout.addWidget(dataset_folder_label, row, 0)
         layout.addWidget(self.dataset_folder, row, 1)
-        layout.addWidget(dataset_folder_select, row, 2)
+        layout.addWidget(self.dataset_folder_select, row, 2)
         row = row + 1
         
         clustering_shift_tolerance_label = QLabel()
@@ -533,18 +752,34 @@ class DiffFitTool(ToolInstance):
         layout.addWidget(simulate_volume_label, row, 0)
         layout.addWidget(self.simulate_volume_resolution, row, 1)
         layout.addWidget(simulate_volume, row, 2)
-        row = row + 1        
-        
+        row = row + 1
+
+        zero_density_threshold_label = QLabel("Threshold:")
+        self.zero_density_threshold = QDoubleSpinBox()
+        self.zero_density_threshold.setMinimum(0.0)
+        self.zero_density_threshold.setMaximum(100.0)
+        self.zero_density_threshold.setSingleStep(0.0001)
+        self.zero_density_threshold.setDecimals(4)
+        self.zero_density_threshold.setValue(0.0)
         zero_density_button = QPushButton()
         zero_density_button.setText("Zero density")
         zero_density_button.clicked.connect(self.zero_density_button_clicked)
-        
+        layout.addWidget(zero_density_threshold_label, row, 0)
+        layout.addWidget(self.zero_density_threshold, row, 1)
+        layout.addWidget(zero_density_button, row, 2)
+        row = row + 1
+
         # saving currently selected object
-        save_button = QPushButton()
-        save_button.setText("Save")
-        save_button.clicked.connect(self.save_button_clicked)
-        layout.addWidget(zero_density_button, row, 1)
-        layout.addWidget(save_button, row, 2)
+        save_label = QLabel("Save:")
+        save_structure_button = QPushButton()
+        save_structure_button.setText("Structure")
+        save_structure_button.clicked.connect(self.save_structure_button_clicked)
+        save_working_vol_button = QPushButton()
+        save_working_vol_button.setText("Working volume")
+        save_working_vol_button.clicked.connect(self.save_working_vol_button_clicked)
+        layout.addWidget(save_label, row, 0)
+        layout.addWidget(save_working_vol_button, row, 1)
+        layout.addWidget(save_structure_button, row, 2)
         row = row + 1        
         
         # slider for animation
@@ -568,6 +803,12 @@ class DiffFitTool(ToolInstance):
         layout.addWidget(progress_label, row, 2)
         row = row + 1        
         
+        test_spheres = QPushButton()
+        test_spheres.setText("Point cloud visualization")
+        test_spheres.clicked.connect(self.add_spheres_clicked)                        
+        layout.addWidget(test_spheres, row, 0)
+        row = row + 1
+
     #def fill_context_menu(self, menu, x, y):
         # Add any tool-specific items to the given context menu (a QMenu instance).
         # The menu will then be automatically filled out with generic tool-related actions
@@ -580,29 +821,110 @@ class DiffFitTool(ToolInstance):
         #clear_action = QAction("Clear", menu)
         #clear_action.triggered.connect(lambda *args: self.init_folder.clear())
         #menu.addAction(clear_action)
-        
+
+
+    def _device_changed(self):
+        device = self._device.currentText()
+        info_text = ""
+
+        if device.startswith("cuda"):
+            device_index = int(device.split(":")[1])
+            device_name = torch.cuda.get_device_name(device_index)
+            total_memory = torch.cuda.get_device_properties(device_index).total_memory / 1024 ** 3  # Convert to GB
+            allocated_memory = torch.cuda.memory_allocated(device_index) / 1024 ** 3  # Convert to GB
+            cached_memory = torch.cuda.memory_reserved(device_index) / 1024 ** 3  # Convert to GB
+
+            info_text = (
+                f"Device: {device_name}\n"
+                f"Total Memory: {total_memory:.2f} GB\n"
+                f"Allocated Memory: {allocated_memory:.2f} GB\n"
+                f"Cached Memory: {cached_memory:.2f} GB"
+            )
+        elif device.startswith("cpu"):
+            cpu_name = platform.processor()
+            cpu_count = psutil.cpu_count(logical=True)
+            cpu_freq = psutil.cpu_freq()
+            total_memory = psutil.virtual_memory().total / 1024 ** 3  # Convert to GB
+            available_memory = psutil.virtual_memory().available / 1024 ** 3  # Convert to GB
+            used_memory = psutil.virtual_memory().used / 1024 ** 3  # Convert to GB
+
+            info_text = (
+                f"CPU Name: {cpu_name}\n"
+                f"CPU Count (Logical): {cpu_count}\n"
+                f"CPU Frequency: {cpu_freq.current:.2f} MHz\n"
+                f"Total Memory: {total_memory:.2f} GB\n"
+                f"Available Memory: {available_memory:.2f} GB\n"
+                f"Used Memory: {used_memory:.2f} GB"
+            )
+
+        self._device_info_label.setText(info_text)
+
+
+    def _view_input_mode_changed(self):
+        if self._view_input_mode.currentText() == "interactive":
+            self.fit_input_mode = "interactive"
+            self.target_vol.setEnabled(False)
+            self.target_vol_select.setEnabled(False)
+            self.structures_folder.setEnabled(False)
+            self.structures_folder_select.setEnabled(False)
+            self.dataset_folder.setEnabled(False)
+            self.dataset_folder_select.setEnabled(False)
+        elif self._view_input_mode.currentText() == "disk file":
+            self.fit_input_mode = "disk file"
+            self.target_vol.setEnabled(True)
+            self.target_vol_select.setEnabled(True)
+            self.structures_folder.setEnabled(True)
+            self.structures_folder_select.setEnabled(True)
+            self.dataset_folder.setEnabled(True)
+            self.dataset_folder_select.setEnabled(True)
+
+
     def table_row_clicked(self, item):        
     
         if item.row() != -1:
-            proxyIndex = self.proxyModel.index(item.row(), 0)
-            sourceIndex = self.proxyModel.mapToSource(proxyIndex)
-            self.cluster_idx = sourceIndex.row()
+            self.select_table_item(item.row())
 
-            self.mol_idx = int(self.e_sqd_clusters_ordered[self.cluster_idx, 0])
-            self.record_idx = int(self.e_sqd_clusters_ordered[self.cluster_idx, 1])
+            # spheres interaction
+            self.activate_sphere(item.row())
+                    
+        return
 
-            N_iter = len(self.e_sqd_log[self.mol_idx, self.record_idx])
-            iter_idx = int(self.e_sqd_clusters_ordered[self.cluster_idx, 2])
+    def get_table_item_transformation(self, cluster_idx):
+        mol_idx = int(self.e_sqd_clusters_ordered[cluster_idx, 0])
+        record_idx = int(self.e_sqd_clusters_ordered[cluster_idx, 1])
 
-            self.transformation = get_transformation_at_record(self.e_sqd_log, self.mol_idx, self.record_idx, iter_idx)
+        N_iter = len(self.e_sqd_log[mol_idx, record_idx])
+        iter_idx = int(self.e_sqd_clusters_ordered[cluster_idx, 2])
+
+        return get_transformation_at_record(self.e_sqd_log, mol_idx, record_idx, iter_idx)
+
+    def select_table_item(self, index):
+        proxyIndex = self.proxyModel.index(index, 0)
+        sourceIndex = self.proxyModel.mapToSource(proxyIndex)
+
+        self.cluster_idx = sourceIndex.row()        
+        self.mol_idx = int(self.e_sqd_clusters_ordered[self.cluster_idx, 0])
+        self.record_idx = int(self.e_sqd_clusters_ordered[self.cluster_idx, 1])
+
+        N_iter = len(self.e_sqd_log[self.mol_idx, self.record_idx])
+        iter_idx = int(self.e_sqd_clusters_ordered[self.cluster_idx, 2])
+
+        #self.transformation = get_transformation_at_record(self.e_sqd_log, self.mol_idx, self.record_idx, iter_idx)
+        self.transformation = self.get_table_item_transformation(self.cluster_idx)
+
+        if self.fit_input_mode == "interactive":
+            self.mol = self.fit_mol_list[self.mol_idx]
+            self.mol.display = True
+            self.mol.scene_position = self.transformation
+        elif self.fit_input_mode == "disk file":
             self.mol = look_at_record(self.mol_folder, self.mol_idx, self.transformation, self.session)
 
-            self.session.logger.info(f"Cluster size: {int(self.e_sqd_clusters_ordered[self.cluster_idx, 3])}")
-            self.session.logger.info(f"Highest metric reached at iter : {iter_idx}")
+        self.session.logger.info(f"Cluster size: {int(self.e_sqd_clusters_ordered[self.cluster_idx, 3])}")
+        self.session.logger.info(f"Highest metric reached at iter : {iter_idx}")
 
-            self.progress.setMinimum(1)
-            self.progress.setMaximum(N_iter)
-            self.progress.setValue(iter_idx)
+        self.progress.setMinimum(1)
+        self.progress.setMaximum(N_iter)
+        self.progress.setValue(iter_idx + 1)        
         
     def select_clicked(self, text, target, save = False, pattern = "dir"):
         fileName = ""
@@ -635,16 +957,20 @@ class DiffFitTool(ToolInstance):
         if e_sqd_log is None:
             return
 
-        print("clear the volumes from the scene")
+        if self.fit_input_mode == "disk file":
+            print("clear the volumes from the scene")
 
-        vlist = volume_list(self.session)
-        for v in vlist:
-            v.delete()
-            
-        print("opening the volume...")
-        #print(self.settings)
-        print(self.settings.view_target_vol_path)
-        self.vol = run(self.session, "open {0}".format(self.settings.view_target_vol_path))[0]
+            vlist = volume_list(self.session)
+            for v in vlist:
+                v.delete()
+
+            print("opening the volume...")
+            #print(self.settings)
+            print(self.settings.view_target_vol_path)
+            self.vol = run(self.session, "open {0}".format(self.settings.view_target_vol_path))[0]
+        elif self.fit_input_mode == "interactive":
+            self.vol = self.fit_vol
+            self.vol.display = True
 
         N_mol, N_quat, N_shift, N_iter, N_metric = e_sqd_log.shape
         self.e_sqd_log = e_sqd_log.reshape([N_mol, N_quat * N_shift, N_iter, N_metric])
@@ -666,7 +992,122 @@ class DiffFitTool(ToolInstance):
         self.mol_folder = self.settings.view_structures_directory
         self.cluster_idx = 0
         # look_at_cluster(self.e_sqd_clusters_ordered, self.mol_folder, self.cluster_idx, self.session)
-        
+
+    def _create_volume_conv_list(self, vol, smooth_by, smooth_loops, session, negative_space_value=-0.5):
+        # From here on, there are three strategies for utilizing gaussian smooth
+        # 1. with increasing sDev on the same input volume
+        # 2. with the same sDev iteratively
+        # Combine 1 & 2
+        # Need to do experiment to see which one is better
+
+        volume_conv_list = [None] * (smooth_loops + 1)
+        volume_conv_list[0] = vol.full_matrix()
+
+        if smooth_by == "PyTorch iterative Gaussian":
+            volume_conv_list[0], _ = numpy2tensor(volume_conv_list[0], self._device.currentText())
+            volume_conv_list[0] = linear_norm_tensor(volume_conv_list[0])
+            volume_conv_list = conv_volume(volume_conv_list[0],
+                                           self._device.currentText(),
+                                           smooth_loops,
+                                           ast.literal_eval(self.smooth_kernel_sizes.text()),
+                                           negative_space_value=negative_space_value,
+                                           kernel_type="Gaussian")
+            volume_conv_list = [v.squeeze().detach().cpu().numpy() for v in volume_conv_list]
+        elif smooth_by == "ChimeraX incremental Gaussian":
+            for conv_idx in range(1, smooth_loops + 1):
+                vol_gaussian = run(session, f"volume gaussian #{vol.id[0]} sDev {conv_idx}")
+
+                vol_device, _ = numpy2tensor(vol_gaussian.full_matrix(), self._device.currentText())
+                vol_device = linear_norm_tensor(vol_device)
+
+                eligible_volume_tensor = vol_device > 0.0
+                vol_device[~eligible_volume_tensor] = negative_space_value
+
+                volume_conv_list[conv_idx] = vol_device.squeeze().detach().cpu().numpy()
+
+                vol_gaussian.delete()
+        elif smooth_by == "ChimeraX iterative Gaussian":
+            kernel_sizes = ast.literal_eval(self.smooth_kernel_sizes.text())
+            vol_current = vol
+            for conv_idx in range(1, smooth_loops + 1):
+                vol_gaussian = run(session, f"volume gaussian #{vol_current.id[0]} sDev {kernel_sizes[conv_idx - 1]}")
+
+                if conv_idx > 1:
+                    vol_current.delete()
+
+                vol_device, _ = numpy2tensor(vol_gaussian.full_matrix(), self._device.currentText())
+                vol_device = linear_norm_tensor(vol_device)
+
+                eligible_volume_tensor = vol_device > 0.0
+                vol_device[~eligible_volume_tensor] = negative_space_value
+
+                volume_conv_list[conv_idx] = vol_device.squeeze().detach().cpu().numpy()
+
+                vol_current = vol_gaussian
+
+            vol_current.delete()
+
+
+        return volume_conv_list
+
+
+    def single_fit_button_clicked(self):
+        single_fit_timer_start = datetime.now()
+
+        # Prepare mol anv vol
+        mol = self._object_menu.value
+        self.fit_mol_list = [mol]
+
+        self.fit_vol = self._map_menu.value
+        vol_matrix = self.fit_vol.full_matrix()
+
+        # Copy vol and make it clean after thresholding
+        vol_copy = self.fit_vol.writable_copy()
+        vol_copy_matrix = vol_copy.data.matrix()
+        vol_copy_matrix[vol_copy_matrix < self.fit_vol.maximum_surface_level] = 0
+        vol_copy.data.values_changed()
+
+        # Smooth the volume
+        smooth_loops = self._single_fit_gaussian_loops.value()
+        smooth_by = self._smooth_by.currentText()
+        volume_conv_list = self._create_volume_conv_list(vol_copy, smooth_by, smooth_loops, self.session)
+        vol_copy.delete()
+
+        # Simulate a map for the mol
+        from chimerax.map.molmap import molecule_map
+        mol_vol = molecule_map(self.session, mol.atoms, self._single_fit_res.value(), grid_spacing=self.fit_vol.data.step[0])
+
+        # Fit
+        timer_start = datetime.now()
+        self.fit_result = diff_fit(volume_conv_list,
+                                   self.fit_vol.data.step,
+                                   self.fit_vol.data.origin,
+                                   10,
+                                   [mol.atoms.coords],
+                                   [(mol_vol.full_matrix(), mol_vol.data.step, mol_vol.data.origin)],
+                                   N_shifts=self._single_fit_n_shifts.value(),
+                                   N_quaternions=self._single_fit_n_quaternions.value(),
+                                   save_results=self._single_fit_result_save_checkbox.isChecked(),
+                                   out_dir=self._single_fit_out_dir.text(),
+                                   out_dir_exist_ok=True,
+                                   device=self._device.currentText()
+                                   )
+        timer_stop = datetime.now()
+        print(f"Fit time elapsed: {timer_stop - timer_start}\n\n")
+
+        mol_vol.delete()
+
+        self._view_input_mode.setCurrentText("interactive")
+        self._view_input_mode_changed()
+        self.fit_result_ready = True
+        self.show_results(self.fit_result)
+
+        self.tab_widget.setCurrentWidget(self.tab_view_group)
+
+        timer_stop = datetime.now()
+        print(f"Single fit time elapsed: {timer_stop - single_fit_timer_start}\n\n")
+
+
     def run_button_clicked(self):
         #import sys
         #sys.path.append('D:\\GIT\\DiffFitViewer\\src')
@@ -703,7 +1144,16 @@ class DiffFitTool(ToolInstance):
         # output is tensor
         self.show_results(e_sqd_log.detach().cpu().numpy())
         
-    def init_button_clicked(self):            
+    def init_button_clicked(self):
+        if self.fit_input_mode == "interactive":
+            if self.fit_result_ready:
+                self.show_results(self.fit_result)
+                return
+            else:
+                from chimerax.log.cmd import log
+                log(self.session, text="Fitting is not performed yet.", error_dialog=True)
+                return
+
         if self.settings is None:
             return
             
@@ -718,12 +1168,20 @@ class DiffFitTool(ToolInstance):
         
         #print(e_sqd_log)
         self.show_results(e_sqd_log)
+
+    def save_working_vol_button_clicked(self):
+        if not self.vol:
+            return
+
+        fileName, ext = self.select_clicked(f"Save {self.vol.name} as", self.view, True, "MRC Density map(*.mrc);;CCP4 density map (*.map)")
+
+        self.save_working_volume(fileName, ext)
         
-    def save_button_clicked(self):          
+    def save_structure_button_clicked(self):
         if not self.mol:
             return
         
-        fileName, ext = self.select_clicked("Save File", self.view, True, "CIF Files(*.cif);;PDB Files (*.pdb)")           
+        fileName, ext = self.select_clicked(f"Save {self.mol.name} as", self.view, True, "CIF Files(*.cif);;PDB Files (*.pdb)")
         
         self.save_structure(fileName, ext)
     
@@ -731,10 +1189,21 @@ class DiffFitTool(ToolInstance):
         
         if len(targetpath) > 0 and self.mol:
             run(self.session, "save '{0}.{1}' models #{2}".format(targetpath, ext, self.mol.id[0]))
-    
-    def simulate_volume_clicked(self): 
-        resolution = self.simulate_volume_resolution.value()
-        self.mol_vol = simulate_volume(self.session, self.vol, self.mol_folder, self.mol_idx, self.transformation, resolution)
+
+    def save_working_volume(self, targetpath, ext):
+
+        if len(targetpath) > 0 and self.vol:
+            run(self.session, "save '{0}.{1}' models #{2}".format(targetpath, ext, self.vol.id[0]))
+
+    def simulate_volume_clicked(self):
+        res = self.simulate_volume_resolution.value()
+        if self.fit_input_mode == "disk file":
+            self.mol_vol = simulate_volume(self.session, self.vol, self.mol_folder, self.mol_idx, self.transformation,
+                                           res)
+        elif self.fit_input_mode == "interactive":
+            from chimerax.map.molmap import molecule_map
+            self.mol_vol = molecule_map(self.session, self.mol.atoms, res, grid_spacing=self.vol.data_origin_and_step()[1][0] / 3)
+
         return
         
     def zero_density_button_clicked(self):      
@@ -746,7 +1215,8 @@ class DiffFitTool(ToolInstance):
             print("You have to simulate a volume first!")
             return
 
-        work_vol = zero_cluster_density(self.session, self.mol_vol, self.mol, self.vol, self.cluster_idx)
+        work_vol = zero_cluster_density(self.session, self.mol_vol, self.mol, self.vol, self.cluster_idx,
+                                        zero_iter=0, threshold=self.zero_density_threshold.value())
         self.vol = work_vol
         return
     
@@ -758,3 +1228,86 @@ class DiffFitTool(ToolInstance):
             self.transformation = get_transformation_at_record(self.e_sqd_log, self.mol_idx, self.record_idx, progress - 1)
             self.mol.scene_position = self.transformation
     
+
+    # point cloud visualization    
+    def get_model_by_name(self, model_name):
+        from chimerax.atomic import Structure
+
+        models = self.session.models.list()
+        for model in models:            
+            if model.name == model_name:
+                return model
+                
+        return None   
+
+    def focus_table_row(self, idx):
+        selection_model = self.view.selectionModel()
+
+        index = self.proxyModel.index(idx, 0)
+        selection_model.clear()
+        selection_model.select(
+            index,
+            selection_model.Select
+        )
+
+        self.view.scrollTo(index, QTableView.PositionAtCenter)        
+        self.view.setFocus()
+
+    def selection_callback(self, trigger, changes):        
+        selected_models = self.session.selection.models()
+                
+        # Print the selected models
+        if selected_models:
+            for model in selected_models:
+                if model.name == "sphere":                    
+                    self.focus_table_row(model.id[1] - 1)
+                    self.select_table_item(model.id[1] - 1)  
+                    
+
+        
+    def activate_sphere(self, cluster_idx):
+        parent = self.get_model_by_name("spheres")
+        
+        if parent:
+            command = 'select #{0}.{1}'.format(parent.id[0], cluster_idx + 1)
+            run(self.session, command)             
+
+    # coloring of the sphere
+    def get_sphere_color(self, idx, count):
+        # TODO: based on some feature
+        value = idx / (count - 1)
+
+        g = 255 * (1 - value)
+        r = 255 * value
+        b = 0
+
+        return [r, g, b]
+
+    def add_spheres_clicked(self):       
+
+        spheres = Model("spheres", self.session)
+        self.session.models.add([spheres])
+
+        entries_count = self.proxyModel.rowCount()
+
+        # map_x_length = abs(self.vol.xyz_bounds()[1][0] - self.vol.xyz_bounds()[0][0])
+
+        offset_x = 100
+        sphere_size = 0.3
+        parent_id = spheres.id[0]
+
+        mol_center = self.mol.atoms.coords.mean(axis=0)
+        
+        for entry_id in range(1, entries_count + 1):    
+            place = self.get_table_item_transformation(entry_id - 1)
+            translation = place * mol_center
+            x = translation[0] + offset_x
+            y = translation[1]
+            z = translation[2]
+            color = self.get_sphere_color(entry_id - 1, entries_count)
+            command = 'shape sphere radius {0} center {1},{2},{3} color {4},{5},{6} modelId #{7}.{8}'.format(sphere_size, x, y, z, color[0], color[1], color[2], parent_id, entry_id)
+            run(self.session, command)        
+        
+        self.spheres = spheres
+
+        return
