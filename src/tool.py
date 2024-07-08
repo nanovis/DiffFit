@@ -889,6 +889,10 @@ class DiffFitTool(ToolInstance):
                     
         return
 
+
+    def get_table_item_size(self, cluster_idx):
+        return int(self.e_sqd_clusters_ordered[cluster_idx, 3])
+
     def get_table_item_transformation(self, cluster_idx):
         mol_idx = int(self.e_sqd_clusters_ordered[cluster_idx, 0])
         record_idx = int(self.e_sqd_clusters_ordered[cluster_idx, 1])
