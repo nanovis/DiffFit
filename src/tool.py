@@ -972,13 +972,18 @@ class DiffFitTool(ToolInstance):
             #print(self.settings)
             print(self.settings.view_target_vol_path)
             self.vol = run(self.session, "open {0}".format(self.settings.view_target_vol_path))[0]
+
+            #TODO: define mol_centers
         elif self.fit_input_mode == "interactive":
             self.vol = self.fit_vol
             self.vol.display = True
+            mol_centers = [self.fit_mol_list[0].atoms.coords.mean(axis=0)]
 
         N_mol, N_quat, N_shift, N_iter, N_metric = e_sqd_log.shape
         self.e_sqd_log = e_sqd_log.reshape([N_mol, N_quat * N_shift, N_iter, N_metric])
-        self.e_sqd_clusters_ordered = cluster_and_sort_sqd_fast(self.e_sqd_log, self.settings.clustering_shift_tolerance, self.settings.clustering_angle_tolerance)
+        self.e_sqd_clusters_ordered = cluster_and_sort_sqd_fast(self.e_sqd_log, mol_centers,
+                                                                self.settings.clustering_shift_tolerance,
+                                                                self.settings.clustering_angle_tolerance)
         
         self.model = TableModel(self.e_sqd_clusters_ordered, self.e_sqd_log)
         self.proxyModel = QSortFilterProxyModel()

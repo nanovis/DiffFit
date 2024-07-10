@@ -23,6 +23,11 @@ from scipy.spatial.transform import Rotation as R
 from sklearn.cluster import Birch
 import math
 
+from math import pi
+from chimerax.geometry import bins
+from chimerax.geometry import Place
+
+
 # Ignore PDBConstructionWarning for unrecognized 'END' record
 warnings.filterwarnings("ignore", message="Ignoring unrecognized record 'END'", category=PDBConstructionWarning)
 
@@ -39,7 +44,7 @@ def q2_unit_coord(Q):
     return np.concatenate((rotated_up, rotated_right), axis=-1)
 
 
-def cluster_and_sort_sqd_fast(e_sqd_log, shift_tolerance: float = 3.0, angle_tolerance: float = 6.0,
+def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3.0, angle_tolerance: float = 6.0,
                               sort_column_idx: int = 9):
     """
     Cluster the fitting results in sqd table by thresholding on shift and quaternion
@@ -57,6 +62,7 @@ def cluster_and_sort_sqd_fast(e_sqd_log, shift_tolerance: float = 3.0, angle_tol
     3. sort the cluster table in descending order by correlation, or the metric at the sort_column_idx
 
     @param e_sqd_log: fitting results in sqd table
+    @param mol_centers: molecule atom coords centers
     @param shift_tolerance: shift tolerance in Angstrom
     @param angle_tolerance: angle tolerance in degrees
     @param sort_column_idx: the column to sort, 9-th column is the correlation
@@ -86,20 +92,36 @@ def cluster_and_sort_sqd_fast(e_sqd_log, shift_tolerance: float = 3.0, angle_tol
         mol_shift = sqd_highest_corr_np[mol_idx, :, :3]
         mol_q = sqd_highest_corr_np[mol_idx, :, 3:7]
 
-        cluster_shift = Birch(threshold=shift_tolerance / 2.0, n_clusters=None).fit(mol_shift)
-        # mol_shift_cluster = np.concatenate([mol_shift, cluster_shift.labels_.reshape(-1, 1)], axis=-1)
-        # np.save(f"mol{mol_idx}_shift_cluster.npy", mol_shift_cluster)
+        T = []
+        for i in range(len(mol_shift)):
+            shift = mol_shift[i]
+            quat = mol_q[i]
+            R_matrix = R.from_quat(quat).as_matrix()
 
-        mol_q_coord = q2_unit_coord(mol_q)
-        cluster_q = Birch(threshold=q_coord_radius_tolerance, n_clusters=None).fit(mol_q_coord)
-        # mol_q_coord_cluster = np.concatenate([mol_q_coord, cluster_q.labels_.reshape(-1, 1)], axis=-1)
-        # np.save(f"mol{mol_idx}_q_coord_cluster.npy", mol_q_coord_cluster)
+            T_matrix = np.zeros([3, 4])
+            T_matrix[:, :3] = R_matrix
+            T_matrix[:, 3] = shift
 
-        mol_transforma_label = np.concatenate(
-            (cluster_shift.labels_.reshape([-1, 1]), cluster_q.labels_.reshape([-1, 1])),
-            axis=-1)
-        unique_labels, indices, counts = np.unique(mol_transforma_label, axis=0, return_inverse=True,
-                                                   return_counts=True)
+            transformation = Place(matrix=T_matrix)
+            T.append(transformation)
+
+        b = bins.Binned_Transforms(angle_tolerance * pi / 180, shift_tolerance, mol_centers[mol_idx])
+        mol_transform_label = []
+        unique_id = 0
+        T_ID_dict = {}
+        for i in range(len(mol_shift)):
+            ptf = T[i]
+            close = b.close_transforms(ptf)
+            if len(close) == 0:
+                b.add_transform(ptf)
+                mol_transform_label.append(unique_id)
+                T_ID_dict[id(ptf)] = unique_id
+                unique_id = unique_id + 1
+            else:
+                mol_transform_label.append(T_ID_dict[id(close[0])])
+                T_ID_dict[id(ptf)] = T_ID_dict[id(close[0])]
+
+        unique_labels, indices, counts = np.unique(mol_transform_label, axis=0, return_inverse=True, return_counts=True)
 
         for cluster_idx in range(len(unique_labels)):
             sqd_idx = np.argwhere(indices == cluster_idx).reshape([-1])
