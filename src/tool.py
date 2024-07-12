@@ -1301,6 +1301,12 @@ class DiffFitTool(ToolInstance):
         # (exponential) scale factor for sphere_size
         # color transparency
         #
+        # playground code for in_contour percentage
+        # points = df.mol.atoms.coords
+        # from chimerax.map_fit import fitmap as FM
+        # 1 - FM.points_outside_contour(points, df.vol.position * df.get_table_item_transformation(0), volume)[0] / len(points)
+        #
+
 
         spheres = Model("clusterSpheres", self.session)
         self.session.models.add([spheres])
