@@ -1270,7 +1270,7 @@ class DiffFitTool(ToolInstance):
         # Print the selected models
         if selected_models:
             for model in selected_models:
-                if model.name == "sphere":                    
+                if type(model) is ClusterSphereModel:
                     self.focus_table_row(model.id[1] - 1)
                     self.select_table_item(model.id[1] - 1)  
                     
@@ -1302,7 +1302,7 @@ class DiffFitTool(ToolInstance):
         # color transparency
         #
 
-        spheres = Model("spheres", self.session)
+        spheres = Model("clusterSpheres", self.session)
         self.session.models.add([spheres])
 
         entries_count = self.proxyModel.rowCount()
