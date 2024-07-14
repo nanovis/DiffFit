@@ -45,7 +45,7 @@ def q2_unit_coord(Q):
 
 
 def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3.0, angle_tolerance: float = 6.0,
-                              sort_column_idx: int = 9):
+                              sort_column_idx: int = 7):
     """
     Cluster the fitting results in sqd table by thresholding on shift and quaternion
     Return the sorted cluster representatives
