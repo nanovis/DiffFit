@@ -709,6 +709,7 @@ def diff_fit(volume_list: list,
     for epoch in range(n_iters):
         # Forward pass
 
+        first_layer_density_sum = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device)
         occupied_density_sum = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device)
         correlation_table = torch.zeros([num_molecules, N_quaternions, N_shifts, 3], device=device)
 
@@ -722,6 +723,7 @@ def diff_fit(volume_list: list,
             correlation_table[mol_idx] = calculate_correlation(render, elements_sim_density_list[mol_idx])
 
             occupied_density_sum[mol_idx] = torch.sum(render, dim=-1).squeeze()
+            first_layer_density_sum[mol_idx] = occupied_density_sum[mol_idx]
 
             add_conv_density(conv_loops, target_gaussian_conv_list, conv_weights, grid, occupied_density_sum[mol_idx])
 
@@ -742,7 +744,7 @@ def diff_fit(volume_list: list,
                 log_idx += 1
                 e_sqd_log[:, :, :, log_idx, 0:3] = e_shifts
                 e_sqd_log[:, :, :, log_idx, 3:7] = e_quaternions
-                e_sqd_log[:, :, :, log_idx, 7] = occupied_density_sum
+                e_sqd_log[:, :, :, log_idx, 7] = first_layer_density_sum
                 e_sqd_log[:, :, :, log_idx, 8:11] = correlation_table
 
                 if save_results:
