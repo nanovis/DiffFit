@@ -562,35 +562,36 @@ def rotate_centers(atom_centers_list, e_quaternions):
 
 
 def calculate_correlation(render, elements_sim_density):
+    # Mask to filter elements in render that are greater than zero
+    mask = render > 0
+
+    # Apply the mask to the render and elements_sim_density tensors
+    render_filtered = render * mask
+    elements_sim_density_filtered = elements_sim_density * mask
+    mask_sum = mask.float().sum(dim=-1, keepdim=True)
+
     # Calculation of correlation
     # First, normalize the inputs to have zero mean and unit variance, as Pearson's correlation requires
-    render_mean = render.mean(dim=-1, keepdim=True)
-    elements_sim_density_mean = elements_sim_density.mean()
+    render_mean = render_filtered.sum(dim=-1, keepdim=True) / mask_sum
+    elements_sim_density_mean = elements_sim_density_filtered.sum(dim=-1, keepdim=True) / mask_sum
 
-    render_std = render.std(dim=-1, keepdim=True)
-    elements_sim_density_std = elements_sim_density.std()
+    render_std = torch.sqrt(((render_filtered - render_mean * mask) ** 2).sum(dim=-1, keepdim=True) / mask_sum)
+    elements_sim_density_std = torch.sqrt(
+        ((elements_sim_density_filtered - elements_sim_density_mean * mask) ** 2).sum(dim=-1, keepdim=True) / mask_sum)
 
-    render_normalized = (render - render_mean) / render_std
-    elements_sim_density_normalized = (elements_sim_density - elements_sim_density_mean) / elements_sim_density_std
+    render_normalized = (render_filtered - render_mean * mask) / render_std
+    elements_sim_density_normalized = (elements_sim_density_filtered - elements_sim_density_mean * mask) / elements_sim_density_std
 
-    # Since we need to compare each [q_idx, s_idx, :] slice of render to elements_sim_density, we'll expand dimensions
-    # to allow broadcasting
-    elements_sim_density_normalized_expanded = elements_sim_density_normalized.unsqueeze(0).unsqueeze(0).unsqueeze(
-        0).unsqueeze(0)
-
-    # Now, both tensors can be multiplied directly and then we sum over the last dimension to compute the dot product
+    # Now, both tensors can be multiplied directly, and then we sum over the last dimension to compute the dot product
     # The denominator for the Pearson correlation coefficient simplifies to the product of stds, times the length of the vectors,
     # because we normalized the inputs. This results in 1 for each pair, so the dot product gives us the correlation directly.
-    cam = (render_normalized * elements_sim_density_normalized_expanded).mean(dim=-1)
+    cam = (render_normalized * elements_sim_density_normalized).sum(dim=-1) / mask_sum.squeeze(-1)
 
-    elements_sim_density_expanded = elements_sim_density.unsqueeze(0).unsqueeze(0).unsqueeze(
-        0).unsqueeze(0)
+    overlap = (render_filtered * elements_sim_density_filtered).sum(dim=-1)
+    overlap_mean = overlap / mask_sum.squeeze(-1)
 
-    overlap = (render * elements_sim_density_expanded).sum(dim=-1)
-    overlap_mean = overlap / (elements_sim_density.shape[0])
-
-    render_norm = torch.linalg.vector_norm(render, dim=-1)
-    elements_sim_density_norm = torch.linalg.vector_norm(elements_sim_density)
+    render_norm = torch.linalg.vector_norm(render_filtered, dim=-1)
+    elements_sim_density_norm = torch.linalg.vector_norm(elements_sim_density_filtered, dim=-1)
 
     correlation = overlap / (render_norm * elements_sim_density_norm)
 
