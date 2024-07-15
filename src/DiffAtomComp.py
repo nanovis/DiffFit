@@ -569,6 +569,7 @@ def calculate_metrics(render, elements_sim_density):
     render_filtered = render * mask
     elements_sim_density_filtered = elements_sim_density * mask
     mask_sum = mask.float().sum(dim=-1, keepdim=True)
+    in_contour_percentage = mask.float().mean(dim=-1)
 
     # Calculation of correlation
     # First, normalize the inputs to have zero mean and unit variance, as Pearson's correlation requires
@@ -595,7 +596,7 @@ def calculate_metrics(render, elements_sim_density):
 
     correlation = overlap / (render_norm * elements_sim_density_norm)
 
-    return torch.stack((overlap_mean, correlation, cam), dim=-1)
+    return torch.stack((overlap_mean, correlation, cam, in_contour_percentage), dim=-1)
 
 
 def diff_fit(volume_list: list,
@@ -691,7 +692,7 @@ def diff_fit(volume_list: list,
     # Training loop
     log_every = 10
 
-    e_sqd_log = torch.zeros([num_molecules, N_quaternions, N_shifts, int(n_iters / 10) + 2, 11], device=device)
+    e_sqd_log = torch.zeros([num_molecules, N_quaternions, N_shifts, int(n_iters / 10) + 2, 12], device=device)
     # [x, y, z, w, -x, -y, -z, occupied_density_sum]
 
     with torch.no_grad():
@@ -712,7 +713,7 @@ def diff_fit(volume_list: list,
 
         first_layer_density_sum = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device)
         occupied_density_sum = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device)
-        metrics_table = torch.zeros([num_molecules, N_quaternions, N_shifts, 3], device=device)
+        metrics_table = torch.zeros([num_molecules, N_quaternions, N_shifts, 4], device=device)
 
         for mol_idx in range(num_molecules):
             grid = transform_coords(atom_coords_list[mol_idx],
@@ -746,7 +747,7 @@ def diff_fit(volume_list: list,
                 e_sqd_log[:, :, :, log_idx, 0:3] = e_shifts
                 e_sqd_log[:, :, :, log_idx, 3:7] = e_quaternions
                 e_sqd_log[:, :, :, log_idx, 7] = first_layer_density_sum
-                e_sqd_log[:, :, :, log_idx, 8:11] = metrics_table
+                e_sqd_log[:, :, :, log_idx, 8:12] = metrics_table
 
                 if save_results:
                     with open(f"{out_dir}/log.log", "a") as log_file:
