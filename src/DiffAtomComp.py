@@ -561,7 +561,7 @@ def rotate_centers(atom_centers_list, e_quaternions):
     return rotated_centers_list
 
 
-def calculate_correlation(render, elements_sim_density):
+def calculate_metrics(render, elements_sim_density):
     # Mask to filter elements in render that are greater than zero
     mask = render > 0
 
@@ -712,7 +712,7 @@ def diff_fit(volume_list: list,
 
         first_layer_density_sum = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device)
         occupied_density_sum = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device)
-        correlation_table = torch.zeros([num_molecules, N_quaternions, N_shifts, 3], device=device)
+        metrics_table = torch.zeros([num_molecules, N_quaternions, N_shifts, 3], device=device)
 
         for mol_idx in range(num_molecules):
             grid = transform_coords(atom_coords_list[mol_idx],
@@ -721,7 +721,7 @@ def diff_fit(volume_list: list,
                                     target_size_x_y_z_tensor, target_origin_tensor, device)
             render = torch.nn.functional.grid_sample(target, grid, 'bilinear', 'border', align_corners=True)
 
-            correlation_table[mol_idx] = calculate_correlation(render, elements_sim_density_list[mol_idx])
+            metrics_table[mol_idx] = calculate_metrics(render, elements_sim_density_list[mol_idx])
 
             occupied_density_sum[mol_idx] = torch.sum(render, dim=-1).squeeze()
             first_layer_density_sum[mol_idx] = occupied_density_sum[mol_idx]
@@ -746,7 +746,7 @@ def diff_fit(volume_list: list,
                 e_sqd_log[:, :, :, log_idx, 0:3] = e_shifts
                 e_sqd_log[:, :, :, log_idx, 3:7] = e_quaternions
                 e_sqd_log[:, :, :, log_idx, 7] = first_layer_density_sum
-                e_sqd_log[:, :, :, log_idx, 8:11] = correlation_table
+                e_sqd_log[:, :, :, log_idx, 8:11] = metrics_table
 
                 if save_results:
                     with open(f"{out_dir}/log.log", "a") as log_file:
@@ -907,7 +907,7 @@ def diff_atom_comp(target_vol_path: str,
                                     target_size_x_y_z_tensor, target_origin_tensor, device)
             render = torch.nn.functional.grid_sample(target, grid, 'bilinear', 'border', align_corners=True)
 
-            correlation_table[mol_idx] = calculate_correlation(render, elements_sim_density_list[mol_idx])
+            correlation_table[mol_idx] = calculate_metrics(render, elements_sim_density_list[mol_idx])
 
             occupied_density_sum[mol_idx] = torch.sum(render, dim=-1).squeeze()
 
