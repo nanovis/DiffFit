@@ -74,8 +74,8 @@ def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3
 
     N_mol, N_record, N_iter, N_metric = e_sqd_log.shape
 
-    correlations = e_sqd_log[:, :, 1:22, sort_column_idx]  # remove the 0 iteration, which is before optimization
-    max_correlations_idx = np.argmax(correlations, axis=-1) + 1  # add back 0 iteration
+    sort_column_metric = e_sqd_log[:, :, 1:22, sort_column_idx]  # remove the 0 iteration, which is before optimization
+    max_sort_column_metric_idx = np.argmax(sort_column_metric, axis=-1) + 1  # add back 0 iteration
 
     # Generate meshgrid for the dimensions you're not indexing through
     dims_0, dims_1 = np.meshgrid(
@@ -84,8 +84,8 @@ def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3
         indexing='ij'
     )
 
-    # Use the generated meshgrid and max_correlations_idx to index into e_sqd_log
-    sqd_highest_corr_np = e_sqd_log[dims_0, dims_1, max_correlations_idx]
+    # Use the generated meshgrid and max_sort_column_metric_idx to index into e_sqd_log
+    sqd_highest_corr_np = e_sqd_log[dims_0, dims_1, max_sort_column_metric_idx]
 
     sqd_clusters = []
     for mol_idx in range(N_mol):
@@ -129,7 +129,7 @@ def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3
 
             # [mol_idx, max_idx (in e_sqd_log), iter_idx (giving the largest correlation),
             #  cluster size, correlation]
-            sqd_clusters.append([mol_idx, max_idx, max_correlations_idx[mol_idx, max_idx],
+            sqd_clusters.append([mol_idx, max_idx, max_sort_column_metric_idx[mol_idx, max_idx],
                                  counts[cluster_idx], sqd_highest_corr_np[mol_idx, max_idx, sort_column_idx]])
 
     sqd_clusters = np.array(sqd_clusters)
