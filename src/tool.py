@@ -1120,6 +1120,8 @@ class DiffFitTool(ToolInstance):
         timer_stop = datetime.now()
         print(f"Single fit time elapsed: {timer_stop - single_fit_timer_start}\n\n")
 
+        self.select_table_item(0)
+
 
     def run_button_clicked(self):
         #import sys
