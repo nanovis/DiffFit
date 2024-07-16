@@ -23,6 +23,11 @@ from scipy.spatial.transform import Rotation as R
 from sklearn.cluster import Birch
 import math
 
+from math import pi
+from chimerax.geometry import bins
+from chimerax.geometry import Place
+
+
 # Ignore PDBConstructionWarning for unrecognized 'END' record
 warnings.filterwarnings("ignore", message="Ignoring unrecognized record 'END'", category=PDBConstructionWarning)
 
@@ -39,8 +44,8 @@ def q2_unit_coord(Q):
     return np.concatenate((rotated_up, rotated_right), axis=-1)
 
 
-def cluster_and_sort_sqd_fast(e_sqd_log, shift_tolerance: float = 3.0, angle_tolerance: float = 6.0,
-                              sort_column_idx: int = 9):
+def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3.0, angle_tolerance: float = 6.0,
+                              sort_column_idx: int = 7):
     """
     Cluster the fitting results in sqd table by thresholding on shift and quaternion
     Return the sorted cluster representatives
@@ -57,6 +62,7 @@ def cluster_and_sort_sqd_fast(e_sqd_log, shift_tolerance: float = 3.0, angle_tol
     3. sort the cluster table in descending order by correlation, or the metric at the sort_column_idx
 
     @param e_sqd_log: fitting results in sqd table
+    @param mol_centers: molecule atom coords centers
     @param shift_tolerance: shift tolerance in Angstrom
     @param angle_tolerance: angle tolerance in degrees
     @param sort_column_idx: the column to sort, 9-th column is the correlation
@@ -68,8 +74,8 @@ def cluster_and_sort_sqd_fast(e_sqd_log, shift_tolerance: float = 3.0, angle_tol
 
     N_mol, N_record, N_iter, N_metric = e_sqd_log.shape
 
-    correlations = e_sqd_log[:, :, 1:22, sort_column_idx]  # remove the 0 iteration, which is before optimization
-    max_correlations_idx = np.argmax(correlations, axis=-1) + 1  # add back 0 iteration
+    sort_column_metric = e_sqd_log[:, :, 1:22, sort_column_idx]  # remove the 0 iteration, which is before optimization
+    max_sort_column_metric_idx = np.argmax(sort_column_metric, axis=-1) + 1  # add back 0 iteration
 
     # Generate meshgrid for the dimensions you're not indexing through
     dims_0, dims_1 = np.meshgrid(
@@ -78,28 +84,44 @@ def cluster_and_sort_sqd_fast(e_sqd_log, shift_tolerance: float = 3.0, angle_tol
         indexing='ij'
     )
 
-    # Use the generated meshgrid and max_correlations_idx to index into e_sqd_log
-    sqd_highest_corr_np = e_sqd_log[dims_0, dims_1, max_correlations_idx]
+    # Use the generated meshgrid and max_sort_column_metric_idx to index into e_sqd_log
+    sqd_highest_corr_np = e_sqd_log[dims_0, dims_1, max_sort_column_metric_idx]
 
     sqd_clusters = []
     for mol_idx in range(N_mol):
         mol_shift = sqd_highest_corr_np[mol_idx, :, :3]
         mol_q = sqd_highest_corr_np[mol_idx, :, 3:7]
 
-        cluster_shift = Birch(threshold=shift_tolerance / 2.0, n_clusters=None).fit(mol_shift)
-        # mol_shift_cluster = np.concatenate([mol_shift, cluster_shift.labels_.reshape(-1, 1)], axis=-1)
-        # np.save(f"mol{mol_idx}_shift_cluster.npy", mol_shift_cluster)
+        T = []
+        for i in range(len(mol_shift)):
+            shift = mol_shift[i]
+            quat = mol_q[i]
+            R_matrix = R.from_quat(quat).as_matrix()
 
-        mol_q_coord = q2_unit_coord(mol_q)
-        cluster_q = Birch(threshold=q_coord_radius_tolerance, n_clusters=None).fit(mol_q_coord)
-        # mol_q_coord_cluster = np.concatenate([mol_q_coord, cluster_q.labels_.reshape(-1, 1)], axis=-1)
-        # np.save(f"mol{mol_idx}_q_coord_cluster.npy", mol_q_coord_cluster)
+            T_matrix = np.zeros([3, 4])
+            T_matrix[:, :3] = R_matrix
+            T_matrix[:, 3] = shift
 
-        mol_transforma_label = np.concatenate(
-            (cluster_shift.labels_.reshape([-1, 1]), cluster_q.labels_.reshape([-1, 1])),
-            axis=-1)
-        unique_labels, indices, counts = np.unique(mol_transforma_label, axis=0, return_inverse=True,
-                                                   return_counts=True)
+            transformation = Place(matrix=T_matrix)
+            T.append(transformation)
+
+        b = bins.Binned_Transforms(angle_tolerance * pi / 180, shift_tolerance, mol_centers[mol_idx])
+        mol_transform_label = []
+        unique_id = 0
+        T_ID_dict = {}
+        for i in range(len(mol_shift)):
+            ptf = T[i]
+            close = b.close_transforms(ptf)
+            if len(close) == 0:
+                b.add_transform(ptf)
+                mol_transform_label.append(unique_id)
+                T_ID_dict[id(ptf)] = unique_id
+                unique_id = unique_id + 1
+            else:
+                mol_transform_label.append(T_ID_dict[id(close[0])])
+                T_ID_dict[id(ptf)] = T_ID_dict[id(close[0])]
+
+        unique_labels, indices, counts = np.unique(mol_transform_label, axis=0, return_inverse=True, return_counts=True)
 
         for cluster_idx in range(len(unique_labels)):
             sqd_idx = np.argwhere(indices == cluster_idx).reshape([-1])
@@ -107,7 +129,7 @@ def cluster_and_sort_sqd_fast(e_sqd_log, shift_tolerance: float = 3.0, angle_tol
 
             # [mol_idx, max_idx (in e_sqd_log), iter_idx (giving the largest correlation),
             #  cluster size, correlation]
-            sqd_clusters.append([mol_idx, max_idx, max_correlations_idx[mol_idx, max_idx],
+            sqd_clusters.append([mol_idx, max_idx, max_sort_column_metric_idx[mol_idx, max_idx],
                                  counts[cluster_idx], sqd_highest_corr_np[mol_idx, max_idx, sort_column_idx]])
 
     sqd_clusters = np.array(sqd_clusters)
@@ -539,40 +561,42 @@ def rotate_centers(atom_centers_list, e_quaternions):
     return rotated_centers_list
 
 
-def calculate_correlation(render, elements_sim_density):
+def calculate_metrics(render, elements_sim_density):
+    # Mask to filter elements in render that are greater than zero
+    mask = render > 0
+
+    # Apply the mask to the render and elements_sim_density tensors
+    render_filtered = render * mask
+    elements_sim_density_filtered = elements_sim_density * mask
+    mask_sum = mask.float().sum(dim=-1, keepdim=True)
+    in_contour_percentage = mask.float().mean(dim=-1)
+
     # Calculation of correlation
     # First, normalize the inputs to have zero mean and unit variance, as Pearson's correlation requires
-    render_mean = render.mean(dim=-1, keepdim=True)
-    elements_sim_density_mean = elements_sim_density.mean()
+    render_mean = render_filtered.sum(dim=-1, keepdim=True) / mask_sum
+    elements_sim_density_mean = elements_sim_density_filtered.sum(dim=-1, keepdim=True) / mask_sum
 
-    render_std = render.std(dim=-1, keepdim=True)
-    elements_sim_density_std = elements_sim_density.std()
+    render_std = torch.sqrt(((render_filtered - render_mean * mask) ** 2).sum(dim=-1, keepdim=True) / mask_sum)
+    elements_sim_density_std = torch.sqrt(
+        ((elements_sim_density_filtered - elements_sim_density_mean * mask) ** 2).sum(dim=-1, keepdim=True) / mask_sum)
 
-    render_normalized = (render - render_mean) / render_std
-    elements_sim_density_normalized = (elements_sim_density - elements_sim_density_mean) / elements_sim_density_std
+    render_normalized = (render_filtered - render_mean * mask) / render_std
+    elements_sim_density_normalized = (elements_sim_density_filtered - elements_sim_density_mean * mask) / elements_sim_density_std
 
-    # Since we need to compare each [q_idx, s_idx, :] slice of render to elements_sim_density, we'll expand dimensions
-    # to allow broadcasting
-    elements_sim_density_normalized_expanded = elements_sim_density_normalized.unsqueeze(0).unsqueeze(0).unsqueeze(
-        0).unsqueeze(0)
-
-    # Now, both tensors can be multiplied directly and then we sum over the last dimension to compute the dot product
+    # Now, both tensors can be multiplied directly, and then we sum over the last dimension to compute the dot product
     # The denominator for the Pearson correlation coefficient simplifies to the product of stds, times the length of the vectors,
     # because we normalized the inputs. This results in 1 for each pair, so the dot product gives us the correlation directly.
-    cam = (render_normalized * elements_sim_density_normalized_expanded).mean(dim=-1)
+    cam = (render_normalized * elements_sim_density_normalized).sum(dim=-1) / mask_sum.squeeze(-1)
 
-    elements_sim_density_expanded = elements_sim_density.unsqueeze(0).unsqueeze(0).unsqueeze(
-        0).unsqueeze(0)
+    overlap = (render_filtered * elements_sim_density_filtered).sum(dim=-1)
+    overlap_mean = overlap / mask_sum.squeeze(-1)
 
-    overlap = (render * elements_sim_density_expanded).sum(dim=-1)
-    overlap_mean = overlap / (elements_sim_density.shape[0])
-
-    render_norm = torch.linalg.vector_norm(render, dim=-1)
-    elements_sim_density_norm = torch.linalg.vector_norm(elements_sim_density)
+    render_norm = torch.linalg.vector_norm(render_filtered, dim=-1)
+    elements_sim_density_norm = torch.linalg.vector_norm(elements_sim_density_filtered, dim=-1)
 
     correlation = overlap / (render_norm * elements_sim_density_norm)
 
-    return torch.stack((overlap_mean, correlation, cam), dim=-1)
+    return torch.stack((overlap_mean, correlation, cam, in_contour_percentage), dim=-1)
 
 
 def diff_fit(volume_list: list,
@@ -668,7 +692,7 @@ def diff_fit(volume_list: list,
     # Training loop
     log_every = 10
 
-    e_sqd_log = torch.zeros([num_molecules, N_quaternions, N_shifts, int(n_iters / 10) + 2, 11], device=device)
+    e_sqd_log = torch.zeros([num_molecules, N_quaternions, N_shifts, int(n_iters / 10) + 2, 12], device=device)
     # [x, y, z, w, -x, -y, -z, occupied_density_sum]
 
     with torch.no_grad():
@@ -687,8 +711,9 @@ def diff_fit(volume_list: list,
     for epoch in range(n_iters):
         # Forward pass
 
+        first_layer_density_sum = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device)
         occupied_density_sum = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device)
-        correlation_table = torch.zeros([num_molecules, N_quaternions, N_shifts, 3], device=device)
+        metrics_table = torch.zeros([num_molecules, N_quaternions, N_shifts, 4], device=device)
 
         for mol_idx in range(num_molecules):
             grid = transform_coords(atom_coords_list[mol_idx],
@@ -697,9 +722,10 @@ def diff_fit(volume_list: list,
                                     target_size_x_y_z_tensor, target_origin_tensor, device)
             render = torch.nn.functional.grid_sample(target, grid, 'bilinear', 'border', align_corners=True)
 
-            correlation_table[mol_idx] = calculate_correlation(render, elements_sim_density_list[mol_idx])
+            metrics_table[mol_idx] = calculate_metrics(render, elements_sim_density_list[mol_idx])
 
             occupied_density_sum[mol_idx] = torch.sum(render, dim=-1).squeeze()
+            first_layer_density_sum[mol_idx] = occupied_density_sum[mol_idx]
 
             add_conv_density(conv_loops, target_gaussian_conv_list, conv_weights, grid, occupied_density_sum[mol_idx])
 
@@ -720,8 +746,8 @@ def diff_fit(volume_list: list,
                 log_idx += 1
                 e_sqd_log[:, :, :, log_idx, 0:3] = e_shifts
                 e_sqd_log[:, :, :, log_idx, 3:7] = e_quaternions
-                e_sqd_log[:, :, :, log_idx, 7] = occupied_density_sum
-                e_sqd_log[:, :, :, log_idx, 8:11] = correlation_table
+                e_sqd_log[:, :, :, log_idx, 7] = first_layer_density_sum
+                e_sqd_log[:, :, :, log_idx, 8:12] = metrics_table
 
                 if save_results:
                     with open(f"{out_dir}/log.log", "a") as log_file:
@@ -882,7 +908,7 @@ def diff_atom_comp(target_vol_path: str,
                                     target_size_x_y_z_tensor, target_origin_tensor, device)
             render = torch.nn.functional.grid_sample(target, grid, 'bilinear', 'border', align_corners=True)
 
-            correlation_table[mol_idx] = calculate_correlation(render, elements_sim_density_list[mol_idx])
+            correlation_table[mol_idx] = calculate_metrics(render, elements_sim_density_list[mol_idx])
 
             occupied_density_sum[mol_idx] = torch.sum(render, dim=-1).squeeze()
 

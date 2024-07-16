@@ -24,7 +24,9 @@ from chimerax.map.volume import volume_list
 from chimerax.atomic import AtomicStructure
 from chimerax.geometry import Place
 from chimerax.ui import MainToolWindow
+
 from chimerax.core.models import Model
+from .cluster_viewer import ClusterSphereModel
 from chimerax.core.selection import SELECTION_CHANGED
 
 from .parse_log import look_at_record, look_at_cluster, look_at_MQS_idx, animate_MQS, animate_MQS_2
@@ -79,7 +81,7 @@ class DiffFitSettings:
         self.conv_weights: list = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
         
         self.clustering_shift_tolerance : float = 3.0
-        self.clustering_angle_tolerance : float = 6.0         
+        self.clustering_angle_tolerance : float = 6.0
 
 
 class DiffFitTool(ToolInstance):
@@ -134,7 +136,9 @@ class DiffFitTool(ToolInstance):
         self.fit_result = None   
 
         # Register the selection change callback
-        self.session.triggers.add_handler(SELECTION_CHANGED, self.selection_callback)             
+        self.session.triggers.add_handler(SELECTION_CHANGED, self.selection_callback)
+
+        self.spheres = None
         
 
     def _build_ui(self):
@@ -889,6 +893,10 @@ class DiffFitTool(ToolInstance):
                     
         return
 
+
+    def get_table_item_size(self, cluster_idx):
+        return int(self.e_sqd_clusters_ordered[cluster_idx, 3])
+
     def get_table_item_transformation(self, cluster_idx):
         mol_idx = int(self.e_sqd_clusters_ordered[cluster_idx, 0])
         record_idx = int(self.e_sqd_clusters_ordered[cluster_idx, 1])
@@ -968,13 +976,18 @@ class DiffFitTool(ToolInstance):
             #print(self.settings)
             print(self.settings.view_target_vol_path)
             self.vol = run(self.session, "open {0}".format(self.settings.view_target_vol_path))[0]
+
+            #TODO: define mol_centers
         elif self.fit_input_mode == "interactive":
             self.vol = self.fit_vol
             self.vol.display = True
+            mol_centers = [self.fit_mol_list[0].atoms.coords.mean(axis=0)]
 
         N_mol, N_quat, N_shift, N_iter, N_metric = e_sqd_log.shape
         self.e_sqd_log = e_sqd_log.reshape([N_mol, N_quat * N_shift, N_iter, N_metric])
-        self.e_sqd_clusters_ordered = cluster_and_sort_sqd_fast(self.e_sqd_log, self.settings.clustering_shift_tolerance, self.settings.clustering_angle_tolerance)
+        self.e_sqd_clusters_ordered = cluster_and_sort_sqd_fast(self.e_sqd_log, mol_centers,
+                                                                self.settings.clustering_shift_tolerance,
+                                                                self.settings.clustering_angle_tolerance)
         
         self.model = TableModel(self.e_sqd_clusters_ordered, self.e_sqd_log)
         self.proxyModel = QSortFilterProxyModel()
@@ -1107,6 +1120,8 @@ class DiffFitTool(ToolInstance):
         timer_stop = datetime.now()
         print(f"Single fit time elapsed: {timer_stop - single_fit_timer_start}\n\n")
 
+        self.select_table_item(0)
+
 
     def run_button_clicked(self):
         #import sys
@@ -1231,8 +1246,6 @@ class DiffFitTool(ToolInstance):
 
     # point cloud visualization    
     def get_model_by_name(self, model_name):
-        from chimerax.atomic import Structure
-
         models = self.session.models.list()
         for model in models:            
             if model.name == model_name:
@@ -1259,17 +1272,16 @@ class DiffFitTool(ToolInstance):
         # Print the selected models
         if selected_models:
             for model in selected_models:
-                if model.name == "sphere":                    
+                if type(model) is ClusterSphereModel:
                     self.focus_table_row(model.id[1] - 1)
                     self.select_table_item(model.id[1] - 1)  
                     
 
         
     def activate_sphere(self, cluster_idx):
-        parent = self.get_model_by_name("spheres")
-        
-        if parent:
-            command = 'select #{0}.{1}'.format(parent.id[0], cluster_idx + 1)
+
+        if self.spheres:
+            command = 'select #{0}.{1}'.format(self.spheres.id[0], cluster_idx + 1)
             run(self.session, command)             
 
     # coloring of the sphere
@@ -1280,12 +1292,25 @@ class DiffFitTool(ToolInstance):
         g = 255 * (1 - value)
         r = 255 * value
         b = 0
+        a = 255
 
-        return [r, g, b]
+        return [r, g, b, a]
 
-    def add_spheres_clicked(self):       
+    def add_spheres_clicked(self):
 
-        spheres = Model("spheres", self.session)
+        # User-controllable variable
+        # offset_x
+        # (exponential) scale factor for sphere_size
+        # color transparency
+        #
+        # playground code for in_contour percentage
+        # points = df.mol.atoms.coords
+        # from chimerax.map_fit import fitmap as FM
+        # 1 - FM.points_outside_contour(points, df.vol.position * df.get_table_item_transformation(0), volume)[0] / len(points)
+        #
+
+
+        spheres = Model("clusterSpheres", self.session)
         self.session.models.add([spheres])
 
         entries_count = self.proxyModel.rowCount()
@@ -1294,7 +1319,6 @@ class DiffFitTool(ToolInstance):
 
         offset_x = 100
         sphere_size = 0.3
-        parent_id = spheres.id[0]
 
         mol_center = self.mol.atoms.coords.mean(axis=0)
         
@@ -1305,8 +1329,8 @@ class DiffFitTool(ToolInstance):
             y = translation[1]
             z = translation[2]
             color = self.get_sphere_color(entry_id - 1, entries_count)
-            command = 'shape sphere radius {0} center {1},{2},{3} color {4},{5},{6} modelId #{7}.{8}'.format(sphere_size, x, y, z, color[0], color[1], color[2], parent_id, entry_id)
-            run(self.session, command)        
+
+            spheres.add([ClusterSphereModel(str(entry_id), self.session, color, (x, y, z), sphere_size)])
         
         self.spheres = spheres
 

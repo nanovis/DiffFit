@@ -9,7 +9,7 @@ class TableModel(QAbstractTableModel):
         self._sqd_cluster_data = sqd_cluster_data
 
         self._header = ["Id", "Mol Id", "Hits",
-                        "Density", "Overlap", "Correlation", "Cam"]
+                        "Density", "Overlap", "Correlation", "Cam", "Inside"]
 
         # mapping of columns (from view to data)
         # self._mapping = [-1, -1, 10, 11, 12, 13]
@@ -56,7 +56,7 @@ class TableModel(QAbstractTableModel):
                 return mol_idx
             elif column == 2:
                 return int(self._sqd_cluster_data[index.row(), 3])
-            elif 3 <= column <= 6:
+            elif 3 <= column <= 7:
                 record_row = self._sqd_data[mol_idx, record_idx, iter_idx]
                 return float(record_row[index.column() + 4])
 
