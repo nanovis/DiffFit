@@ -138,6 +138,7 @@ class DiffFitTool(ToolInstance):
 
         # Register the selection change callback
         self.session.triggers.add_handler(SELECTION_CHANGED, self.selection_callback)
+        self.session.triggers.add_handler('graphics update', self.graphics_update_callback)
 
         self.spheres = None
         
@@ -1336,9 +1337,10 @@ class DiffFitTool(ToolInstance):
             for model in selected_models:
                 if type(model) is ClusterSphereModel:
                     self.focus_table_row(model.id[1] - 1)
-                    self.select_table_item(model.id[1] - 1)  
-                    
+                    self.select_table_item(model.id[1] - 1)
 
+    def graphics_update_callback(self, trigger, changes):
+        print(self.session.main_view.camera.view_direction())
         
     def activate_sphere(self, cluster_idx):
 
