@@ -840,8 +840,8 @@ class DiffFitTool(ToolInstance):
         CS_scale_label.setText("Scale: ")
 
         CS_scale = QSlider(Qt.Horizontal)
-        CS_scale.setValue(3)
-        CS_scale.setMinimum(0)
+        CS_scale.setValue(40)
+        CS_scale.setMinimum(20)
         CS_scale.setMaximum(100)
         CS_scale.valueChanged.connect(self.CS_scale_changed)
         self.CS_scale = CS_scale
@@ -1305,7 +1305,7 @@ class DiffFitTool(ToolInstance):
         if self.spheres:
             child_models = self.spheres.child_models()
             for i in range(len(child_models)):
-                child_models[i].radius = sphere_size * math.pow(child_models[i].hit_number, 1.0/self.CS_scale.value())
+                child_models[i].radius = sphere_size * math.pow(child_models[i].hit_number, 20.0/(120 - self.CS_scale.value()))
 
     def get_model_by_name(self, model_name):
         models = self.session.models.list()
@@ -1382,7 +1382,7 @@ class DiffFitTool(ToolInstance):
                 z = original_position[2]
                 color = self.get_sphere_color(entry_id - 1, entries_count)
 
-                spheres.add([ClusterSphereModel(str(entry_id), self.session, color, (x, y, z), sphere_size * math.pow(hit_number, 1.0/5), original_position, hit_number)])
+                spheres.add([ClusterSphereModel(str(entry_id), self.session, color, (x, y, z), sphere_size * math.pow(hit_number, 20.0/80.0), original_position, hit_number)])
 
             self.spheres = spheres
 
