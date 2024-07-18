@@ -1360,34 +1360,30 @@ class DiffFitTool(ToolInstance):
 
     def enable_spheres_clicked(self):
 
-        # User-controllable variable
-        # offset_x
-        # (exponential) scale factor for sphere_size
-        # color transparency
+        if not self.spheres:
+            spheres = Model("clusterSpheres", self.session)
+            self.session.models.add([spheres])
 
-        spheres = Model("clusterSpheres", self.session)
-        self.session.models.add([spheres])
+            entries_count = self.proxyModel.rowCount()
 
-        entries_count = self.proxyModel.rowCount()
+            # map_x_length = abs(self.vol.xyz_bounds()[1][0] - self.vol.xyz_bounds()[0][0])
 
-        # map_x_length = abs(self.vol.xyz_bounds()[1][0] - self.vol.xyz_bounds()[0][0])
+            self.CS_offset_current = 100.0
+            sphere_size = 0.3
 
-        self.CS_offset_current = 100.0
-        sphere_size = 0.3
+            mol_center = self.mol.atoms.coords.mean(axis=0)
 
-        mol_center = self.mol.atoms.coords.mean(axis=0)
-        
-        for entry_id in range(1, entries_count + 1):    
-            place = self.get_table_item_transformation(entry_id - 1)
-            hit_number = self.get_table_item_size(entry_id - 1)
-            original_position = place * mol_center
-            x = original_position[0] + self.CS_offset_current
-            y = original_position[1]
-            z = original_position[2]
-            color = self.get_sphere_color(entry_id - 1, entries_count)
+            for entry_id in range(1, entries_count + 1):
+                place = self.get_table_item_transformation(entry_id - 1)
+                hit_number = self.get_table_item_size(entry_id - 1)
+                original_position = place * mol_center
+                x = original_position[0] + self.CS_offset_current
+                y = original_position[1]
+                z = original_position[2]
+                color = self.get_sphere_color(entry_id - 1, entries_count)
 
-            spheres.add([ClusterSphereModel(str(entry_id), self.session, color, (x, y, z), sphere_size * math.pow(hit_number, 1.0/5), original_position, hit_number)])
-        
-        self.spheres = spheres
+                spheres.add([ClusterSphereModel(str(entry_id), self.session, color, (x, y, z), sphere_size * math.pow(hit_number, 1.0/5), original_position, hit_number)])
+
+            self.spheres = spheres
 
         return
