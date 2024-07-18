@@ -1,4 +1,5 @@
 # vim: set expandtab shiftwidth=4 softtabstop=4:
+import math
 from datetime import datetime
 
 from PyQt6.QtWidgets import QCheckBox
@@ -807,13 +808,54 @@ class DiffFitTool(ToolInstance):
         layout.addWidget(progress_label, row, 2)
         row = row + 1        
         
-        test_spheres = QPushButton()
-        test_spheres.setText("Point cloud visualization")
-        test_spheres.clicked.connect(self.add_spheres_clicked)                        
-        layout.addWidget(test_spheres, row, 0)
+        # Enable ClusterSphere
+        enable_spheres = QPushButton()
+        enable_spheres.setText("Point cloud visualization")
+        enable_spheres.clicked.connect(self.enable_spheres_clicked)                        
+        layout.addWidget(enable_spheres, row, 0)
         row = row + 1
 
-    #def fill_context_menu(self, menu, x, y):
+        # slider for ClusterSphere offset
+        CS_offset_label = QLabel()
+        CS_offset_label.setText("Offset: ")
+
+        CS_offset = QSlider(Qt.Horizontal)
+        CS_offset.setValue(100)
+        CS_offset.setMinimum(0)
+        CS_offset.setMaximum(300)
+        CS_offset.valueChanged.connect(self.CS_offset_changed)
+        self.CS_offset = CS_offset
+
+        CS_offset_value_label = QLabel()
+        CS_offset_value_label.setText(str(CS_offset.value()))
+        self.CS_offset_value_label = CS_offset_value_label
+
+        layout.addWidget(CS_offset_label, row, 0)
+        layout.addWidget(CS_offset, row, 1)
+        layout.addWidget(CS_offset_value_label, row, 2)
+        row = row + 1
+
+        # slider for ClusterSphere scale factor
+        CS_scale_label = QLabel()
+        CS_scale_label.setText("Scale: ")
+
+        CS_scale = QSlider(Qt.Horizontal)
+        CS_scale.setValue(40)
+        CS_scale.setMinimum(20)
+        CS_scale.setMaximum(100)
+        CS_scale.valueChanged.connect(self.CS_scale_changed)
+        self.CS_scale = CS_scale
+
+        CS_scale_value_label = QLabel()
+        CS_scale_value_label.setText(str(CS_scale.value()))
+        self.CS_scale_value_label = CS_scale_value_label
+
+        layout.addWidget(CS_scale_label, row, 0)
+        layout.addWidget(CS_scale, row, 1)
+        layout.addWidget(CS_scale_value_label, row, 2)
+        row = row + 1
+
+        #def fill_context_menu(self, menu, x, y):
         # Add any tool-specific items to the given context menu (a QMenu instance).
         # The menu will then be automatically filled out with generic tool-related actions
         # (e.g. Hide Tool, Help, Dockable Tool, etc.) 
@@ -1245,6 +1287,26 @@ class DiffFitTool(ToolInstance):
     
 
     # point cloud visualization    
+    def CS_offset_changed(self):
+        self.CS_offset_value_label.setText(str(self.CS_offset.value()))
+        if self.spheres:
+            offset_delta = self.CS_offset.value() - self.CS_offset_current
+            self.CS_offset_current = self.CS_offset.value()
+
+            from chimerax.geometry import translation
+            child_models = self.spheres.child_models()
+            for i in range(len(child_models)):
+                child_models[i].position = translation(child_models[i].position.translation() +
+                                                       [offset_delta, 0.0, 0.0])
+
+    def CS_scale_changed(self):
+        self.CS_scale_value_label.setText(str(self.CS_scale.value()))
+        sphere_size = 0.3
+        if self.spheres:
+            child_models = self.spheres.child_models()
+            for i in range(len(child_models)):
+                child_models[i].radius = sphere_size * math.pow(child_models[i].hit_number, 20.0/(120 - self.CS_scale.value()))
+
     def get_model_by_name(self, model_name):
         models = self.session.models.list()
         for model in models:            
@@ -1296,42 +1358,32 @@ class DiffFitTool(ToolInstance):
 
         return [r, g, b, a]
 
-    def add_spheres_clicked(self):
+    def enable_spheres_clicked(self):
 
-        # User-controllable variable
-        # offset_x
-        # (exponential) scale factor for sphere_size
-        # color transparency
-        #
-        # playground code for in_contour percentage
-        # points = df.mol.atoms.coords
-        # from chimerax.map_fit import fitmap as FM
-        # 1 - FM.points_outside_contour(points, df.vol.position * df.get_table_item_transformation(0), volume)[0] / len(points)
-        #
+        if not self.spheres:
+            spheres = Model("clusterSpheres", self.session)
+            self.session.models.add([spheres])
 
+            entries_count = self.proxyModel.rowCount()
 
-        spheres = Model("clusterSpheres", self.session)
-        self.session.models.add([spheres])
+            # map_x_length = abs(self.vol.xyz_bounds()[1][0] - self.vol.xyz_bounds()[0][0])
 
-        entries_count = self.proxyModel.rowCount()
+            self.CS_offset_current = 100.0
+            sphere_size = 0.3
 
-        # map_x_length = abs(self.vol.xyz_bounds()[1][0] - self.vol.xyz_bounds()[0][0])
+            mol_center = self.mol.atoms.coords.mean(axis=0)
 
-        offset_x = 100
-        sphere_size = 0.3
+            for entry_id in range(1, entries_count + 1):
+                place = self.get_table_item_transformation(entry_id - 1)
+                hit_number = self.get_table_item_size(entry_id - 1)
+                original_position = place * mol_center
+                x = original_position[0] + self.CS_offset_current
+                y = original_position[1]
+                z = original_position[2]
+                color = self.get_sphere_color(entry_id - 1, entries_count)
 
-        mol_center = self.mol.atoms.coords.mean(axis=0)
-        
-        for entry_id in range(1, entries_count + 1):    
-            place = self.get_table_item_transformation(entry_id - 1)
-            translation = place * mol_center
-            x = translation[0] + offset_x
-            y = translation[1]
-            z = translation[2]
-            color = self.get_sphere_color(entry_id - 1, entries_count)
+                spheres.add([ClusterSphereModel(str(entry_id), self.session, color, (x, y, z), sphere_size * math.pow(hit_number, 20.0/80.0), original_position, hit_number)])
 
-            spheres.add([ClusterSphereModel(str(entry_id), self.session, color, (x, y, z), sphere_size)])
-        
-        self.spheres = spheres
+            self.spheres = spheres
 
         return

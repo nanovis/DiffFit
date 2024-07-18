@@ -2,7 +2,7 @@ from chimerax.core.models import Surface
 
 
 class ClusterSphereModel(Surface):
-    def __init__(self, name, session, color, center, radius, num_triangles=1000):
+    def __init__(self, name, session, color, center, radius, original_position, hit_number, num_triangles=1000):
         self._num_triangles = num_triangles
         Surface.__init__(self, name, session)
         from chimerax.surface import sphere_geometry2
@@ -13,6 +13,8 @@ class ClusterSphereModel(Surface):
         from chimerax.geometry import translation
         self.position = translation(center)
         self._radius = radius
+        self.original_position = original_position
+        self.hit_number = hit_number
         session.models.add([self])
 
     def _get_radius(self):
