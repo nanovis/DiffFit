@@ -141,7 +141,7 @@ class DiffFitTool(ToolInstance):
         self.session.triggers.add_handler('graphics update', self.graphics_update_callback)
 
         self.spheres = None
-        
+
 
     def _build_ui(self):
         
@@ -821,7 +821,8 @@ class DiffFitTool(ToolInstance):
         CS_offset_label.setText("Offset: ")
 
         CS_offset = QSlider(Qt.Horizontal)
-        CS_offset.setValue(100)
+        spheres_default_offset = 100
+        CS_offset.setValue(spheres_default_offset)
         CS_offset.setMinimum(0)
         CS_offset.setMaximum(300)
         CS_offset.valueChanged.connect(self.CS_offset_changed)
@@ -838,10 +839,11 @@ class DiffFitTool(ToolInstance):
 
         # slider for ClusterSphere scale factor
         CS_scale_label = QLabel()
-        CS_scale_label.setText("Scale: ")
+        CS_scale_label.setText("Diff Scale: ")
 
         CS_scale = QSlider(Qt.Horizontal)
-        CS_scale.setValue(40)
+        spheres_default_scale = 40
+        CS_scale.setValue(spheres_default_scale)
         CS_scale.setMinimum(20)
         CS_scale.setMaximum(100)
         CS_scale.valueChanged.connect(self.CS_scale_changed)
@@ -1291,14 +1293,12 @@ class DiffFitTool(ToolInstance):
     def CS_offset_changed(self):
         self.CS_offset_value_label.setText(str(self.CS_offset.value()))
         if self.spheres:
-            offset_delta = self.CS_offset.value() - self.CS_offset_current
-            self.CS_offset_current = self.CS_offset.value()
-
             from chimerax.geometry import translation
             child_models = self.spheres.child_models()
             for i in range(len(child_models)):
-                child_models[i].position = translation(child_models[i].position.translation() +
-                                                       [offset_delta, 0.0, 0.0])
+                child_models[i].position = translation(child_models[i].original_position +
+                                                       self.session.main_view.camera.position.axes()[0] *
+                                                       self.CS_offset.value())
 
     def CS_scale_changed(self):
         self.CS_scale_value_label.setText(str(self.CS_scale.value()))
@@ -1370,21 +1370,24 @@ class DiffFitTool(ToolInstance):
 
             # map_x_length = abs(self.vol.xyz_bounds()[1][0] - self.vol.xyz_bounds()[0][0])
 
-            self.CS_offset_current = 100.0
             sphere_size = 0.3
 
             mol_center = self.mol.atoms.coords.mean(axis=0)
 
+            spheres_default_offset = 100
+            spheres_default_scale = 40
             for entry_id in range(1, entries_count + 1):
                 place = self.get_table_item_transformation(entry_id - 1)
                 hit_number = self.get_table_item_size(entry_id - 1)
                 original_position = place * mol_center
-                x = original_position[0] + self.CS_offset_current
-                y = original_position[1]
-                z = original_position[2]
+                place_position = (original_position +
+                                  self.session.main_view.camera.position.axes()[0] *
+                                  spheres_default_offset)
                 color = self.get_sphere_color(entry_id - 1, entries_count)
 
-                spheres.add([ClusterSphereModel(str(entry_id), self.session, color, (x, y, z), sphere_size * math.pow(hit_number, 20.0/80.0), original_position, hit_number)])
+                spheres.add([ClusterSphereModel(str(entry_id), self.session, color, place_position,
+                                                sphere_size * math.pow(hit_number, 20.0/(120 - spheres_default_scale)),
+                                                original_position, hit_number)])
 
             self.spheres = spheres
 
