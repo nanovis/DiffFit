@@ -29,6 +29,7 @@ from chimerax.ui import MainToolWindow
 from chimerax.core.models import Model
 from .cluster_viewer import ClusterSphereModel
 from chimerax.core.selection import SELECTION_CHANGED
+from chimerax.geometry import translation
 
 from .parse_log import look_at_record, look_at_cluster, look_at_MQS_idx, animate_MQS, animate_MQS_2
 from .parse_log import simulate_volume, get_transformation_at_record, zero_cluster_density
@@ -1289,16 +1290,10 @@ class DiffFitTool(ToolInstance):
             self.mol.scene_position = self.transformation
     
 
-    # point cloud visualization    
+    # point cloud visualization
     def CS_offset_changed(self):
         self.CS_offset_value_label.setText(str(self.CS_offset.value()))
-        if self.spheres:
-            from chimerax.geometry import translation
-            child_models = self.spheres.child_models()
-            for i in range(len(child_models)):
-                child_models[i].position = translation(child_models[i].original_position +
-                                                       self.session.main_view.camera.position.axes()[0] *
-                                                       self.CS_offset.value())
+        self.update_spheres_pos()
 
     def CS_scale_changed(self):
         self.CS_scale_value_label.setText(str(self.CS_scale.value()))
@@ -1339,8 +1334,17 @@ class DiffFitTool(ToolInstance):
                     self.focus_table_row(model.id[1] - 1)
                     self.select_table_item(model.id[1] - 1)
 
+    def update_spheres_pos(self):
+        if self.spheres:
+            child_models = self.spheres.child_models()
+            for i in range(len(child_models)):
+                child_models[i].position = translation(child_models[i].original_position +
+                                                       self.session.main_view.camera.position.axes()[0] *
+                                                       self.CS_offset.value())
+
     def graphics_update_callback(self, trigger, changes):
-        print(self.session.main_view.camera.view_direction())
+        # print(self.session.main_view.camera.view_direction())
+        self.update_spheres_pos()
         
     def activate_sphere(self, cluster_idx):
 
