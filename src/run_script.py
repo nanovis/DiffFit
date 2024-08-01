@@ -1,5 +1,5 @@
 import sys
-sys.path.append('D:\\GIT\\DiffFitViewer\\src')
+sys.path.append('D:\\GIT\\DiffFit\\src')
 from parse_log import cluster_and_sort_sqd, cluster_and_sort_sqd_fast, look_at_cluster, look_at_MQS_idx, animate_MQS, animate_cluster
 from parse_log import zero_cluster_density
 import numpy as np

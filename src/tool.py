@@ -57,17 +57,17 @@ def create_row(parent_layout, left=0, top=0, right=0, bottom=0, spacing=5):
 class DiffFitSettings:    
     def __init__(self):   
         # viewing
-        self.view_output_directory: str = "D:\\GIT\\DiffFitViewer\\dev_data\\output\\dev_comp_domain_fit_3_domains_10s20q_new_q"
-        self.view_target_vol_path: str = "D:\\GIT\\DiffFitViewer\\dev_data\\input\\domain_fit_demo_3domains\\density2.mrc"        
-        self.view_structures_directory: str = "D:\\GIT\\DiffFitViewer\dev_data\input\domain_fit_demo_3domains\subunits_cif"
+        self.view_output_directory: str = "D:\\GIT\\DiffFit\\dev_data\\output\\dev_comp_domain_fit_3_domains_10s20q_new_q"
+        self.view_target_vol_path: str = "D:\\GIT\\DiffFit\\dev_data\\input\\domain_fit_demo_3domains\\density2.mrc"
+        self.view_structures_directory: str = "D:\\GIT\\DiffFit\dev_data\input\domain_fit_demo_3domains\subunits_cif"
         
         # computing
-        self.input_directory: str = "D:\\GIT\\DiffFitViewer\\dev_data\\input\\domain_fit_demo_3domains"        
-        self.target_vol_path: str = "D:\\GIT\\DiffFitViewer\\dev_data\\input\\domain_fit_demo_3domains\\density2.mrc"        
-        self.structures_directory: str = "D:\\GIT\\DiffFitViewer\dev_data\input\domain_fit_demo_3domains\subunits_cif"
-        self.structures_sim_map_dir: str = "D:\\GIT\\DiffFitViewer\dev_data\input\domain_fit_demo_3domains\subunits_mrc"
+        self.input_directory: str = "D:\\GIT\\DiffFit\\dev_data\\input\\domain_fit_demo_3domains"
+        self.target_vol_path: str = "D:\\GIT\\DiffFit\\dev_data\\input\\domain_fit_demo_3domains\\density2.mrc"
+        self.structures_directory: str = "D:\\GIT\\DiffFit\dev_data\input\domain_fit_demo_3domains\subunits_cif"
+        self.structures_sim_map_dir: str = "D:\\GIT\\DiffFit\dev_data\input\domain_fit_demo_3domains\subunits_mrc"
         
-        self.output_directory: str = "D:\\GIT\\DiffFitViewer\\dev_data\\output"
+        self.output_directory: str = "D:\\GIT\\DiffFit\\dev_data\\output"
         self.exp_name: str = "dev_comp"
         
         self.target_surface_threshold: float = 0.7
@@ -1171,11 +1171,11 @@ class DiffFitTool(ToolInstance):
 
     def run_button_clicked(self):
         #import sys
-        #sys.path.append('D:\\GIT\\DiffFitViewer\\src')
+        #sys.path.append('D:\\GIT\\DiffFit\\src')
         print("Running the computation...")
 
-        #target_vol_path = "D:\\GIT\\DiffFitViewer\dev_data\input\domain_fit_demo_3domains\density2.mrc"
-        #output_folder = "D:\\GIT\\DiffFitViewer\dev_data\output"                
+        #target_vol_path = "D:\\GIT\\DiffFit\dev_data\input\domain_fit_demo_3domains\density2.mrc"
+        #output_folder = "D:\\GIT\\DiffFit\dev_data\output"
         
         e_sqd_log = diff_atom_comp(
             target_vol_path=self.settings.target_vol_path,
