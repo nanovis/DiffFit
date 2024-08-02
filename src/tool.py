@@ -1193,7 +1193,9 @@ class DiffFitTool(ToolInstance):
         
         # output is tensor
         self.show_results(e_sqd_log.detach().cpu().numpy(), mol_centers)
-        
+        self.tab_widget.setCurrentWidget(self.tab_view_group)
+        self.select_table_item(0)
+
     def init_button_clicked(self):
         if self.fit_input_mode == "interactive":
             if self.fit_result_ready:
