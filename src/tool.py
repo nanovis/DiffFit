@@ -1193,7 +1193,8 @@ class DiffFitTool(ToolInstance):
             out_dir_exist_ok=self.settings.out_dir_exist_ok,
             conv_loops=self.settings.conv_loops,
             conv_kernel_sizes=self.settings.conv_kernel_sizes,
-            conv_weights=self.settings.conv_weights
+            conv_weights=self.settings.conv_weights,
+            device=self._device.currentText()
         )
 
         # copy the directories

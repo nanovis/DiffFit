@@ -800,6 +800,7 @@ def diff_atom_comp(target_vol_path: str,
                    conv_loops: int = 10,
                    conv_kernel_sizes: list = (5, 5, 5, 5, 5, 5, 5, 5, 5, 5),
                    conv_weights: list = (1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0),
+                   device: str = "cpu"
                    ):
     timer_start = datetime.now()
     # ======= load target volume to fit into
@@ -817,7 +818,6 @@ def diff_atom_comp(target_vol_path: str,
     sampled_coords = np.array([np.array(idx) * np.array(target_steps) for idx in sampled_indices])
     sampled_coords = sampled_coords[:, [2, 1, 0]] + target_origin  # convert to [x, y, z] and then shift
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     target_no_negative, target_dim = numpy2tensor(target_no_negative, device)
     # target as [1, 1, z, y, x]
     # target_dim as [z, y, x]
@@ -825,8 +825,8 @@ def diff_atom_comp(target_vol_path: str,
     target_size = np.array(list(map(operator.mul, target_dim, target_steps)))  # in [z, y, x]
 
     target_no_negative = linear_norm_tensor(target_no_negative)
-    np.save(f"{os.path.dirname(target_vol_path)}/target_filtered_normalized.npy",
-            target_no_negative.squeeze().detach().cpu().numpy())
+    # np.save(f"{os.path.dirname(target_vol_path)}/target_filtered_normalized.npy",
+    #         target_no_negative.squeeze().detach().cpu().numpy())
 
     # negative space in target volume
     eligible_volume_tensor = torch.tensor(eligible_volume, device=device).unsqueeze_(0).unsqueeze_(0)
@@ -868,6 +868,7 @@ def diff_atom_comp(target_vol_path: str,
 
     # coordinates is in [x, y, z]
     # target_size is in [z, y, x]
+    # make the conversion here
     target_size_x_y_z = [target_size[2], target_size[1], target_size[0]]
     target_size_x_y_z_tensor = torch.tensor(target_size_x_y_z, device=device).float()
     target_origin_tensor = torch.tensor(target_origin, device=device).float()
@@ -875,7 +876,7 @@ def diff_atom_comp(target_vol_path: str,
     # Training loop
     log_every = 10
 
-    e_sqd_log = torch.zeros([num_molecules, N_quaternions, N_shifts, int(n_iters / 10) + 2, 11], device=device)
+    e_sqd_log = torch.zeros([num_molecules, N_quaternions, N_shifts, int(n_iters / 10) + 2, 12], device=device)
     # [x, y, z, w, -x, -y, -z, occupied_density_sum]
 
     with torch.no_grad():
@@ -899,7 +900,7 @@ def diff_atom_comp(target_vol_path: str,
         # Forward pass
 
         occupied_density_sum = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device)
-        correlation_table = torch.zeros([num_molecules, N_quaternions, N_shifts, 3], device=device)
+        metrics_table = torch.zeros([num_molecules, N_quaternions, N_shifts, 4], device=device)
 
         for mol_idx in range(num_molecules):
             grid = transform_coords(atom_coords_list[mol_idx],
@@ -908,7 +909,7 @@ def diff_atom_comp(target_vol_path: str,
                                     target_size_x_y_z_tensor, target_origin_tensor, device)
             render = torch.nn.functional.grid_sample(target, grid, 'bilinear', 'border', align_corners=True)
 
-            correlation_table[mol_idx] = calculate_metrics(render, elements_sim_density_list[mol_idx])
+            metrics_table[mol_idx] = calculate_metrics(render, elements_sim_density_list[mol_idx])
 
             occupied_density_sum[mol_idx] = torch.sum(render, dim=-1).squeeze()
 
@@ -932,7 +933,7 @@ def diff_atom_comp(target_vol_path: str,
                 e_sqd_log[:, :, :, log_idx, 0:3] = e_shifts
                 e_sqd_log[:, :, :, log_idx, 3:7] = e_quaternions
                 e_sqd_log[:, :, :, log_idx, 7] = occupied_density_sum
-                e_sqd_log[:, :, :, log_idx, 8:11] = correlation_table
+                e_sqd_log[:, :, :, log_idx, 8:12] = metrics_table
 
                 with open(f"{exp_out_dir}/log.log", "a") as log_file:
                     log_file.write(f"Epoch: {epoch + 1:05d}, "
@@ -953,7 +954,7 @@ def diff_atom_comp(target_vol_path: str,
     e_sqd_log[:, :, :, :, 3:7] /= q_norms
 
     np.save(f"{exp_out_dir}/e_sqd_log.npy", e_sqd_log.detach().cpu().numpy())
-    np.save(f"{exp_out_dir}/sampled_coords.npy", sampled_coords)
+    # np.save(f"{exp_out_dir}/sampled_coords.npy", sampled_coords)
 
     # e_sqd_log_np = e_sqd_log.detach().cpu().numpy()
     # N_mol, N_quat, N_shift, N_iter, N_metric = e_sqd_log_np
