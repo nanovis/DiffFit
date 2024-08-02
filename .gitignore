@@ -9,6 +9,7 @@ _info.txt
 DiffFitViewerTool.egg-info/
 DiffFit.egg-info/
 dev_data/output/*
+dev_data/output_old/*
 !dev_data/output/dev_comp_domain_fit_3_domains_10s20q_new_q
 case_study_data
 run

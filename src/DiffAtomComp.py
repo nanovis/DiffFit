@@ -792,7 +792,6 @@ def diff_atom_comp(target_vol_path: str,
                    N_shifts: int = 10,
                    N_quaternions: int = 100,
                    negative_space_value: float = -0.5,
-                   exp_name: str = "dev_comp",
                    learning_rate: float = 0.01,
                    n_iters: int = 201,
                    out_dir: str = "out",
@@ -884,10 +883,9 @@ def diff_atom_comp(target_vol_path: str,
         e_sqd_log[:, :, :, 0, 3:7] = e_quaternions
 
     log_idx = 0
-    exp_out_dir = f"{out_dir}/{exp_name}"
-    os.makedirs(exp_out_dir, exist_ok=out_dir_exist_ok)
+    os.makedirs(out_dir, exist_ok=out_dir_exist_ok)
 
-    with open(f"{exp_out_dir}/log.log", "a") as log_file:
+    with open(f"{out_dir}/log.log", "a") as log_file:
         log_file.write(f"Wall clock time: {datetime.now()}\n")
 
     # Create the optimizer with different learning rates
@@ -935,14 +933,14 @@ def diff_atom_comp(target_vol_path: str,
                 e_sqd_log[:, :, :, log_idx, 7] = occupied_density_sum
                 e_sqd_log[:, :, :, log_idx, 8:12] = metrics_table
 
-                with open(f"{exp_out_dir}/log.log", "a") as log_file:
+                with open(f"{out_dir}/log.log", "a") as log_file:
                     log_file.write(f"Epoch: {epoch + 1:05d}, "
                                    f"loss = {loss:.4f}\n")
 
 
     timer_stop = datetime.now()
 
-    with open(f"{exp_out_dir}/log.log", "a") as log_file:
+    with open(f"{out_dir}/log.log", "a") as log_file:
         log_file.write(f"Time elapsed: {timer_stop - timer_start}\n\n")
 
     # convert quaternion to ChimeraX, Houdini, scipy system and normalize it
@@ -953,8 +951,8 @@ def diff_atom_comp(target_vol_path: str,
     q_norms = torch.linalg.vector_norm(e_sqd_log[:, :, :, :, 3:7], dim=-1, keepdim=True)
     e_sqd_log[:, :, :, :, 3:7] /= q_norms
 
-    np.save(f"{exp_out_dir}/e_sqd_log.npy", e_sqd_log.detach().cpu().numpy())
-    # np.save(f"{exp_out_dir}/sampled_coords.npy", sampled_coords)
+    np.save(f"{out_dir}/e_sqd_log.npy", e_sqd_log.detach().cpu().numpy())
+    # np.save(f"{out_dir}/sampled_coords.npy", sampled_coords)
 
     # e_sqd_log_np = e_sqd_log.detach().cpu().numpy()
     # N_mol, N_quat, N_shift, N_iter, N_metric = e_sqd_log_np

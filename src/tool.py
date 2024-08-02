@@ -68,8 +68,7 @@ class DiffFitSettings:
         self.structures_sim_map_dir: str = "D:\\GIT\\DiffFit\dev_data\input\domain_fit_demo_3domains\subunits_mrc"
         
         self.output_directory: str = "D:\\GIT\\DiffFit\\dev_data\\output"
-        self.exp_name: str = "dev_comp"
-        
+
         self.target_surface_threshold: float = 0.7
         self.min_cluster_size: float = 100
         self.N_shifts: int = 10
@@ -205,7 +204,6 @@ class DiffFitTool(ToolInstance):
         self.structures_dir.setText(self.settings.structures_directory)
         self.structures_sim_map_dir.setText(self.settings.structures_sim_map_dir)
         self.out_dir.setText(self.settings.output_directory)
-        self.exp_name.setText(self.settings.exp_name)        
         self.target_surface_threshold.setValue(self.settings.target_surface_threshold)
         self.min_cluster_size.setValue(self.settings.min_cluster_size)
         self.n_iters.setValue(self.settings.N_iters)
@@ -239,7 +237,6 @@ class DiffFitTool(ToolInstance):
         self.settings.structures_directory = self.structures_dir.text()
         self.settings.structures_sim_map_dir = self.structures_sim_map_dir.text()
         self.settings.output_directory = self.out_dir.text()        
-        self.settings.exp_name = self.exp_name.text()        
         self.settings.target_surface_threshold = self.target_surface_threshold.value()
         self.settings.min_cluster_size = self.min_cluster_size.value()
         self.settings.N_iters = self.n_iters.value()
@@ -490,14 +487,6 @@ class DiffFitTool(ToolInstance):
         layout.addWidget(out_dir_label, row, 0)
         layout.addWidget(self.out_dir, row, 1)
         layout.addWidget(out_dir_select, row, 2)
-        row = row + 1
-        
-        exp_name_label = QLabel()
-        exp_name_label.setText("Experiment name:")
-        self.exp_name = QLineEdit()
-        self.exp_name.textChanged.connect(lambda: self.store_settings())        
-        layout.addWidget(exp_name_label, row, 0)
-        layout.addWidget(self.exp_name, row, 1, 1, 2)
         row = row + 1
         
         target_surface_threshold_label = QLabel()
@@ -1186,7 +1175,6 @@ class DiffFitTool(ToolInstance):
             N_shifts=self.settings.N_shifts,
             N_quaternions=self.settings.N_quaternions,
             negative_space_value=self.settings.negative_space_value,
-            exp_name=self.settings.exp_name,
             learning_rate=self.settings.learning_rate,
             n_iters=self.settings.N_iters,
             out_dir=self.settings.output_directory,
@@ -1200,7 +1188,7 @@ class DiffFitTool(ToolInstance):
         # copy the directories
         self.target_vol.setText(self.settings.target_vol_path)     
         self.structures_folder.setText(self.settings.structures_directory)
-        self.dataset_folder.setText("{0}\{1}".format(self.settings.output_directory, self.settings.exp_name))            
+        self.dataset_folder.setText("{0}".format(self.settings.output_directory))
         #print(self.settings)
         
         # output is tensor
