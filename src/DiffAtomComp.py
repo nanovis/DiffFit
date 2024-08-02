@@ -546,7 +546,7 @@ def read_all_files_to_atom_coords_list(structures_dir):
     return atom_coords_list
 
 
-def rotate_centers(atom_centers_list, e_quaternions):
+def rotate_centers(mol_centers, e_quaternions):
     Q = e_quaternions[:, [1, 2, 3, 0]]
     Q[:, 0:3] *= -1  # convert to scipy system, which is the same as ChimeraX and Houdini system
     # suspect that DiffFit system has something consistently negative (Right-hand vs. Left-hand probably)
@@ -554,7 +554,7 @@ def rotate_centers(atom_centers_list, e_quaternions):
     rotations = [R.from_quat(q) for q in Q]
 
     rotated_centers_list = []
-    for atom_center in atom_centers_list:
+    for atom_center in mol_centers:
         rotated_centers = np.array([rot.apply(atom_center) for rot in rotations])
         rotated_centers_list.append(rotated_centers)
 
@@ -660,7 +660,7 @@ def diff_fit(volume_list: list,
 
     # ======= get atom coords
     atom_coords_list = mol_coords  # atom coords as [x, y, z]
-    atom_centers_list = [np.mean(coords, axis=0) for coords in atom_coords_list]
+    mol_centers = [np.mean(coords, axis=0) for coords in atom_coords_list]
     num_molecules = len(atom_coords_list)
 
     # read simulated map
@@ -673,7 +673,7 @@ def diff_fit(volume_list: list,
 
     e_quaternions = generate_random_quaternions(N_quaternions * N_shifts)
 
-    rotated_centers_array = np.array(rotate_centers(atom_centers_list, e_quaternions))
+    rotated_centers_array = np.array(rotate_centers(mol_centers, e_quaternions))
 
     e_shifts = sampled_coords - rotated_centers_array.reshape([num_molecules, N_quaternions, N_shifts, 3])
 
@@ -842,7 +842,7 @@ def diff_atom_comp(target_vol_path: str,
                                             negative_space_value, kernel_type="Gaussian")
 
     atom_coords_list = read_all_files_to_atom_coords_list(structures_dir)  # atom coords as [x, y, z]
-    atom_centers_list = [np.mean(coords, axis=0) for coords in atom_coords_list]
+    mol_centers = [np.mean(coords, axis=0) for coords in atom_coords_list]
     num_molecules = len(atom_coords_list)
 
     # read simulated map
@@ -855,7 +855,7 @@ def diff_atom_comp(target_vol_path: str,
 
     e_quaternions = generate_random_quaternions(N_quaternions * N_shifts)
 
-    rotated_centers_array = np.array(rotate_centers(atom_centers_list, e_quaternions))
+    rotated_centers_array = np.array(rotate_centers(mol_centers, e_quaternions))
 
     e_shifts = sampled_coords - rotated_centers_array.reshape([num_molecules, N_quaternions, N_shifts, 3])
 
@@ -961,7 +961,7 @@ def diff_atom_comp(target_vol_path: str,
 
     # Each record is in length of 11 as [shift 3, quat 4, quality metric 4]
     # quality metric: occupied_density_avg (idx: 7), overlap (idx: 8), correlation (idx: 9), cam (idx: 10)
-    return e_sqd_log
+    return mol_centers, e_sqd_log
 
 
 def parse_floats(arg):

@@ -996,7 +996,7 @@ class DiffFitTool(ToolInstance):
             
         return fileName, ext
     
-    def show_results(self, e_sqd_log):
+    def show_results(self, e_sqd_log, mol_centers=None):
         if e_sqd_log is None:
             return
 
@@ -1008,11 +1008,12 @@ class DiffFitTool(ToolInstance):
                 v.delete()
 
             print("opening the volume...")
-            #print(self.settings)
+            # print(self.settings)
             print(self.settings.view_target_vol_path)
             self.vol = run(self.session, "open {0}".format(self.settings.view_target_vol_path))[0]
 
-            #TODO: define mol_centers
+            # TODO: define mol_centers
+
         elif self.fit_input_mode == "interactive":
             self.vol = self.fit_vol
             self.vol.display = True
@@ -1166,7 +1167,7 @@ class DiffFitTool(ToolInstance):
         #target_vol_path = "D:\\GIT\\DiffFit\dev_data\input\domain_fit_demo_3domains\density2.mrc"
         #output_folder = "D:\\GIT\\DiffFit\dev_data\output"
         
-        e_sqd_log = diff_atom_comp(
+        mol_centers, e_sqd_log = diff_atom_comp(
             target_vol_path=self.settings.target_vol_path,
             target_surface_threshold=self.settings.target_surface_threshold,
             min_cluster_size=self.settings.min_cluster_size,
@@ -1192,7 +1193,7 @@ class DiffFitTool(ToolInstance):
         #print(self.settings)
         
         # output is tensor
-        self.show_results(e_sqd_log.detach().cpu().numpy())
+        self.show_results(e_sqd_log.detach().cpu().numpy(), mol_centers)
         
     def init_button_clicked(self):
         if self.fit_input_mode == "interactive":
