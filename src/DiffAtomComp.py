@@ -781,7 +781,7 @@ def diff_fit(volume_list: list,
 
     # Each record is in length of 11 as [shift 3, quat 4, quality metric 4]
     # quality metric: occupied_density_avg (idx: 7), overlap (idx: 8), correlation (idx: 9), cam (idx: 10)
-    return e_sqd_log_np
+    return mol_centers, e_sqd_log_np
 
 
 def diff_atom_comp(target_vol_path: str,

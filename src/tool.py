@@ -996,7 +996,7 @@ class DiffFitTool(ToolInstance):
             
         return fileName, ext
     
-    def show_results(self, e_sqd_log, mol_centers=None):
+    def show_results(self, e_sqd_log, mol_centers):
         if e_sqd_log is None:
             return
 
@@ -1017,7 +1017,6 @@ class DiffFitTool(ToolInstance):
         elif self.fit_input_mode == "interactive":
             self.vol = self.fit_vol
             self.vol.display = True
-            mol_centers = [self.fit_mol_list[0].atoms.coords.mean(axis=0)]
 
         N_mol, N_quat, N_shift, N_iter, N_metric = e_sqd_log.shape
         self.e_sqd_log = e_sqd_log.reshape([N_mol, N_quat * N_shift, N_iter, N_metric])
@@ -1128,7 +1127,7 @@ class DiffFitTool(ToolInstance):
 
         # Fit
         timer_start = datetime.now()
-        self.fit_result = diff_fit(volume_conv_list,
+        mol_centers, self.fit_result = diff_fit(volume_conv_list,
                                    self.fit_vol.data.step,
                                    self.fit_vol.data.origin,
                                    10,
@@ -1149,7 +1148,7 @@ class DiffFitTool(ToolInstance):
         self._view_input_mode.setCurrentText("interactive")
         self._view_input_mode_changed()
         self.fit_result_ready = True
-        self.show_results(self.fit_result)
+        self.show_results(self.fit_result, mol_centers)
 
         self.tab_widget.setCurrentWidget(self.tab_view_group)
 
