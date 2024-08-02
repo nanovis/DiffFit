@@ -803,50 +803,53 @@ class DiffFitTool(ToolInstance):
         enable_spheres = QPushButton()
         enable_spheres.setText("Point cloud visualization")
         enable_spheres.clicked.connect(self.enable_spheres_clicked)                        
-        layout.addWidget(enable_spheres, row, 0)
+        layout.addWidget(enable_spheres, row, 0, 1, 3)
         row = row + 1
 
         # slider for ClusterSphere offset
-        CS_offset_label = QLabel()
-        CS_offset_label.setText("Offset: ")
+        debug_toggle = True
+        if debug_toggle:
+            CS_offset_label = QLabel()
+            CS_offset_label.setText("Offset: ")
+            layout.addWidget(CS_offset_label, row, 0)
 
-        CS_offset = QSlider(Qt.Horizontal)
-        spheres_default_offset = 100
-        CS_offset.setValue(spheres_default_offset)
-        CS_offset.setMinimum(0)
-        CS_offset.setMaximum(300)
-        CS_offset.valueChanged.connect(self.CS_offset_changed)
-        self.CS_offset = CS_offset
-
-        CS_offset_value_label = QLabel()
-        CS_offset_value_label.setText(str(CS_offset.value()))
-        self.CS_offset_value_label = CS_offset_value_label
-
-        layout.addWidget(CS_offset_label, row, 0)
-        layout.addWidget(CS_offset, row, 1)
-        layout.addWidget(CS_offset_value_label, row, 2)
-        row = row + 1
+        # CS_offset = QSlider(Qt.Horizontal)
+        # spheres_default_offset = 100
+        # CS_offset.setValue(spheres_default_offset)
+        # CS_offset.setMinimum(0)
+        # CS_offset.setMaximum(300)
+        # CS_offset.valueChanged.connect(self.CS_offset_changed)
+        # self.CS_offset = CS_offset
+        #
+        # CS_offset_value_label = QLabel()
+        # CS_offset_value_label.setText(str(CS_offset.value()))
+        # self.CS_offset_value_label = CS_offset_value_label
+        #
+        #
+        # layout.addWidget(CS_offset, row, 1)
+        # layout.addWidget(CS_offset_value_label, row, 2)
+        # row = row + 1
 
         # slider for ClusterSphere scale factor
-        CS_scale_label = QLabel()
-        CS_scale_label.setText("Diff Scale: ")
-
-        CS_scale = QSlider(Qt.Horizontal)
-        spheres_default_scale = 40
-        CS_scale.setValue(spheres_default_scale)
-        CS_scale.setMinimum(20)
-        CS_scale.setMaximum(100)
-        CS_scale.valueChanged.connect(self.CS_scale_changed)
-        self.CS_scale = CS_scale
-
-        CS_scale_value_label = QLabel()
-        CS_scale_value_label.setText(str(CS_scale.value()))
-        self.CS_scale_value_label = CS_scale_value_label
-
-        layout.addWidget(CS_scale_label, row, 0)
-        layout.addWidget(CS_scale, row, 1)
-        layout.addWidget(CS_scale_value_label, row, 2)
-        row = row + 1
+        # CS_scale_label = QLabel()
+        # CS_scale_label.setText("Diff Scale: ")
+        #
+        # CS_scale = QSlider(Qt.Horizontal)
+        # spheres_default_scale = 40
+        # CS_scale.setValue(spheres_default_scale)
+        # CS_scale.setMinimum(20)
+        # CS_scale.setMaximum(100)
+        # CS_scale.valueChanged.connect(self.CS_scale_changed)
+        # self.CS_scale = CS_scale
+        #
+        # CS_scale_value_label = QLabel()
+        # CS_scale_value_label.setText(str(CS_scale.value()))
+        # self.CS_scale_value_label = CS_scale_value_label
+        #
+        # layout.addWidget(CS_scale_label, row, 0)
+        # layout.addWidget(CS_scale, row, 1)
+        # layout.addWidget(CS_scale_value_label, row, 2)
+        # row = row + 1
 
         #def fill_context_menu(self, menu, x, y):
         # Add any tool-specific items to the given context menu (a QMenu instance).
