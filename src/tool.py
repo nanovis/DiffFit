@@ -1377,7 +1377,7 @@ class DiffFitTool(ToolInstance):
 
                 spheres.add([ClusterSphereModel(str(entry_id), self.session, color, place_position,
                                                 sphere_size * math.pow(hit_number, 20.0/(120 - spheres_default_scale)),
-                                                original_position, hit_number)])
+                                                original_position, hit_number, num_triangles=100)])
 
             self.spheres = spheres
 
