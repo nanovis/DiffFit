@@ -500,6 +500,15 @@ class DiffFitTool(ToolInstance):
         layout.addWidget(target_surface_threshold_label, row, 0)
         layout.addWidget(self.target_surface_threshold, row, 1, 1, 2)
         row = row + 1
+
+        button = QPushButton()
+        button.setText("Run!")
+        button.clicked.connect(lambda: self.run_button_clicked())
+        layout.addWidget(button, row, 0, 1, 3)
+        row = row + 1
+
+        # advanced
+        # TODO:
         
         min_cluster_size_label = QLabel()
         min_cluster_size_label.setText("Min island size:")
@@ -511,9 +520,7 @@ class DiffFitTool(ToolInstance):
         layout.addWidget(self.min_cluster_size, row, 1, 1, 2)
         row = row + 1
         
-        
-        # advanced
-        # TODO:
+
         n_iters_label = QLabel()
         n_iters_label.setText("# iters:")
         self.n_iters = QSpinBox()
@@ -592,22 +599,7 @@ class DiffFitTool(ToolInstance):
         self.conv_weights.textChanged.connect(lambda: self.store_settings())        
         layout.addWidget(conv_weights_label, row, 0)
         layout.addWidget(self.conv_weights, row, 1, 1, 2)
-        row = row + 1
-        
-        #conv_weights_label = QCheckBox()
-        #conv_weights_label.setText("Visualize results:")
-        #self.conv_weights = QLineEdit()
-        #self.conv_weights.setText("[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]")
-        #self.conv_weights.textChanged.connect(lambda: self.store_settings())        
-        #layout.addWidget(conv_weights_label, row, 0)
-        #layout.addWidget(self.conv_weights, row, 1, 1, 2)
-        #row = row + 1
-        
-        
-        button = QPushButton()
-        button.setText("Run!")
-        button.clicked.connect(lambda: self.run_button_clicked())        
-        layout.addWidget(button, row, 1, 1, 2)
+
 
     def build_device_ui(self, layout):
         row = QHBoxLayout()
@@ -802,67 +794,56 @@ class DiffFitTool(ToolInstance):
         # Enable ClusterSphere
         enable_spheres = QPushButton()
         enable_spheres.setText("Point cloud visualization")
-        enable_spheres.clicked.connect(self.enable_spheres_clicked)                        
-        layout.addWidget(enable_spheres, row, 0, 1, 3)
+        enable_spheres.clicked.connect(self.enable_spheres_clicked)
+        disable_spheres = QPushButton()
+        disable_spheres.setText("Clear")
+        disable_spheres.clicked.connect(self.disable_spheres_clicked)
+        layout.addWidget(enable_spheres, row, 0, 1, 2)
+        layout.addWidget(disable_spheres, row, 2)
         row = row + 1
 
         # slider for ClusterSphere offset
-        debug_toggle = True
-        if debug_toggle:
-            CS_offset_label = QLabel()
-            CS_offset_label.setText("Offset: ")
-            layout.addWidget(CS_offset_label, row, 0)
+        CS_offset_label = QLabel()
+        CS_offset_label.setText("Offset: ")
+        layout.addWidget(CS_offset_label, row, 0)
 
-        # CS_offset = QSlider(Qt.Horizontal)
-        # spheres_default_offset = 100
-        # CS_offset.setValue(spheres_default_offset)
-        # CS_offset.setMinimum(0)
-        # CS_offset.setMaximum(300)
-        # CS_offset.valueChanged.connect(self.CS_offset_changed)
-        # self.CS_offset = CS_offset
-        #
-        # CS_offset_value_label = QLabel()
-        # CS_offset_value_label.setText(str(CS_offset.value()))
-        # self.CS_offset_value_label = CS_offset_value_label
-        #
-        #
-        # layout.addWidget(CS_offset, row, 1)
-        # layout.addWidget(CS_offset_value_label, row, 2)
-        # row = row + 1
+        CS_offset = QSlider(Qt.Horizontal)
+        spheres_default_offset = 100
+        CS_offset.setValue(spheres_default_offset)
+        CS_offset.setMinimum(0)
+        CS_offset.setMaximum(300)
+        CS_offset.valueChanged.connect(self.CS_offset_changed)
+        self.CS_offset = CS_offset
+
+        CS_offset_value_label = QLabel()
+        CS_offset_value_label.setText(str(CS_offset.value()))
+        self.CS_offset_value_label = CS_offset_value_label
+
+
+        layout.addWidget(CS_offset, row, 1)
+        layout.addWidget(CS_offset_value_label, row, 2)
+        row = row + 1
 
         # slider for ClusterSphere scale factor
-        # CS_scale_label = QLabel()
-        # CS_scale_label.setText("Diff Scale: ")
-        #
-        # CS_scale = QSlider(Qt.Horizontal)
-        # spheres_default_scale = 40
-        # CS_scale.setValue(spheres_default_scale)
-        # CS_scale.setMinimum(20)
-        # CS_scale.setMaximum(100)
-        # CS_scale.valueChanged.connect(self.CS_scale_changed)
-        # self.CS_scale = CS_scale
-        #
-        # CS_scale_value_label = QLabel()
-        # CS_scale_value_label.setText(str(CS_scale.value()))
-        # self.CS_scale_value_label = CS_scale_value_label
-        #
-        # layout.addWidget(CS_scale_label, row, 0)
-        # layout.addWidget(CS_scale, row, 1)
-        # layout.addWidget(CS_scale_value_label, row, 2)
-        # row = row + 1
+        CS_scale_label = QLabel()
+        CS_scale_label.setText("Diff Scale: ")
 
-        #def fill_context_menu(self, menu, x, y):
-        # Add any tool-specific items to the given context menu (a QMenu instance).
-        # The menu will then be automatically filled out with generic tool-related actions
-        # (e.g. Hide Tool, Help, Dockable Tool, etc.) 
-        #
-        # The x,y args are the x() and y() values of QContextMenuEvent, in the rare case
-        # where the items put in the menu depends on where in the tool interface the menu
-        # was raised.
-        #from Qt.QtGui import QAction
-        #clear_action = QAction("Clear", menu)
-        #clear_action.triggered.connect(lambda *args: self.init_folder.clear())
-        #menu.addAction(clear_action)
+        CS_scale = QSlider(Qt.Horizontal)
+        spheres_default_scale = 40
+        CS_scale.setValue(spheres_default_scale)
+        CS_scale.setMinimum(20)
+        CS_scale.setMaximum(100)
+        CS_scale.valueChanged.connect(self.CS_scale_changed)
+        self.CS_scale = CS_scale
+
+        CS_scale_value_label = QLabel()
+        CS_scale_value_label.setText(str(CS_scale.value()))
+        self.CS_scale_value_label = CS_scale_value_label
+
+        layout.addWidget(CS_scale_label, row, 0)
+        layout.addWidget(CS_scale, row, 1)
+        layout.addWidget(CS_scale_value_label, row, 2)
+        row = row + 1
 
 
     def _device_changed(self):
@@ -1103,6 +1084,10 @@ class DiffFitTool(ToolInstance):
 
 
     def single_fit_button_clicked(self):
+        if self.spheres:
+            self.spheres.delete()
+            self.spheres = None
+
         single_fit_timer_start = datetime.now()
 
         # Prepare mol anv vol
@@ -1162,8 +1147,10 @@ class DiffFitTool(ToolInstance):
 
 
     def run_button_clicked(self):
-        #import sys
-        #sys.path.append('D:\\GIT\\DiffFit\\src')
+        if self.spheres:
+            self.spheres.delete()
+            self.spheres = None
+
         print("Running the computation...")
 
         #target_vol_path = "D:\\GIT\\DiffFit\dev_data\input\domain_fit_demo_3domains\density2.mrc"
@@ -1357,6 +1344,11 @@ class DiffFitTool(ToolInstance):
         a = 255
 
         return [r, g, b, a]
+
+    def disable_spheres_clicked(self):
+        if self.spheres:
+            self.spheres.delete()
+            self.spheres = None
 
     def enable_spheres_clicked(self):
 
