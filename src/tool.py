@@ -1211,6 +1211,7 @@ class DiffFitTool(ToolInstance):
         opt_res = fit_res['opt_res']
 
         self.show_results(opt_res, mol_centers)
+        self.select_table_item(0)
 
     def save_working_vol_button_clicked(self):
         if not self.vol:
