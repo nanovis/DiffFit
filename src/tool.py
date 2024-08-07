@@ -430,6 +430,8 @@ class DiffFitTool(ToolInstance):
         self._single_fit_out_dir = QLineEdit()
         self._single_fit_out_dir.setDisabled(True)
         self._single_fit_out_dir_select = QPushButton("Select")
+        self._single_fit_out_dir_select.clicked.connect(
+            lambda: self.select_clicked("Output folder", self._single_fit_out_dir))
         self._single_fit_out_dir.setText("DiffFit_out/single_fit")
         self._single_fit_out_dir_select.setDisabled(True)
 
@@ -462,7 +464,7 @@ class DiffFitTool(ToolInstance):
         self.structures_dir = QLineEdit()
         self.structures_dir.textChanged.connect(lambda: self.store_settings())    
         structures_dir_select = QPushButton("Select")        
-        structures_dir_select.clicked.connect(lambda: self.select_clicked("Structures folder (containing *.cif)", self.structures_dir))
+        structures_dir_select.clicked.connect(lambda: self.select_clicked("Structures folder (containing *.cif or *.pdb)", self.structures_dir))
         layout.addWidget(structures_dir_label, row, 0)
         layout.addWidget(self.structures_dir, row, 1)
         layout.addWidget(structures_dir_select, row, 2)
