@@ -711,7 +711,7 @@ def diff_fit(volume_list: list,
     for epoch in range(n_iters):
         # Forward pass
 
-        first_layer_density_sum = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device)
+        first_layer_positive_density_sum = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device)
         occupied_density_sum = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device)
         metrics_table = torch.zeros([num_molecules, N_quaternions, N_shifts, 4], device=device)
 
@@ -725,7 +725,7 @@ def diff_fit(volume_list: list,
             metrics_table[mol_idx] = calculate_metrics(render, elements_sim_density_list[mol_idx])
 
             occupied_density_sum[mol_idx] = torch.sum(render, dim=-1).squeeze()
-            first_layer_density_sum[mol_idx] = occupied_density_sum[mol_idx]
+            first_layer_positive_density_sum[mol_idx] = torch.sum(render * (render > 0), dim=-1).squeeze()
 
             add_conv_density(conv_loops, target_gaussian_conv_list, conv_weights, grid, occupied_density_sum[mol_idx])
 
@@ -746,7 +746,7 @@ def diff_fit(volume_list: list,
                 log_idx += 1
                 e_sqd_log[:, :, :, log_idx, 0:3] = e_shifts
                 e_sqd_log[:, :, :, log_idx, 3:7] = e_quaternions
-                e_sqd_log[:, :, :, log_idx, 7] = first_layer_density_sum
+                e_sqd_log[:, :, :, log_idx, 7] = first_layer_positive_density_sum
                 e_sqd_log[:, :, :, log_idx, 8:12] = metrics_table
 
                 if save_results:
@@ -897,6 +897,7 @@ def diff_atom_comp(target_vol_path: str,
     for epoch in range(n_iters):
         # Forward pass
 
+        first_layer_positive_density_sum = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device)
         occupied_density_sum = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device)
         metrics_table = torch.zeros([num_molecules, N_quaternions, N_shifts, 4], device=device)
 
@@ -910,6 +911,7 @@ def diff_atom_comp(target_vol_path: str,
             metrics_table[mol_idx] = calculate_metrics(render, elements_sim_density_list[mol_idx])
 
             occupied_density_sum[mol_idx] = torch.sum(render, dim=-1).squeeze()
+            first_layer_positive_density_sum[mol_idx] = torch.sum(render * (render > 0), dim=-1).squeeze()
 
             add_conv_density(conv_loops, target_gaussian_conv_list, conv_weights, grid, occupied_density_sum[mol_idx])
 
@@ -930,7 +932,7 @@ def diff_atom_comp(target_vol_path: str,
                 log_idx += 1
                 e_sqd_log[:, :, :, log_idx, 0:3] = e_shifts
                 e_sqd_log[:, :, :, log_idx, 3:7] = e_quaternions
-                e_sqd_log[:, :, :, log_idx, 7] = occupied_density_sum
+                e_sqd_log[:, :, :, log_idx, 7] = first_layer_positive_density_sum
                 e_sqd_log[:, :, :, log_idx, 8:12] = metrics_table
 
                 with open(f"{out_dir}/log.log", "a") as log_file:
