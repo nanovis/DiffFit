@@ -1084,9 +1084,7 @@ class DiffFitTool(ToolInstance):
 
 
     def single_fit_button_clicked(self):
-        if self.spheres:
-            self.spheres.delete()
-            self.spheres = None
+        self.disable_spheres_clicked()
 
         single_fit_timer_start = datetime.now()
 
@@ -1147,9 +1145,7 @@ class DiffFitTool(ToolInstance):
 
 
     def run_button_clicked(self):
-        if self.spheres:
-            self.spheres.delete()
-            self.spheres = None
+        self.disable_spheres_clicked()
 
         print("Running the computation...")
 
@@ -1349,7 +1345,12 @@ class DiffFitTool(ToolInstance):
 
     def disable_spheres_clicked(self):
         if self.spheres:
-            self.spheres.delete()
+            try:
+                self.spheres.delete()
+            except Exception as e:
+                self.session.logger.warning(f"Failed to delete cluster spheres: {e}\n"
+                                            f"Continue by just setting cluster spheres to None.")
+
             self.spheres = None
 
     def enable_spheres_clicked(self):
