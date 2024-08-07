@@ -134,7 +134,8 @@ class DiffFitTool(ToolInstance):
         self.fit_input_mode = "disk file"
 
         self.fit_result_ready = False
-        self.fit_result = None   
+        self.fit_result = None
+        self.mol_centers = None
 
         # Register the selection change callback
         self.session.triggers.add_handler(SELECTION_CHANGED, self.selection_callback)
@@ -1113,7 +1114,7 @@ class DiffFitTool(ToolInstance):
 
         # Fit
         timer_start = datetime.now()
-        mol_centers, self.fit_result = diff_fit(volume_conv_list,
+        self.mol_centers, self.fit_result = diff_fit(volume_conv_list,
                                    self.fit_vol.data.step,
                                    self.fit_vol.data.origin,
                                    10,
@@ -1134,7 +1135,7 @@ class DiffFitTool(ToolInstance):
         self._view_input_mode.setCurrentText("interactive")
         self._view_input_mode_changed()
         self.fit_result_ready = True
-        self.show_results(self.fit_result, mol_centers)
+        self.show_results(self.fit_result, self.mol_centers)
 
         self.tab_widget.setCurrentWidget(self.tab_view_group)
 
@@ -1185,7 +1186,7 @@ class DiffFitTool(ToolInstance):
     def load_button_clicked(self):
         if self.fit_input_mode == "interactive":
             if self.fit_result_ready:
-                self.show_results(self.fit_result)
+                self.show_results(self.fit_result, self.mol_centers)
                 return
             else:
                 from chimerax.log.cmd import log
