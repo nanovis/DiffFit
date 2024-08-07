@@ -57,7 +57,7 @@ def create_row(parent_layout, left=0, top=0, right=0, bottom=0, spacing=5):
 class DiffFitSettings:    
     def __init__(self):   
         # viewing
-        self.view_output_directory: str = "D:\\GIT\\DiffFit\\dev_data\\output\\dev_comp_domain_fit_3_domains_10s20q_new_q"
+        self.view_output_directory: str = "D:\\GIT\\DiffFit\\dev_data\\output"
         self.view_target_vol_path: str = "D:\\GIT\\DiffFit\\dev_data\\input\\domain_fit_demo_3domains\\density2.mrc"
         self.view_structures_directory: str = "D:\\GIT\\DiffFit\dev_data\input\domain_fit_demo_3domains\subunits_cif"
         
@@ -697,7 +697,7 @@ class DiffFitTool(ToolInstance):
         # init button                
         button = QPushButton()
         button.setText("Load")
-        button.clicked.connect(lambda: self.init_button_clicked())        
+        button.clicked.connect(lambda: self.load_button_clicked())        
         layout.addWidget(button, row, 1, 1, 2)
         row = row + 1        
 
@@ -1186,7 +1186,7 @@ class DiffFitTool(ToolInstance):
         self.tab_widget.setCurrentWidget(self.tab_view_group)
         self.select_table_item(0)
 
-    def init_button_clicked(self):
+    def load_button_clicked(self):
         if self.fit_input_mode == "interactive":
             if self.fit_result_ready:
                 self.show_results(self.fit_result)
@@ -1206,10 +1206,11 @@ class DiffFitTool(ToolInstance):
             return
                 
         print("loading data...")
-        e_sqd_log = np.load("{0}\\e_sqd_log.npy".format(datasetoutput))
-        
-        #print(e_sqd_log)
-        self.show_results(e_sqd_log)
+        fit_res = np.load("{0}\\fit_res.npz".format(datasetoutput))
+        mol_centers = fit_res['mol_centers']
+        opt_res = fit_res['opt_res']
+
+        self.show_results(opt_res, mol_centers)
 
     def save_working_vol_button_clicked(self):
         if not self.vol:
