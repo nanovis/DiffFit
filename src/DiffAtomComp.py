@@ -436,33 +436,14 @@ def quaternion_to_matrix_batch(quaternions):
 
 
 def filter_volume(volume_np, threshold, min_island_size):
-    # Step 1: Threshold the volume
+    # Step 1: Threshold the volume to create a binary mask
     binary_volume = volume_np > threshold
 
-    # Step 2: Identify connected components
-    labeled_volume, num_features = label(binary_volume)
-
-    # Step 3: Filter based on size using vectorized operations
-    # Calculate the size of each component
-    component_sizes = np.bincount(labeled_volume.ravel())
-    # Identify components that meet the size threshold
-    eligible_components = component_sizes > min_island_size
-    eligible_components[0] = False  # Skip background
-    # Use the eligibility array to filter the labeled_volume directly
-    eligible_volume = eligible_components[labeled_volume]
-    eligible_labels = np.where(eligible_components)[0]
-
-    # Calculate the center of mass for eligible components
-    cluster_center_indices = []
-    for i in eligible_labels:
-        center = center_of_mass(labeled_volume == i, labels=labeled_volume, index=i)
-        cluster_center_indices.append(center)
-
-    # Filter the original volume to retain only the voxels in eligible clusters
+    # Step 2: Apply the binary mask to the original volume
     filtered_volume = np.zeros_like(volume_np)
-    filtered_volume[eligible_volume] = volume_np[eligible_volume]
+    filtered_volume[binary_volume] = volume_np[binary_volume]
 
-    return filtered_volume, eligible_volume, cluster_center_indices
+    return filtered_volume, binary_volume, None
 
 
 def random_sample_indices(binary_volume, sample_size):
@@ -808,7 +789,7 @@ def diff_atom_comp(target_vol_path: str,
     # target dim is in [z, y, x]
     # target_origin is in [x, y, z]
 
-    target_no_negative, eligible_volume, cluster_center_indices = filter_volume(target_no_negative,
+    target_no_negative, eligible_volume, _ = filter_volume(target_no_negative,
                                                                                 target_surface_threshold,
                                                                                 min_cluster_size)
 
