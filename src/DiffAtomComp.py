@@ -577,7 +577,7 @@ def calculate_metrics(render, elements_sim_density):
 
     correlation = overlap / (render_norm * elements_sim_density_norm)
 
-    return torch.stack((overlap_mean, correlation, cam, in_contour_percentage), dim=-1)
+    return torch.nan_to_num(torch.stack((overlap_mean, correlation, cam, in_contour_percentage), dim=-1))
 
 
 def diff_fit(volume_list: list,
