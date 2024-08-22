@@ -1120,7 +1120,7 @@ class DiffFitTool(ToolInstance):
                                    self.fit_vol.data.step,
                                    self.fit_vol.data.origin,
                                    10,
-                                   [mol.atoms.coords],
+                                   [mol.atoms.scene_coords],
                                    [(mol_vol.full_matrix(), mol_vol.data.step, mol_vol.data.origin)],
                                    N_shifts=self._single_fit_n_shifts.value(),
                                    N_quaternions=self._single_fit_n_quaternions.value(),
@@ -1368,7 +1368,7 @@ class DiffFitTool(ToolInstance):
 
             sphere_size = 0.3
 
-            mol_center = self.mol.atoms.coords.mean(axis=0)
+            mol_center = self.mol.atoms.scene_coords.mean(axis=0)
 
             spheres_default_offset = 100
             spheres_default_scale = 40
