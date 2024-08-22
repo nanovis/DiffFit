@@ -44,36 +44,20 @@ def generate_random_quaternions(n):
 
     Returns:
     - quaternions: An array of shape (n, 4) containing n quaternions.
-
-    # Example usage:
-    n = 5  # Number of quaternions to generate
-    quaternions = generate_random_quaternions(n)
-    print(quaternions)
     """
-    # Randomly sample the angle
-    angles = 2 * np.pi * np.random.rand(n)
+    # Random rotation axes
+    u1 = np.random.rand(n)
+    u2 = np.random.rand(n)
+    u3 = np.random.rand(n)
 
-    # Randomly sample the square root of the distribution for the axis
-    u = np.random.rand(n, 3)
-    sqrt_u = np.sqrt(u)
+    # Convert random numbers to quaternion parameters
+    q0 = np.sqrt(1 - u1) * np.sin(2 * np.pi * u2)
+    q1 = np.sqrt(1 - u1) * np.cos(2 * np.pi * u2)
+    q2 = np.sqrt(u1) * np.sin(2 * np.pi * u3)
+    q3 = np.sqrt(u1) * np.cos(2 * np.pi * u3)
 
-    # Generate the axis components
-    axis = np.zeros((n, 3))
-    axis[:, 0] = np.sin(angles) * sqrt_u[:, 0]
-    axis[:, 1] = np.cos(angles) * sqrt_u[:, 1]
-    axis[:, 2] = np.sin(angles) * sqrt_u[:, 2]
-
-    # Normalize the axis to ensure it's a unit vector
-    norm = np.linalg.norm(axis, axis=1)
-    axis = axis / norm[:, None]
-
-    # Sample the cos(theta/2) for the quaternion's real part
-    cos_theta_2 = np.cos(np.random.rand(n) * np.pi)
-
-    # Combine to form quaternions: q = [cos(theta/2), sin(theta/2)*axis]
-    quaternions = np.zeros((n, 4))
-    quaternions[:, 0] = cos_theta_2
-    quaternions[:, 1:] = axis * np.sin(np.arccos(cos_theta_2))[:, None]
+    # Combine into quaternion array
+    quaternions = np.vstack((q0, q1, q2, q3)).T
 
     return quaternions
 
