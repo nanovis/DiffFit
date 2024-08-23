@@ -156,6 +156,9 @@ def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3
             sqd_clusters.append([mol_idx, max_idx, max_sort_column_metric_idx[mol_idx, max_idx],
                                  counts[cluster_idx], fit_res_filtered[mol_idx][max_idx_in_filtered, sort_column_idx]])
 
+    if len(sqd_clusters) == 0:
+        return None
+
     sqd_clusters = np.array(sqd_clusters)
     e_sqd_clusters_ordered = sqd_clusters[np.argsort(-sqd_clusters[:, -1])]
 

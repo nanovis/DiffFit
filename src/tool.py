@@ -146,6 +146,8 @@ class DiffFitTool(ToolInstance):
 
         self.spheres = None
 
+        self.proxyModel = None
+
 
     def _build_ui(self):
         
@@ -960,6 +962,9 @@ class DiffFitTool(ToolInstance):
         return get_transformation_at_record(self.e_sqd_log, mol_idx, record_idx, iter_idx)
 
     def select_table_item(self, index):
+        if self.proxyModel is None:
+            return
+
         proxyIndex = self.proxyModel.index(index, 0)
         sourceIndex = self.proxyModel.mapToSource(proxyIndex)
 
@@ -1043,7 +1048,11 @@ class DiffFitTool(ToolInstance):
                                                                 self.settings.clustering_angle_tolerance,
                                                                 in_contour_threshold=self.settings.clustering_in_contour_threshold,
                                                                 correlation_threshold=self.settings.clustering_correlation_threshold)
-        
+
+        if self.e_sqd_clusters_ordered is None:
+            self.session.logger.error("No result under these thresholds. Please decrease \"In contour threshold\" or \"Correlation threshold\" or rerun the fitting!")
+            return
+
         self.model = TableModel(self.e_sqd_clusters_ordered, self.e_sqd_log)
         self.proxyModel = QSortFilterProxyModel()
         self.proxyModel.setSourceModel(self.model)
