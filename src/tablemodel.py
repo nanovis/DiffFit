@@ -58,8 +58,8 @@ class TableModel(QAbstractTableModel):
                 return int(self._sqd_cluster_data[index.row(), 3])
             elif 3 <= column <= 7:
                 record_row = self._sqd_data[mol_idx, record_idx, iter_idx]
-                # return float(round(float(record_row[index.column() + 4]) * 10000)) / 10000.0  # for 4 decimals
-                return float(record_row[index.column() + 4])
+                return float(round(float(record_row[index.column() + 4]) * 10000)) / 10000.0  # for 4 decimals
+                # return float(record_row[index.column() + 4])
 
         return None
 
