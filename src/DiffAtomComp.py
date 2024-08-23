@@ -45,7 +45,7 @@ def q2_unit_coord(Q):
 
 
 def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3.0, angle_tolerance: float = 6.0,
-                              sort_column_idx: int = 7):
+                              sort_column_idx: int = 7, in_contour_threshold = 0.2, correlation_threshold = 0.2):
     """
     Cluster the fitting results in sqd table by thresholding on shift and quaternion
     Return the sorted cluster representatives
@@ -84,10 +84,36 @@ def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3
     # Use the generated meshgrid and max_sort_column_metric_idx to index into e_sqd_log
     sqd_highest_corr_np = e_sqd_log[dims_0, dims_1, max_sort_column_metric_idx]
 
+    fit_res_filtered = []
+    fit_res_filtered_indices = []
+    in_contour_col_idx = 11
+    correlation_col_idx = 9
+    for mol_idx in range(N_mol):
+        sqd_highest_corr_np_mol = sqd_highest_corr_np[mol_idx]
+
+        # Fetch the columns of interest
+        in_contour_percentage_column = sqd_highest_corr_np_mol[:, in_contour_col_idx]
+        correlation_column = sqd_highest_corr_np_mol[:, correlation_col_idx]
+
+        # Create masks for the filtering conditions
+        in_contour_mask = in_contour_percentage_column >= in_contour_threshold
+        correlation_mask = correlation_column >= correlation_threshold
+
+        # Combine the masks to get a final filter
+        combined_mask = in_contour_mask & correlation_mask
+
+        # Apply the mask to filter the original array and also retrieve the indices
+        filtered_indices = np.where(combined_mask)  # Get the indices of the filtered rows
+        filtered_array = sqd_highest_corr_np_mol[filtered_indices]
+
+        fit_res_filtered.append(filtered_array)
+        fit_res_filtered_indices.append(filtered_indices[0])
+
+
     sqd_clusters = []
     for mol_idx in range(N_mol):
-        mol_shift = sqd_highest_corr_np[mol_idx, :, :3]
-        mol_q = sqd_highest_corr_np[mol_idx, :, 3:7]
+        mol_shift = fit_res_filtered[mol_idx][:, :3]
+        mol_q = fit_res_filtered[mol_idx][:, 3:7]
 
         T = []
         for i in range(len(mol_shift)):
@@ -122,12 +148,13 @@ def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3
 
         for cluster_idx in range(len(unique_labels)):
             sqd_idx = np.argwhere(indices == cluster_idx).reshape([-1])
-            max_idx = sqd_idx[np.argsort(-sqd_highest_corr_np[mol_idx, sqd_idx, sort_column_idx])[0]]
+            max_idx_in_filtered = sqd_idx[np.argsort(-fit_res_filtered[mol_idx][sqd_idx, sort_column_idx])[0]]
+            max_idx = fit_res_filtered_indices[mol_idx][max_idx_in_filtered]
 
             # [mol_idx, max_idx (in e_sqd_log), iter_idx (giving the largest sort_column),
-            #  cluster size, metrics]
+            #  cluster size, sort_metric]
             sqd_clusters.append([mol_idx, max_idx, max_sort_column_metric_idx[mol_idx, max_idx],
-                                 counts[cluster_idx], sqd_highest_corr_np[mol_idx, max_idx, sort_column_idx]])
+                                 counts[cluster_idx], fit_res_filtered[mol_idx][max_idx_in_filtered, sort_column_idx]])
 
     sqd_clusters = np.array(sqd_clusters)
     e_sqd_clusters_ordered = sqd_clusters[np.argsort(-sqd_clusters[:, -1])]
