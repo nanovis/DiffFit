@@ -69,9 +69,6 @@ def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3
     @return: cluster representative table sorted in descending order
     """
 
-    # Convert angle tolerance to radians and then compute the sin of half the angle
-    q_coord_radius_tolerance = math.sin(math.radians(angle_tolerance / 2.0))
-
     N_mol, N_record, N_iter, N_metric = e_sqd_log.shape
 
     sort_column_metric = e_sqd_log[:, :, 1:22, sort_column_idx]  # remove the 0 iteration, which is before optimization
@@ -127,8 +124,8 @@ def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3
             sqd_idx = np.argwhere(indices == cluster_idx).reshape([-1])
             max_idx = sqd_idx[np.argsort(-sqd_highest_corr_np[mol_idx, sqd_idx, sort_column_idx])[0]]
 
-            # [mol_idx, max_idx (in e_sqd_log), iter_idx (giving the largest correlation),
-            #  cluster size, correlation]
+            # [mol_idx, max_idx (in e_sqd_log), iter_idx (giving the largest sort_column),
+            #  cluster size, metrics]
             sqd_clusters.append([mol_idx, max_idx, max_sort_column_metric_idx[mol_idx, max_idx],
                                  counts[cluster_idx], sqd_highest_corr_np[mol_idx, max_idx, sort_column_idx]])
 
