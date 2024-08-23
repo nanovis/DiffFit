@@ -84,6 +84,9 @@ class DiffFitSettings:
         self.clustering_shift_tolerance : float = 3.0
         self.clustering_angle_tolerance : float = 6.0
 
+        self.clustering_in_contour_threshold: float = 0.5
+        self.clustering_correlation_threshold: float = 0.5
+
 
 class DiffFitTool(ToolInstance):
 
@@ -222,6 +225,8 @@ class DiffFitTool(ToolInstance):
         self.structures_folder.setText(self.settings.view_structures_directory)        
         
         # clustering
+        self.clustering_in_contour_threshold.setValue(self.settings.clustering_in_contour_threshold)
+        self.clustering_correlation_threshold.setValue(self.settings.clustering_correlation_threshold)
         self.clustering_angle_tolerance.setValue(self.settings.clustering_angle_tolerance)
         self.clustering_shift_tolerance.setValue(self.settings.clustering_shift_tolerance)
         
@@ -259,6 +264,8 @@ class DiffFitTool(ToolInstance):
         self.settings.view_target_vol_path = self.target_vol.text()
         
         # clustering
+        self.settings.clustering_in_contour_threshold = self.clustering_in_contour_threshold.value()
+        self.settings.clustering_correlation_threshold = self.clustering_correlation_threshold.value()
         self.settings.clustering_angle_tolerance = self.clustering_angle_tolerance.value()
         self.settings.clustering_shift_tolerance = self.clustering_shift_tolerance.value()
         
@@ -674,6 +681,28 @@ class DiffFitTool(ToolInstance):
         layout.addWidget(self.dataset_folder, row, 1)
         layout.addWidget(self.dataset_folder_select, row, 2)
         row = row + 1
+
+        clustering_in_contour_threshold_label = QLabel()
+        clustering_in_contour_threshold_label.setText("In contour threshold:")
+        self.clustering_in_contour_threshold = QDoubleSpinBox()
+        self.clustering_in_contour_threshold.setMinimum(0.0)
+        self.clustering_in_contour_threshold.setMaximum(1.0)
+        self.clustering_in_contour_threshold.setSingleStep(0.1)
+        self.clustering_in_contour_threshold.valueChanged.connect(lambda: self.store_settings())
+        layout.addWidget(clustering_in_contour_threshold_label, row, 0)
+        layout.addWidget(self.clustering_in_contour_threshold, row, 1, 1, 2)
+        row = row + 1
+
+        clustering_correlation_threshold_label = QLabel()
+        clustering_correlation_threshold_label.setText("Correlation threshold:")
+        self.clustering_correlation_threshold = QDoubleSpinBox()
+        self.clustering_correlation_threshold.setMinimum(0.0)
+        self.clustering_correlation_threshold.setMaximum(1.0)
+        self.clustering_correlation_threshold.setSingleStep(0.1)
+        self.clustering_correlation_threshold.valueChanged.connect(lambda: self.store_settings())
+        layout.addWidget(clustering_correlation_threshold_label, row, 0)
+        layout.addWidget(self.clustering_correlation_threshold, row, 1, 1, 2)
+        row = row + 1
         
         clustering_shift_tolerance_label = QLabel()
         clustering_shift_tolerance_label.setText("Clustering - Shift Tolerance:")
@@ -696,6 +725,8 @@ class DiffFitTool(ToolInstance):
         layout.addWidget(clustering_angle_tolerance_label, row, 0)
         layout.addWidget(self.clustering_angle_tolerance, row, 1, 1, 2)
         row = row + 1
+
+
         
         # init button                
         button = QPushButton()
@@ -1009,7 +1040,9 @@ class DiffFitTool(ToolInstance):
         self.e_sqd_log = e_sqd_log.reshape([N_mol, N_quat * N_shift, N_iter, N_metric])
         self.e_sqd_clusters_ordered = cluster_and_sort_sqd_fast(self.e_sqd_log, mol_centers,
                                                                 self.settings.clustering_shift_tolerance,
-                                                                self.settings.clustering_angle_tolerance)
+                                                                self.settings.clustering_angle_tolerance,
+                                                                in_contour_threshold=self.settings.clustering_in_contour_threshold,
+                                                                correlation_threshold=self.settings.clustering_correlation_threshold)
         
         self.model = TableModel(self.e_sqd_clusters_ordered, self.e_sqd_log)
         self.proxyModel = QSortFilterProxyModel()
