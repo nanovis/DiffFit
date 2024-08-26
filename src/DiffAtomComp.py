@@ -1038,6 +1038,8 @@ if __name__ == '__main__':
 
     parser.add_argument('--negative_space_value', type=float, default=-0.5,
                         help="The value to set the negative space voxels to")
+    parser.add_argument('--device', type=str, default="cpu",
+                        help="cpu or cuda")
 
     args = parser.parse_args()
 
@@ -1052,7 +1054,8 @@ if __name__ == '__main__':
                    out_dir_exist_ok=args.out_dir_exist_ok,
                    N_shifts=args.N_shifts,
                    N_quaternions=args.N_quaternions,
-                   negative_space_value=args.negative_space_value)
+                   negative_space_value=args.negative_space_value,
+                   device=args.device)
 
     timer_stop = datetime.now()
 
