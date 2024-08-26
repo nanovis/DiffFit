@@ -16,8 +16,6 @@ from Bio.PDB.PDBExceptions import PDBConstructionWarning
 
 from scipy.ndimage import label, center_of_mass
 
-from .common import generate_random_quaternions
-
 from scipy.spatial.transform import Rotation as R
 
 from sklearn.cluster import Birch
@@ -28,6 +26,33 @@ from math import pi
 
 # Ignore PDBConstructionWarning for unrecognized 'END' record
 warnings.filterwarnings("ignore", message="Ignoring unrecognized record 'END'", category=PDBConstructionWarning)
+
+
+def generate_random_quaternions(n):
+    """
+    Generate n random quaternion vectors that evenly sample directions.
+
+    Parameters:
+    - n: The number of quaternion vectors to generate.
+
+    Returns:
+    - quaternions: An array of shape (n, 4) containing n quaternions.
+    """
+    # Random rotation axes
+    u1 = np.random.rand(n)
+    u2 = np.random.rand(n)
+    u3 = np.random.rand(n)
+
+    # Convert random numbers to quaternion parameters
+    q0 = np.sqrt(1 - u1) * np.sin(2 * np.pi * u2)
+    q1 = np.sqrt(1 - u1) * np.cos(2 * np.pi * u2)
+    q2 = np.sqrt(u1) * np.sin(2 * np.pi * u3)
+    q3 = np.sqrt(u1) * np.cos(2 * np.pi * u3)
+
+    # Combine into quaternion array
+    quaternions = np.vstack((q0, q1, q2, q3)).T
+
+    return quaternions
 
 
 def q2_unit_coord(Q):
