@@ -24,8 +24,6 @@ from sklearn.cluster import Birch
 import math
 
 from math import pi
-from chimerax.geometry import bins
-from chimerax.geometry import Place
 
 
 # Ignore PDBConstructionWarning for unrecognized 'END' record
@@ -68,6 +66,8 @@ def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3
     @param sort_column_idx: the column to sort, 9-th column is the correlation
     @return: cluster representative table sorted in descending order
     """
+    from chimerax.geometry import bins
+    from chimerax.geometry import Place
 
     N_mol, N_record, N_iter, N_metric = e_sqd_log.shape
 
