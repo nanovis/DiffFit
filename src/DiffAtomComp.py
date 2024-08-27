@@ -1027,8 +1027,10 @@ if __name__ == '__main__':
     parser.add_argument('--structures_sim_map_dir', type=str,
                         help="directory containing the simulated map from the structures to be fit")
 
+    parser.add_argument('--out_dir', type=str, default="out",
+                        help="Output directory")
     parser.add_argument('--out_dir_exist_ok', type=bool,
-                        help="if True, output directory will be overwritten when existing")
+                        help="If True, output directory will be overwritten when existing")
 
     parser.add_argument('--N_shifts', type=int, default=10,
                         help="The number of random shift initializations")
@@ -1051,6 +1053,7 @@ if __name__ == '__main__':
                    args.min_cluster_size,
                    args.structures_dir,
                    args.structures_sim_map_dir,
+                   out_dir=args.out_dir,
                    out_dir_exist_ok=args.out_dir_exist_ok,
                    N_shifts=args.N_shifts,
                    N_quaternions=args.N_quaternions,
