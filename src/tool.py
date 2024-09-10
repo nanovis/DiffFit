@@ -1051,6 +1051,7 @@ class DiffFitTool(ToolInstance):
 
         if self.e_sqd_clusters_ordered is None:
             self.session.logger.error("No result under these thresholds. Please decrease \"In contour threshold\" or \"Correlation threshold\" or rerun the fitting!")
+            self.proxyModel = None
             return
 
         self.model = TableModel(self.e_sqd_clusters_ordered, self.e_sqd_log)
