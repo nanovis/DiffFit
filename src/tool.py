@@ -84,8 +84,8 @@ class DiffFitSettings:
         self.clustering_shift_tolerance : float = 3.0
         self.clustering_angle_tolerance : float = 6.0
 
-        self.clustering_in_contour_threshold: float = 0.5
-        self.clustering_correlation_threshold: float = 0.5
+        self.clustering_in_contour_threshold: float = 0.1
+        self.clustering_correlation_threshold: float = 0.1
 
 
 class DiffFitTool(ToolInstance):
