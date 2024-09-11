@@ -44,6 +44,7 @@ import torch
 import psutil
 import platform
 import ast
+from scipy.interpolate import interp1d
         
 
 def create_row(parent_layout, left=0, top=0, right=0, bottom=0, spacing=5):
@@ -53,6 +54,38 @@ def create_row(parent_layout, left=0, top=0, right=0, bottom=0, spacing=5):
     row_layout.setContentsMargins(left, top, right, bottom)
     row_layout.setSpacing(spacing)
     return row_layout
+
+
+def interpolate_coords(coords, inter_folds, inter_kind='quadratic'):
+    """Interpolate backbone coordinates."""
+    # inter_kind = 'cubic'
+
+    x = np.arange(len(coords))
+    interp_func = interp1d(x, coords, axis=0, kind=inter_kind)
+    new_x = np.linspace(0, len(coords) - 1, len(coords) * inter_folds - inter_folds + 1)
+    return interp_func(new_x)
+
+
+def interp_backbone(mol):
+    backbone_atoms = ['N', 'CA', 'C', 'O']
+    is_backbone = np.isin(mol.atoms.names, backbone_atoms)
+    backbone_coords = mol.atoms.scene_coords[is_backbone]
+    backbone_chains = mol.atoms.residues.mmcif_chain_ids[is_backbone]
+    unique_chains = np.unique(backbone_chains)
+
+    all_interpolated_backbone_coords = []
+    for chain in unique_chains:
+        # Get the backbone coordinates for the current chain
+        chain_backbone_coords = backbone_coords[backbone_chains == chain]
+
+        # Perform interpolation for the current chain
+        interpolated_coords = interpolate_coords(chain_backbone_coords, inter_folds=3)
+
+        # Add the interpolated coordinates to the aggregated list
+        all_interpolated_backbone_coords.append(interpolated_coords)
+
+    return np.vstack(all_interpolated_backbone_coords)
+
 
 class DiffFitSettings:    
     def __init__(self):   
@@ -1157,13 +1190,16 @@ class DiffFitTool(ToolInstance):
         from chimerax.map.molmap import molecule_map
         mol_vol = molecule_map(self.session, mol.atoms, self._single_fit_res.value(), grid_spacing=self.fit_vol.data.step[0])
 
+        input_coords = interp_backbone(mol)
+        # input_coords = mol.atoms.scene_coords
+
         # Fit
         timer_start = datetime.now()
         self.mol_centers, self.fit_result = diff_fit(volume_conv_list,
                                    self.fit_vol.data.step,
                                    self.fit_vol.data.origin,
                                    10,
-                                   [mol.atoms.scene_coords],
+                                   [input_coords],
                                    [(mol_vol.full_matrix(), mol_vol.data.step, mol_vol.data.origin)],
                                    N_shifts=self._single_fit_n_shifts.value(),
                                    N_quaternions=self._single_fit_n_quaternions.value(),
