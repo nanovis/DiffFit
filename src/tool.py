@@ -66,11 +66,8 @@ def interpolate_coords(coords, inter_folds, inter_kind='quadratic'):
     return interp_func(new_x)
 
 
-def interp_backbone(mol):
-    backbone_atoms = ['N', 'CA', 'C', 'O']
-    is_backbone = np.isin(mol.atoms.names, backbone_atoms)
-    backbone_coords = mol.atoms.scene_coords[is_backbone]
-    backbone_chains = mol.atoms.residues.mmcif_chain_ids[is_backbone]
+def interp_backbone(backbone_coords, backbone_chains):
+
     unique_chains = np.unique(backbone_chains)
 
     all_interpolated_backbone_coords = []
@@ -86,6 +83,14 @@ def interp_backbone(mol):
 
     return np.vstack(all_interpolated_backbone_coords)
 
+
+def interp_backbone_for_mol(mol):
+    backbone_atoms = ['N', 'CA', 'C', 'O']
+    is_backbone = np.isin(mol.atoms.names, backbone_atoms)
+    backbone_coords = mol.atoms.scene_coords[is_backbone]
+    backbone_chains = mol.atoms.residues.mmcif_chain_ids[is_backbone]
+
+    return interp_backbone(backbone_coords, backbone_chains)
 
 class DiffFitSettings:    
     def __init__(self):   
@@ -1190,7 +1195,7 @@ class DiffFitTool(ToolInstance):
         from chimerax.map.molmap import molecule_map
         mol_vol = molecule_map(self.session, mol.atoms, self._single_fit_res.value(), grid_spacing=self.fit_vol.data.step[0])
 
-        input_coords = interp_backbone(mol)
+        input_coords = interp_backbone_for_mol(mol)
         # input_coords = mol.atoms.scene_coords
 
         # Fit
