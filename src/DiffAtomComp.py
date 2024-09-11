@@ -22,10 +22,39 @@ from sklearn.cluster import Birch
 import math
 
 from math import pi
+from scipy.interpolate import interp1d
 
 
 # Ignore PDBConstructionWarning for unrecognized 'END' record
 warnings.filterwarnings("ignore", message="Ignoring unrecognized record 'END'", category=PDBConstructionWarning)
+
+
+def interpolate_coords(coords, inter_folds, inter_kind='quadratic'):
+    """Interpolate backbone coordinates."""
+    # inter_kind = 'cubic'
+
+    x = np.arange(len(coords))
+    interp_func = interp1d(x, coords, axis=0, kind=inter_kind)
+    new_x = np.linspace(0, len(coords) - 1, len(coords) * inter_folds - inter_folds + 1)
+    return interp_func(new_x)
+
+
+def interp_backbone(backbone_coords, backbone_chains):
+
+    unique_chains = np.unique(backbone_chains)
+
+    all_interpolated_backbone_coords = []
+    for chain in unique_chains:
+        # Get the backbone coordinates for the current chain
+        chain_backbone_coords = backbone_coords[backbone_chains == chain]
+
+        # Perform interpolation for the current chain
+        interpolated_coords = interpolate_coords(chain_backbone_coords, inter_folds=1)
+
+        # Add the interpolated coordinates to the aggregated list
+        all_interpolated_backbone_coords.append(interpolated_coords)
+
+    return np.vstack(all_interpolated_backbone_coords)
 
 
 def generate_random_quaternions(n):
@@ -423,20 +452,26 @@ def read_file_and_get_coordinates(file_path):
 
     # Initialize a list to hold all atom coordinates
     all_atom_coordinates = []
+    backbone_coords = []
+    backbone_chains = []
+
+    backbone_atoms = ['N', 'CA', 'C', 'O']
 
     # Iterate through each model, chain, and residue in the structure to get atoms
     for model in structure:
         for chain in model:
+            chain_id = chain.get_id()
             for residue in chain:
                 for atom in residue:
-                    # Append the atom's coordinates to the list
-                    all_atom_coordinates.append(atom.get_coord())
+                    if atom.get_name() in backbone_atoms:
+                        # Append the atom's coordinates to the list
+                        backbone_coords.append(atom.get_coord())
+                        # backbone_chains.append(chain_id)
 
-    # Convert the list of coordinates to a numpy array
-    coordinates_array = np.array(all_atom_coordinates)
+    # interp_backbone_coords = interp_backbone(backbone_coords, backbone_chains)
 
     # Return the numpy array of coordinates
-    return coordinates_array
+    return np.array(backbone_coords)
 
 
 def pad_and_convert_to_tensor(atom_coords_list, device):
