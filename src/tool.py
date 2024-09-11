@@ -79,7 +79,7 @@ def interp_backbone(mol):
         chain_backbone_coords = backbone_coords[backbone_chains == chain]
 
         # Perform interpolation for the current chain
-        interpolated_coords = interpolate_coords(chain_backbone_coords, inter_folds=3)
+        interpolated_coords = interpolate_coords(chain_backbone_coords, inter_folds=1)
 
         # Add the interpolated coordinates to the aggregated list
         all_interpolated_backbone_coords.append(interpolated_coords)
@@ -117,8 +117,8 @@ class DiffFitSettings:
         self.clustering_shift_tolerance : float = 3.0
         self.clustering_angle_tolerance : float = 6.0
 
-        self.clustering_in_contour_threshold: float = 0.1
-        self.clustering_correlation_threshold: float = 0.1
+        self.clustering_in_contour_threshold: float = 0.2
+        self.clustering_correlation_threshold: float = 0.5
 
 
 class DiffFitTool(ToolInstance):
