@@ -863,11 +863,11 @@ def diff_atom_comp(target_vol_path: str,
                    learning_rate: float = 0.01,
                    n_iters: int = 201,
                    out_dir: str = "out",
-                   out_dir_exist_ok: bool = False,
-                   conv_loops: int = 10,
-                   conv_kernel_sizes: list = (5, 5, 5, 5, 5, 5, 5, 5, 5, 5),
-                   conv_weights: list = (1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0),
-                   device: str = "cpu"
+                   out_dir_exist_ok: bool = True,
+                   conv_loops: int = 3,
+                   conv_kernel_sizes: list = (5, 5, 5),
+                   conv_weights: list = (1.0, 1.0, 1.0),
+                   device: str = "cuda"
                    ):
     timer_start = datetime.now()
     # ======= load target volume to fit into
