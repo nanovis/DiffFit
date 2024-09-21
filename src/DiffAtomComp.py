@@ -1075,7 +1075,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--negative_space_value', type=float, default=-0.5,
                         help="The value to set the negative space voxels to")
-    parser.add_argument('--device', type=str, default="cpu",
+    parser.add_argument('--device', type=str, default="cuda",
                         help="cpu or cuda")
 
     args = parser.parse_args()
