@@ -1017,7 +1017,8 @@ class DiffFitTool(ToolInstance):
         self.transformation = self.get_table_item_transformation(self.cluster_idx)
 
         if self.fit_input_mode == "interactive":
-            self.mol = self.fit_mol_list[self.mol_idx]
+            if self.mol is None:
+                self.mol = self.fit_mol_list[self.mol_idx]
             self.mol.display = True
             self.mol.scene_position = self.transformation
         elif self.fit_input_mode == "disk file":
@@ -1190,6 +1191,12 @@ class DiffFitTool(ToolInstance):
         smooth_by = self._smooth_by.currentText()
         volume_conv_list = self._create_volume_conv_list(vol_copy, smooth_by, smooth_loops, self.session)
         vol_copy.delete()
+
+
+        mol.atoms.transform(mol.position)
+        from chimerax.geometry import Place
+        mol.position = Place()
+        self.mol = mol
 
         # Simulate a map for the mol
         from chimerax.map.molmap import molecule_map
