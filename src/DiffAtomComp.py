@@ -90,7 +90,7 @@ def quaternion_from_vectors(v0, v1):
         qy = c[1] * invs
         qz = c[2] * invs
         qw = s * 0.5
-        return np.array([qx, qy, qz, qw])
+        return np.array([qw, -qx, -qy, -qz])
 
 
 def generate_random_quaternions(n):
