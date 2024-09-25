@@ -57,6 +57,42 @@ def interp_backbone(backbone_coords, backbone_chains):
     return np.vstack(all_interpolated_backbone_coords)
 
 
+def normalize(v):
+    """Normalize a vector."""
+    norm = np.linalg.norm(v)
+    if norm == 0:
+        return v
+    return v / norm
+
+
+def quaternion_from_vectors(v0, v1):
+    """Compute the quaternion representing the rotation from vector v0 to vector v1."""
+    v0 = normalize(v0)
+    v1 = normalize(v1)
+    c = np.cross(v0, v1)
+    d = np.dot(v0, v1)
+
+    if d >= 1.0:
+        # The vectors are the same
+        return np.array([0, 0, 0, 1])
+    elif d <= -1.0:
+        # The vectors are opposite
+        # Find an orthogonal vector to v0
+        orthogonal = np.cross([1, 0, 0], v0)
+        if np.linalg.norm(orthogonal) < 1e-6:
+            orthogonal = np.cross([0, 1, 0], v0)
+        orthogonal = normalize(orthogonal)
+        return np.array([orthogonal[0], orthogonal[1], orthogonal[2], 0])
+    else:
+        s = math.sqrt((1 + d) * 2)
+        invs = 1 / s
+        qx = c[0] * invs
+        qy = c[1] * invs
+        qz = c[2] * invs
+        qw = s * 0.5
+        return np.array([qx, qy, qz, qw])
+
+
 def generate_random_quaternions(n):
     """
     Generate n random quaternion vectors that evenly sample directions.
@@ -67,21 +103,26 @@ def generate_random_quaternions(n):
     Returns:
     - quaternions: An array of shape (n, 4) containing n quaternions.
     """
-    # Random rotation axes
-    u1 = np.random.rand(n)
-    u2 = np.random.rand(n)
-    u3 = np.random.rand(n)
+    golden_angle = math.pi * (3.0 - math.sqrt(5.0))  # Approximately 2.39996323
 
-    # Convert random numbers to quaternion parameters
-    q0 = np.sqrt(1 - u1) * np.sin(2 * np.pi * u2)
-    q1 = np.sqrt(1 - u1) * np.cos(2 * np.pi * u2)
-    q2 = np.sqrt(u1) * np.sin(2 * np.pi * u3)
-    q3 = np.sqrt(u1) * np.cos(2 * np.pi * u3)
+    v0 = np.array([0, 1, 0])
+    quaternions = []
+    for i in range(n):
+        # Compute y coordinate and radius at this latitude
+        y = 1 - (i / float(n - 1)) * 2  # y ranges from 1 to -1
+        radius = math.sqrt(1 - y * y)  # Radius at y
 
-    # Combine into quaternion array
-    quaternions = np.vstack((q0, q1, q2, q3)).T
+        # Compute theta for this point
+        theta = golden_angle * i
 
-    return quaternions
+        # Compute Cartesian coordinates
+        x = math.cos(theta) * radius
+        z = math.sin(theta) * radius
+
+        v1 = np.array([x, y, z])
+        quaternions.append(quaternion_from_vectors(v0, v1))
+
+    return np.array(quaternions)
 
 
 def q2_unit_coord(Q):
@@ -740,6 +781,11 @@ def diff_fit(volume_list: list,
     # Init params
 
     e_quaternions = generate_random_quaternions(N_quaternions * N_shifts)
+
+    # reorder
+    e_quaternions = e_quaternions.reshape([N_quaternions, N_shifts, 4])
+    e_quaternions = np.transpose(e_quaternions, (1, 0, 2))
+    e_quaternions = e_quaternions.reshape([N_quaternions * N_shifts, 4])
 
     rotated_centers_array = np.array(rotate_centers(mol_centers, e_quaternions))
 
