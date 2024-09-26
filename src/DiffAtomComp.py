@@ -16,20 +16,72 @@ from Bio.PDB.PDBExceptions import PDBConstructionWarning
 
 from scipy.ndimage import label, center_of_mass
 
-from .common import generate_random_quaternions
-
 from scipy.spatial.transform import Rotation as R
 
 from sklearn.cluster import Birch
 import math
 
 from math import pi
-from chimerax.geometry import bins
-from chimerax.geometry import Place
+from scipy.interpolate import interp1d
 
 
 # Ignore PDBConstructionWarning for unrecognized 'END' record
 warnings.filterwarnings("ignore", message="Ignoring unrecognized record 'END'", category=PDBConstructionWarning)
+
+
+def interpolate_coords(coords, inter_folds, inter_kind='quadratic'):
+    """Interpolate backbone coordinates."""
+    # inter_kind = 'cubic'
+
+    x = np.arange(len(coords))
+    interp_func = interp1d(x, coords, axis=0, kind=inter_kind)
+    new_x = np.linspace(0, len(coords) - 1, len(coords) * inter_folds - inter_folds + 1)
+    return interp_func(new_x)
+
+
+def interp_backbone(backbone_coords, backbone_chains):
+
+    unique_chains = np.unique(backbone_chains)
+
+    all_interpolated_backbone_coords = []
+    for chain in unique_chains:
+        # Get the backbone coordinates for the current chain
+        chain_backbone_coords = backbone_coords[backbone_chains == chain]
+
+        # Perform interpolation for the current chain
+        interpolated_coords = interpolate_coords(chain_backbone_coords, inter_folds=1)
+
+        # Add the interpolated coordinates to the aggregated list
+        all_interpolated_backbone_coords.append(interpolated_coords)
+
+    return np.vstack(all_interpolated_backbone_coords)
+
+
+def generate_random_quaternions(n):
+    """
+    Generate n random quaternion vectors that evenly sample directions.
+
+    Parameters:
+    - n: The number of quaternion vectors to generate.
+
+    Returns:
+    - quaternions: An array of shape (n, 4) containing n quaternions.
+    """
+    # Random rotation axes
+    u1 = np.random.rand(n)
+    u2 = np.random.rand(n)
+    u3 = np.random.rand(n)
+
+    # Convert random numbers to quaternion parameters
+    q0 = np.sqrt(1 - u1) * np.sin(2 * np.pi * u2)
+    q1 = np.sqrt(1 - u1) * np.cos(2 * np.pi * u2)
+    q2 = np.sqrt(u1) * np.sin(2 * np.pi * u3)
+    q3 = np.sqrt(u1) * np.cos(2 * np.pi * u3)
+
+    # Combine into quaternion array
+    quaternions = np.vstack((q0, q1, q2, q3)).T
+
+    return quaternions
 
 
 def q2_unit_coord(Q):
@@ -45,7 +97,7 @@ def q2_unit_coord(Q):
 
 
 def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3.0, angle_tolerance: float = 6.0,
-                              sort_column_idx: int = 7):
+                              sort_column_idx: int = 7, in_contour_threshold = 0.5, correlation_threshold = 0.5):
     """
     Cluster the fitting results in sqd table by thresholding on shift and quaternion
     Return the sorted cluster representatives
@@ -68,9 +120,8 @@ def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3
     @param sort_column_idx: the column to sort, 9-th column is the correlation
     @return: cluster representative table sorted in descending order
     """
-
-    # Convert angle tolerance to radians and then compute the sin of half the angle
-    q_coord_radius_tolerance = math.sin(math.radians(angle_tolerance / 2.0))
+    from chimerax.geometry import bins
+    from chimerax.geometry import Place
 
     N_mol, N_record, N_iter, N_metric = e_sqd_log.shape
 
@@ -87,10 +138,36 @@ def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3
     # Use the generated meshgrid and max_sort_column_metric_idx to index into e_sqd_log
     sqd_highest_corr_np = e_sqd_log[dims_0, dims_1, max_sort_column_metric_idx]
 
+    fit_res_filtered = []
+    fit_res_filtered_indices = []
+    in_contour_col_idx = 11
+    correlation_col_idx = 9
+    for mol_idx in range(N_mol):
+        sqd_highest_corr_np_mol = sqd_highest_corr_np[mol_idx]
+
+        # Fetch the columns of interest
+        in_contour_percentage_column = sqd_highest_corr_np_mol[:, in_contour_col_idx]
+        correlation_column = sqd_highest_corr_np_mol[:, correlation_col_idx]
+
+        # Create masks for the filtering conditions
+        in_contour_mask = in_contour_percentage_column >= in_contour_threshold
+        correlation_mask = correlation_column >= correlation_threshold
+
+        # Combine the masks to get a final filter
+        combined_mask = in_contour_mask & correlation_mask
+
+        # Apply the mask to filter the original array and also retrieve the indices
+        filtered_indices = np.where(combined_mask)  # Get the indices of the filtered rows
+        filtered_array = sqd_highest_corr_np_mol[filtered_indices]
+
+        fit_res_filtered.append(filtered_array)
+        fit_res_filtered_indices.append(filtered_indices[0])
+
+
     sqd_clusters = []
     for mol_idx in range(N_mol):
-        mol_shift = sqd_highest_corr_np[mol_idx, :, :3]
-        mol_q = sqd_highest_corr_np[mol_idx, :, 3:7]
+        mol_shift = fit_res_filtered[mol_idx][:, :3]
+        mol_q = fit_res_filtered[mol_idx][:, 3:7]
 
         T = []
         for i in range(len(mol_shift)):
@@ -125,12 +202,16 @@ def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3
 
         for cluster_idx in range(len(unique_labels)):
             sqd_idx = np.argwhere(indices == cluster_idx).reshape([-1])
-            max_idx = sqd_idx[np.argsort(-sqd_highest_corr_np[mol_idx, sqd_idx, sort_column_idx])[0]]
+            max_idx_in_filtered = sqd_idx[np.argsort(-fit_res_filtered[mol_idx][sqd_idx, sort_column_idx])[0]]
+            max_idx = fit_res_filtered_indices[mol_idx][max_idx_in_filtered]
 
-            # [mol_idx, max_idx (in e_sqd_log), iter_idx (giving the largest correlation),
-            #  cluster size, correlation]
+            # [mol_idx, max_idx (in e_sqd_log), iter_idx (giving the largest sort_column),
+            #  cluster size, sort_metric]
             sqd_clusters.append([mol_idx, max_idx, max_sort_column_metric_idx[mol_idx, max_idx],
-                                 counts[cluster_idx], sqd_highest_corr_np[mol_idx, max_idx, sort_column_idx]])
+                                 counts[cluster_idx], fit_res_filtered[mol_idx][max_idx_in_filtered, sort_column_idx]])
+
+    if len(sqd_clusters) == 0:
+        return None
 
     sqd_clusters = np.array(sqd_clusters)
     e_sqd_clusters_ordered = sqd_clusters[np.argsort(-sqd_clusters[:, -1])]
@@ -371,20 +452,26 @@ def read_file_and_get_coordinates(file_path):
 
     # Initialize a list to hold all atom coordinates
     all_atom_coordinates = []
+    backbone_coords = []
+    backbone_chains = []
+
+    backbone_atoms = ['N', 'CA', 'C', 'O']
 
     # Iterate through each model, chain, and residue in the structure to get atoms
     for model in structure:
         for chain in model:
+            chain_id = chain.get_id()
             for residue in chain:
                 for atom in residue:
-                    # Append the atom's coordinates to the list
-                    all_atom_coordinates.append(atom.get_coord())
+                    if atom.get_name() in backbone_atoms:
+                        # Append the atom's coordinates to the list
+                        backbone_coords.append(atom.get_coord())
+                        # backbone_chains.append(chain_id)
 
-    # Convert the list of coordinates to a numpy array
-    coordinates_array = np.array(all_atom_coordinates)
+    # interp_backbone_coords = interp_backbone(backbone_coords, backbone_chains)
 
     # Return the numpy array of coordinates
-    return coordinates_array
+    return np.array(backbone_coords)
 
 
 def pad_and_convert_to_tensor(atom_coords_list, device):
@@ -436,33 +523,14 @@ def quaternion_to_matrix_batch(quaternions):
 
 
 def filter_volume(volume_np, threshold, min_island_size):
-    # Step 1: Threshold the volume
+    # Step 1: Threshold the volume to create a binary mask
     binary_volume = volume_np > threshold
 
-    # Step 2: Identify connected components
-    labeled_volume, num_features = label(binary_volume)
-
-    # Step 3: Filter based on size using vectorized operations
-    # Calculate the size of each component
-    component_sizes = np.bincount(labeled_volume.ravel())
-    # Identify components that meet the size threshold
-    eligible_components = component_sizes > min_island_size
-    eligible_components[0] = False  # Skip background
-    # Use the eligibility array to filter the labeled_volume directly
-    eligible_volume = eligible_components[labeled_volume]
-    eligible_labels = np.where(eligible_components)[0]
-
-    # Calculate the center of mass for eligible components
-    cluster_center_indices = []
-    for i in eligible_labels:
-        center = center_of_mass(labeled_volume == i, labels=labeled_volume, index=i)
-        cluster_center_indices.append(center)
-
-    # Filter the original volume to retain only the voxels in eligible clusters
+    # Step 2: Apply the binary mask to the original volume
     filtered_volume = np.zeros_like(volume_np)
-    filtered_volume[eligible_volume] = volume_np[eligible_volume]
+    filtered_volume[binary_volume] = volume_np[binary_volume]
 
-    return filtered_volume, eligible_volume, cluster_center_indices
+    return filtered_volume, binary_volume, None
 
 
 def random_sample_indices(binary_volume, sample_size):
@@ -596,7 +664,7 @@ def calculate_metrics(render, elements_sim_density):
 
     correlation = overlap / (render_norm * elements_sim_density_norm)
 
-    return torch.stack((overlap_mean, correlation, cam, in_contour_percentage), dim=-1)
+    return torch.nan_to_num(torch.stack((overlap_mean, correlation, cam, in_contour_percentage), dim=-1))
 
 
 def diff_fit(volume_list: list,
@@ -795,11 +863,11 @@ def diff_atom_comp(target_vol_path: str,
                    learning_rate: float = 0.01,
                    n_iters: int = 201,
                    out_dir: str = "out",
-                   out_dir_exist_ok: bool = False,
-                   conv_loops: int = 10,
-                   conv_kernel_sizes: list = (5, 5, 5, 5, 5, 5, 5, 5, 5, 5),
-                   conv_weights: list = (1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0),
-                   device: str = "cpu"
+                   out_dir_exist_ok: bool = True,
+                   conv_loops: int = 3,
+                   conv_kernel_sizes: list = (5, 5, 5),
+                   conv_weights: list = (1.0, 1.0, 1.0),
+                   device: str = "cuda"
                    ):
     timer_start = datetime.now()
     # ======= load target volume to fit into
@@ -808,7 +876,7 @@ def diff_atom_comp(target_vol_path: str,
     # target dim is in [z, y, x]
     # target_origin is in [x, y, z]
 
-    target_no_negative, eligible_volume, cluster_center_indices = filter_volume(target_no_negative,
+    target_no_negative, eligible_volume, _ = filter_volume(target_no_negative,
                                                                                 target_surface_threshold,
                                                                                 min_cluster_size)
 
@@ -994,8 +1062,10 @@ if __name__ == '__main__':
     parser.add_argument('--structures_sim_map_dir', type=str,
                         help="directory containing the simulated map from the structures to be fit")
 
+    parser.add_argument('--out_dir', type=str, default="out",
+                        help="Output directory")
     parser.add_argument('--out_dir_exist_ok', type=bool,
-                        help="if True, output directory will be overwritten when existing")
+                        help="If True, output directory will be overwritten when existing")
 
     parser.add_argument('--N_shifts', type=int, default=10,
                         help="The number of random shift initializations")
@@ -1005,6 +1075,8 @@ if __name__ == '__main__':
 
     parser.add_argument('--negative_space_value', type=float, default=-0.5,
                         help="The value to set the negative space voxels to")
+    parser.add_argument('--device', type=str, default="cuda",
+                        help="cpu or cuda")
 
     args = parser.parse_args()
 
@@ -1016,10 +1088,12 @@ if __name__ == '__main__':
                    args.min_cluster_size,
                    args.structures_dir,
                    args.structures_sim_map_dir,
+                   out_dir=args.out_dir,
                    out_dir_exist_ok=args.out_dir_exist_ok,
                    N_shifts=args.N_shifts,
                    N_quaternions=args.N_quaternions,
-                   negative_space_value=args.negative_space_value)
+                   negative_space_value=args.negative_space_value,
+                   device=args.device)
 
     timer_stop = datetime.now()
 

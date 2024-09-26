@@ -44,6 +44,7 @@ import torch
 import psutil
 import platform
 import ast
+from scipy.interpolate import interp1d
         
 
 def create_row(parent_layout, left=0, top=0, right=0, bottom=0, spacing=5):
@@ -53,6 +54,43 @@ def create_row(parent_layout, left=0, top=0, right=0, bottom=0, spacing=5):
     row_layout.setContentsMargins(left, top, right, bottom)
     row_layout.setSpacing(spacing)
     return row_layout
+
+
+def interpolate_coords(coords, inter_folds, inter_kind='quadratic'):
+    """Interpolate backbone coordinates."""
+    # inter_kind = 'cubic'
+
+    x = np.arange(len(coords))
+    interp_func = interp1d(x, coords, axis=0, kind=inter_kind)
+    new_x = np.linspace(0, len(coords) - 1, len(coords) * inter_folds - inter_folds + 1)
+    return interp_func(new_x)
+
+
+def interp_backbone(backbone_coords, backbone_chains):
+
+    unique_chains = np.unique(backbone_chains)
+
+    all_interpolated_backbone_coords = []
+    for chain in unique_chains:
+        # Get the backbone coordinates for the current chain
+        chain_backbone_coords = backbone_coords[backbone_chains == chain]
+
+        # Perform interpolation for the current chain
+        interpolated_coords = interpolate_coords(chain_backbone_coords, inter_folds=1)
+
+        # Add the interpolated coordinates to the aggregated list
+        all_interpolated_backbone_coords.append(interpolated_coords)
+
+    return np.vstack(all_interpolated_backbone_coords)
+
+
+def interp_backbone_for_mol(mol):
+    backbone_atoms = ['N', 'CA', 'C', 'O']
+    is_backbone = np.isin(mol.atoms.names, backbone_atoms)
+    backbone_coords = mol.atoms.scene_coords[is_backbone]
+    backbone_chains = mol.atoms.residues.mmcif_chain_ids[is_backbone]
+
+    return interp_backbone(backbone_coords, backbone_chains)
 
 class DiffFitSettings:    
     def __init__(self):   
@@ -83,6 +121,9 @@ class DiffFitSettings:
         
         self.clustering_shift_tolerance : float = 3.0
         self.clustering_angle_tolerance : float = 6.0
+
+        self.clustering_in_contour_threshold: float = 0.2
+        self.clustering_correlation_threshold: float = 0.5
 
 
 class DiffFitTool(ToolInstance):
@@ -142,6 +183,8 @@ class DiffFitTool(ToolInstance):
         self.session.triggers.add_handler('graphics update', self.graphics_update_callback)
 
         self.spheres = None
+
+        self.proxyModel = None
 
 
     def _build_ui(self):
@@ -222,6 +265,8 @@ class DiffFitTool(ToolInstance):
         self.structures_folder.setText(self.settings.view_structures_directory)        
         
         # clustering
+        self.clustering_in_contour_threshold.setValue(self.settings.clustering_in_contour_threshold)
+        self.clustering_correlation_threshold.setValue(self.settings.clustering_correlation_threshold)
         self.clustering_angle_tolerance.setValue(self.settings.clustering_angle_tolerance)
         self.clustering_shift_tolerance.setValue(self.settings.clustering_shift_tolerance)
         
@@ -259,6 +304,8 @@ class DiffFitTool(ToolInstance):
         self.settings.view_target_vol_path = self.target_vol.text()
         
         # clustering
+        self.settings.clustering_in_contour_threshold = self.clustering_in_contour_threshold.value()
+        self.settings.clustering_correlation_threshold = self.clustering_correlation_threshold.value()
         self.settings.clustering_angle_tolerance = self.clustering_angle_tolerance.value()
         self.settings.clustering_shift_tolerance = self.clustering_shift_tolerance.value()
         
@@ -350,8 +397,8 @@ class DiffFitTool(ToolInstance):
         preset_balanced = QPushButton("Balanced")
         preset_exhaustive = QPushButton("Exhaustive")
         preset_fast.clicked.connect(lambda: self._single_fit_set_preset())
-        preset_balanced.clicked.connect(lambda: self._single_fit_set_preset(10, 50, 3))
-        preset_exhaustive.clicked.connect(lambda: self._single_fit_set_preset(10, 100, 10))
+        preset_balanced.clicked.connect(lambda: self._single_fit_set_preset(10, 100, 3))
+        preset_exhaustive.clicked.connect(lambda: self._single_fit_set_preset(50, 100, 5))
         row.addWidget(preset_fast)
         row.addWidget(preset_balanced)
         row.addWidget(preset_exhaustive)
@@ -361,17 +408,17 @@ class DiffFitTool(ToolInstance):
         row = create_row(f.layout())
         n_shifts_label = QLabel("# shifts:")
         self._single_fit_n_shifts = QSpinBox()
-        self._single_fit_n_shifts.setValue(5)
         self._single_fit_n_shifts.setMinimum(1)
         self._single_fit_n_shifts.setMaximum(500)
+        self._single_fit_n_shifts.setValue(10)
         row.addWidget(n_shifts_label)
         row.addWidget(self._single_fit_n_shifts)
 
         n_quaternions_label = QLabel("# quaternions:")
         self._single_fit_n_quaternions = QSpinBox()
-        self._single_fit_n_quaternions.setValue(20)
         self._single_fit_n_quaternions.setMinimum(1)
-        self._single_fit_n_quaternions.setMaximum(500)
+        self._single_fit_n_quaternions.setMaximum(1000)
+        self._single_fit_n_quaternions.setValue(100)
         row.addWidget(n_quaternions_label)
         row.addWidget(self._single_fit_n_quaternions)
         row.addStretch()
@@ -390,7 +437,7 @@ class DiffFitTool(ToolInstance):
 
         convs_loops_label = QLabel("Smooth loops:")
         self._single_fit_gaussian_loops = QSpinBox()
-        self._single_fit_gaussian_loops.setValue(0)
+        self._single_fit_gaussian_loops.setValue(3)
         self._single_fit_gaussian_loops.setMinimum(0)
         self._single_fit_gaussian_loops.setMaximum(50)
         self._single_fit_gaussian_loops.valueChanged.connect(self._update_smooth_fields)
@@ -404,7 +451,7 @@ class DiffFitTool(ToolInstance):
         smooth_kernel_sizes_label = QLabel()
         smooth_kernel_sizes_label.setText("Kernel sizes [list]:")
         self.smooth_kernel_sizes = QLineEdit()
-        self.smooth_kernel_sizes.setText("[]")
+        self.smooth_kernel_sizes.setText("[5, 5, 5]")
         row.addWidget(smooth_kernel_sizes_label)
         row.addWidget(self.smooth_kernel_sizes)
         row.addStretch()
@@ -413,7 +460,7 @@ class DiffFitTool(ToolInstance):
         smooth_weights_label = QLabel()
         smooth_weights_label.setText("Smooth weights [list]:")
         self.smooth_weights = QLineEdit()
-        self.smooth_weights.setText("[]")
+        self.smooth_weights.setText("[1.0, 1.0, 1.0]")
         row.addWidget(smooth_weights_label)
         row.addWidget(self.smooth_weights)
         row.addStretch()
@@ -674,6 +721,28 @@ class DiffFitTool(ToolInstance):
         layout.addWidget(self.dataset_folder, row, 1)
         layout.addWidget(self.dataset_folder_select, row, 2)
         row = row + 1
+
+        clustering_in_contour_threshold_label = QLabel()
+        clustering_in_contour_threshold_label.setText("In contour threshold:")
+        self.clustering_in_contour_threshold = QDoubleSpinBox()
+        self.clustering_in_contour_threshold.setMinimum(0.0)
+        self.clustering_in_contour_threshold.setMaximum(1.0)
+        self.clustering_in_contour_threshold.setSingleStep(0.1)
+        self.clustering_in_contour_threshold.valueChanged.connect(lambda: self.store_settings())
+        layout.addWidget(clustering_in_contour_threshold_label, row, 0)
+        layout.addWidget(self.clustering_in_contour_threshold, row, 1, 1, 2)
+        row = row + 1
+
+        clustering_correlation_threshold_label = QLabel()
+        clustering_correlation_threshold_label.setText("Correlation threshold:")
+        self.clustering_correlation_threshold = QDoubleSpinBox()
+        self.clustering_correlation_threshold.setMinimum(0.0)
+        self.clustering_correlation_threshold.setMaximum(1.0)
+        self.clustering_correlation_threshold.setSingleStep(0.1)
+        self.clustering_correlation_threshold.valueChanged.connect(lambda: self.store_settings())
+        layout.addWidget(clustering_correlation_threshold_label, row, 0)
+        layout.addWidget(self.clustering_correlation_threshold, row, 1, 1, 2)
+        row = row + 1
         
         clustering_shift_tolerance_label = QLabel()
         clustering_shift_tolerance_label.setText("Clustering - Shift Tolerance:")
@@ -696,6 +765,8 @@ class DiffFitTool(ToolInstance):
         layout.addWidget(clustering_angle_tolerance_label, row, 0)
         layout.addWidget(self.clustering_angle_tolerance, row, 1, 1, 2)
         row = row + 1
+
+
         
         # init button                
         button = QPushButton()
@@ -929,6 +1000,9 @@ class DiffFitTool(ToolInstance):
         return get_transformation_at_record(self.e_sqd_log, mol_idx, record_idx, iter_idx)
 
     def select_table_item(self, index):
+        if self.proxyModel is None:
+            return
+
         proxyIndex = self.proxyModel.index(index, 0)
         sourceIndex = self.proxyModel.mapToSource(proxyIndex)
 
@@ -943,7 +1017,8 @@ class DiffFitTool(ToolInstance):
         self.transformation = self.get_table_item_transformation(self.cluster_idx)
 
         if self.fit_input_mode == "interactive":
-            self.mol = self.fit_mol_list[self.mol_idx]
+            if self.mol is None:
+                self.mol = self.fit_mol_list[self.mol_idx]
             self.mol.display = True
             self.mol.scene_position = self.transformation
         elif self.fit_input_mode == "disk file":
@@ -1009,8 +1084,15 @@ class DiffFitTool(ToolInstance):
         self.e_sqd_log = e_sqd_log.reshape([N_mol, N_quat * N_shift, N_iter, N_metric])
         self.e_sqd_clusters_ordered = cluster_and_sort_sqd_fast(self.e_sqd_log, mol_centers,
                                                                 self.settings.clustering_shift_tolerance,
-                                                                self.settings.clustering_angle_tolerance)
-        
+                                                                self.settings.clustering_angle_tolerance,
+                                                                in_contour_threshold=self.settings.clustering_in_contour_threshold,
+                                                                correlation_threshold=self.settings.clustering_correlation_threshold)
+
+        if self.e_sqd_clusters_ordered is None:
+            self.session.logger.error("No result under these thresholds. Please decrease \"In contour threshold\" or \"Correlation threshold\" or rerun the fitting!")
+            self.proxyModel = None
+            return
+
         self.model = TableModel(self.e_sqd_clusters_ordered, self.e_sqd_log)
         self.proxyModel = QSortFilterProxyModel()
         self.proxyModel.setSourceModel(self.model)
@@ -1110,9 +1192,24 @@ class DiffFitTool(ToolInstance):
         volume_conv_list = self._create_volume_conv_list(vol_copy, smooth_by, smooth_loops, self.session)
         vol_copy.delete()
 
+        # Apply the user's transformation and center mol
+        from chimerax.geometry import Place
+        mol.atoms.transform(mol.position)
+        mol_center = mol.atoms.coords.mean(axis=0)
+        transform = Place(origin=-mol_center)
+        mol.atoms.transform(transform)
+        mol.position = Place()
+        self.mol = mol
+
         # Simulate a map for the mol
         from chimerax.map.molmap import molecule_map
         mol_vol = molecule_map(self.session, mol.atoms, self._single_fit_res.value(), grid_spacing=self.fit_vol.data.step[0])
+
+        backbone_atoms = ['N', 'CA', 'C', 'O']
+        is_backbone = np.isin(mol.atoms.names, backbone_atoms)
+
+        input_coords = mol.atoms.scene_coords[is_backbone]
+        # input_coords = mol.atoms.scene_coords
 
         # Fit
         timer_start = datetime.now()
@@ -1120,7 +1217,7 @@ class DiffFitTool(ToolInstance):
                                    self.fit_vol.data.step,
                                    self.fit_vol.data.origin,
                                    10,
-                                   [mol.atoms.coords],
+                                   [input_coords],
                                    [(mol_vol.full_matrix(), mol_vol.data.step, mol_vol.data.origin)],
                                    N_shifts=self._single_fit_n_shifts.value(),
                                    N_quaternions=self._single_fit_n_quaternions.value(),
@@ -1368,7 +1465,7 @@ class DiffFitTool(ToolInstance):
 
             sphere_size = 0.3
 
-            mol_center = self.mol.atoms.coords.mean(axis=0)
+            mol_center = self.mol.atoms.scene_coords.mean(axis=0)
 
             spheres_default_offset = 100
             spheres_default_scale = 40

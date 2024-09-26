@@ -40,6 +40,9 @@ for chain in structure.chains:
 
     chain_id_name_list.append(chain_id_name.upper())
 
+    if chain.num_existing_residues <= 500:
+        continue
+
     # Save the chain's coordinates as a npy file
     npy_filename = f"{structure_basename}_chain_{chain_id_name}.npy"
     npy_filepath = os.path.join(output_dir, npy_filename)
