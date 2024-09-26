@@ -1192,9 +1192,12 @@ class DiffFitTool(ToolInstance):
         volume_conv_list = self._create_volume_conv_list(vol_copy, smooth_by, smooth_loops, self.session)
         vol_copy.delete()
 
-
-        mol.atoms.transform(mol.position)
+        # Apply the user's transformation and center mol
         from chimerax.geometry import Place
+        mol.atoms.transform(mol.position)
+        mol_center = mol.atoms.coords.mean(axis=0)
+        transform = Place(origin=-mol_center)
+        mol.atoms.transform(transform)
         mol.position = Place()
         self.mol = mol
 
