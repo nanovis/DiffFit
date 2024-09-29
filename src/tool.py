@@ -115,9 +115,9 @@ class DiffFitSettings:
         self.learning_rate: float = 0.01
         self.N_iters: int = 201        
         self.out_dir_exist_ok: bool = True
-        self.conv_loops: int = 10
-        self.conv_kernel_sizes: list = [5, 5, 5, 5, 5, 5, 5, 5, 5, 5]
-        self.conv_weights: list = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+        self.conv_loops: int = 3
+        self.conv_kernel_sizes: list = [5, 5, 5]
+        self.conv_weights: list = [1.0, 1.0, 1.0]
         
         self.clustering_shift_tolerance : float = 3.0
         self.clustering_angle_tolerance : float = 6.0
