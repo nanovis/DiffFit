@@ -924,9 +924,10 @@ def diff_atom_comp(target_vol_path: str,
 
     e_quaternions = generate_random_quaternions(N_quaternions * N_shifts)
 
-    rotated_centers_array = np.array(rotate_centers(mol_centers, e_quaternions))
-
-    e_shifts = sampled_coords - rotated_centers_array.reshape([num_molecules, N_quaternions, N_shifts, 3])
+    e_shifts = np.tile(
+        sampled_coords.reshape(1, 1, N_shifts, 3),
+        (num_molecules, N_quaternions, 1, 1)
+    )
 
     e_quaternions = e_quaternions.reshape([N_quaternions, N_shifts, 4])
     e_quaternions = np.repeat(e_quaternions[np.newaxis, :, :, :], num_molecules, axis=0)
