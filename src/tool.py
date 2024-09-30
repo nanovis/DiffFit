@@ -1073,6 +1073,7 @@ class DiffFitTool(ToolInstance):
             # print(self.settings)
             print(self.settings.view_target_vol_path)
             self.vol = run(self.session, "open {0}".format(self.settings.view_target_vol_path))[0]
+            run(self.session,f"volume #{self.vol.id[0]} level {self.settings.target_surface_threshold}")
 
             # TODO: define mol_centers
 
