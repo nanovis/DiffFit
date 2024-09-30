@@ -161,6 +161,11 @@ def look_at_record(mol_folder, mol_idx, transformation, session, clean_scene=Tru
     mol_path = os.path.join(mol_folder, mol_files[mol_idx])
     mol = run(session, f"open {mol_path}")[0]
 
+    from chimerax.geometry import Place
+    mol_center = mol.atoms.coords.mean(axis=0)
+    transform = Place(origin=-mol_center)
+    mol.atoms.transform(transform)
+
     mol.scene_position = transformation
 
     return mol

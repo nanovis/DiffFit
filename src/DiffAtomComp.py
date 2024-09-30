@@ -600,6 +600,11 @@ def add_conv_density(conv_loops, conv_list, conv_weights, grid, occupied_density
             occupied_density_sum_mol += torch.sum(render_conv * conv_weights[conv_idx - 1], dim=-1).squeeze()
 
 
+def center_atom_coords_list(atom_coords_list, mol_centers):
+
+    return [coords - mol_center for coords, mol_center in zip(atom_coords_list, mol_centers)]
+
+
 def read_all_files_to_atom_coords_list(structures_dir):
     atom_coords_list = []
     # List all files in the given directory
@@ -911,12 +916,18 @@ def diff_atom_comp(target_vol_path: str,
                                             negative_space_value, kernel_type="Gaussian")
 
     atom_coords_list = read_all_files_to_atom_coords_list(structures_dir)  # atom coords as [x, y, z]
-    mol_centers = [np.mean(coords, axis=0) for coords in atom_coords_list]
     num_molecules = len(atom_coords_list)
 
     # read simulated map
     sim_map_list = mrc_folder_to_npy_list(structures_sim_map_dir)
     elements_sim_density_list = sample_sim_map(atom_coords_list, sim_map_list, num_molecules, device)
+
+    # center the mol
+    mol_centers = [np.mean(coords, axis=0) for coords in atom_coords_list]
+    atom_coords_list = center_atom_coords_list(atom_coords_list, mol_centers)
+    # re-calculate the centers, should be all near zero
+    mol_centers = [np.mean(coords, axis=0) for coords in atom_coords_list]
+
 
     # ======= optimization
 
