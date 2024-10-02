@@ -107,7 +107,7 @@ class DiffFitSettings:
         
         self.output_directory: str = "D:\\GIT\\DiffFit\\dev_data\\output"
 
-        self.target_surface_threshold: float = 0.7
+        self.target_surface_threshold: float = 2.0
         self.min_cluster_size: float = 100
         self.N_shifts: int = 10
         self.N_quaternions: int = 100
