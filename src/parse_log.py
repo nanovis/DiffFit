@@ -179,6 +179,11 @@ def simulate_volume(session, vol, mol_folder, mol_idx, transformation, res=4.0):
     mol_path = os.path.join(mol_folder, mol_files[mol_idx])
     mol = run(session, f"open {mol_path}")[0]
 
+    from chimerax.geometry import Place
+    mol_center = mol.atoms.coords.mean(axis=0)
+    transform = Place(origin=-mol_center)
+    mol.atoms.transform(transform)
+
     mol.atoms.transform(transformation)
 
     from chimerax.map.molmap import molecule_map
