@@ -16,7 +16,7 @@ from PyQt6.QtWidgets import QCheckBox
 
 from Qt.QtWidgets import QLabel, QPushButton, QLineEdit, QVBoxLayout, QHBoxLayout, QGridLayout, QComboBox, QFrame
 from Qt.QtWidgets import QTableView, QSlider, QTabWidget, QGroupBox, QDoubleSpinBox, QSpinBox 
-from Qt.QtWidgets import QFileDialog, QSpacerItem
+from Qt.QtWidgets import QFileDialog, QSpacerItem, QSizePolicy
 from Qt.QtCore import QSortFilterProxyModel, Qt
 
 from chimerax.core.tools import ToolInstance
@@ -648,6 +648,9 @@ class DiffFitTool(ToolInstance):
         self.conv_weights.textChanged.connect(lambda: self.store_settings())        
         layout.addWidget(conv_weights_label, row, 0)
         layout.addWidget(self.conv_weights, row, 1, 1, 2)
+
+        vertical_spacer = QSpacerItem(1, 1, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        layout.addItem(vertical_spacer, row+1, 0)
 
 
     def build_device_ui(self, layout):
