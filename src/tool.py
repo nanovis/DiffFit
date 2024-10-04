@@ -234,9 +234,8 @@ class DiffFitTool(ToolInstance):
         layout.addWidget(tab_widget)
         self.tool_window.ui_area.setLayout(layout)
         
-        # Show the window on the user-preferred side of the ChimeraX
-        # main window
-        self.tool_window.manage('side')
+        # Show the window such that it is detached from the main window
+        self.tool_window.manage(placement=None)
 
     def load_settings(self):
         print("loading settings...")
