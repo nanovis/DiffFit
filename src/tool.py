@@ -16,7 +16,7 @@ from PyQt6.QtWidgets import QCheckBox
 
 from Qt.QtWidgets import QLabel, QPushButton, QLineEdit, QVBoxLayout, QHBoxLayout, QGridLayout, QComboBox, QFrame
 from Qt.QtWidgets import QTableView, QSlider, QTabWidget, QGroupBox, QDoubleSpinBox, QSpinBox 
-from Qt.QtWidgets import QFileDialog, QSpacerItem
+from Qt.QtWidgets import QFileDialog, QSpacerItem, QSizePolicy
 from Qt.QtCore import QSortFilterProxyModel, Qt
 
 from chimerax.core.tools import ToolInstance
@@ -107,7 +107,7 @@ class DiffFitSettings:
         
         self.output_directory: str = "D:\\GIT\\DiffFit\\dev_data\\output"
 
-        self.target_surface_threshold: float = 0.7
+        self.target_surface_threshold: float = 2.0
         self.min_cluster_size: float = 100
         self.N_shifts: int = 10
         self.N_quaternions: int = 100
@@ -192,21 +192,21 @@ class DiffFitTool(ToolInstance):
         # the base layout is Vertical
         
         tab_widget = QTabWidget()
-        tab_widget.setTabPosition(QTabWidget.West)
+        tab_widget.setTabPosition(QTabWidget.North)
 
         # single fit GUI
         single_fit_group = QGroupBox()
         single_fit_group_layout = QVBoxLayout()
         single_fit_group.setLayout(single_fit_group_layout)
         self.build_single_fit_ui(single_fit_group_layout)
-        tab_widget.addTab(single_fit_group, "Single")
+        tab_widget.addTab(single_fit_group, "Interactive")
 
         # computation GUI
         compute_group = QGroupBox()
         compute_group_layout = QGridLayout()
         compute_group.setLayout(compute_group_layout)
         self.build_compute_ui(compute_group_layout)
-        tab_widget.addTab(compute_group, "Compute")
+        tab_widget.addTab(compute_group, "Disk")
 
         # device GUI
         device_group = QGroupBox()
@@ -234,9 +234,8 @@ class DiffFitTool(ToolInstance):
         layout.addWidget(tab_widget)
         self.tool_window.ui_area.setLayout(layout)
         
-        # Show the window on the user-preferred side of the ChimeraX
-        # main window
-        self.tool_window.manage('side')
+        # Show the window such that it is detached from the main window
+        self.tool_window.manage(placement=None)
 
     def load_settings(self):
         print("loading settings...")
@@ -313,6 +312,13 @@ class DiffFitTool(ToolInstance):
         #print(self.settings.view_target_vol_path)
 
     def build_single_fit_ui(self, layout):
+        row = QHBoxLayout()
+        layout.addLayout(row)
+
+        doc_label = QLabel("Fit a single atomic model to a map interactively.")
+        doc_label.setWordWrap(True)
+        row.addWidget(doc_label)
+
         row = QHBoxLayout()
         layout.addLayout(row)
 
@@ -494,6 +500,16 @@ class DiffFitTool(ToolInstance):
 
     def build_compute_ui(self, layout):
         row = 0
+
+        doc_label = QLabel("Fit <b>multiple</b> atomic models to a map by specifying the file paths.\n"
+                           "The number of models can be up to hundreds to thousands, limited by the available device memory.\n"
+                           "You may change the device in use from the Device tab.\n"
+                           "Check the doc and tutorial videos for how to set the parameters, especially the \"Sim-map Folder\".\n"
+                           "You may also run this tab's functionality by a Python command independently from ChimeraX "
+                           "on a supercomputer and then view the results in the View tab.")
+        doc_label.setWordWrap(True)
+        layout.addWidget(doc_label, row, 0, 1, 3)
+        row = row + 1
                
         target_vol_path_label = QLabel()
         target_vol_path_label.setText("Target Volume:")
@@ -522,7 +538,7 @@ class DiffFitTool(ToolInstance):
         self.structures_sim_map_dir = QLineEdit()
         self.structures_sim_map_dir.textChanged.connect(lambda: self.store_settings())   
         structures_sim_map_dir_select = QPushButton("Select")        
-        structures_sim_map_dir_select.clicked.connect(lambda: self.select_clicked("Structures sim-map Folder", self.structures_sim_map_dir))
+        structures_sim_map_dir_select.clicked.connect(lambda: self.select_clicked("Structures Sim-map Folder", self.structures_sim_map_dir))
         layout.addWidget(structures_sim_map_dir_label, row, 0)
         layout.addWidget(self.structures_sim_map_dir, row, 1)
         layout.addWidget(structures_sim_map_dir_select, row, 2)
@@ -540,7 +556,7 @@ class DiffFitTool(ToolInstance):
         row = row + 1
         
         target_surface_threshold_label = QLabel()
-        target_surface_threshold_label.setText("Target surface threshold:")
+        target_surface_threshold_label.setText("Target Surface Threshold:")
         self.target_surface_threshold = QDoubleSpinBox()
         self.target_surface_threshold.setMinimum(0.0)
         self.target_surface_threshold.setMaximum(20.0)
@@ -559,6 +575,11 @@ class DiffFitTool(ToolInstance):
 
         # advanced
         # TODO:
+
+        doc_label = QLabel("Usually, you don't have to touch the parameters below.")
+        doc_label.setWordWrap(True)
+        layout.addWidget(doc_label, row, 0, 1, 3)
+        row = row + 1
         
         min_cluster_size_label = QLabel()
         min_cluster_size_label.setText("Min island size:")
@@ -649,6 +670,9 @@ class DiffFitTool(ToolInstance):
         self.conv_weights.textChanged.connect(lambda: self.store_settings())        
         layout.addWidget(conv_weights_label, row, 0)
         layout.addWidget(self.conv_weights, row, 1, 1, 2)
+
+        vertical_spacer = QSpacerItem(1, 1, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        layout.addItem(vertical_spacer, row+1, 0)
 
 
     def build_device_ui(self, layout):
