@@ -199,14 +199,14 @@ class DiffFitTool(ToolInstance):
         single_fit_group_layout = QVBoxLayout()
         single_fit_group.setLayout(single_fit_group_layout)
         self.build_single_fit_ui(single_fit_group_layout)
-        tab_widget.addTab(single_fit_group, "Single")
+        tab_widget.addTab(single_fit_group, "Interactive")
 
         # computation GUI
         compute_group = QGroupBox()
         compute_group_layout = QGridLayout()
         compute_group.setLayout(compute_group_layout)
         self.build_compute_ui(compute_group_layout)
-        tab_widget.addTab(compute_group, "Compute")
+        tab_widget.addTab(compute_group, "Disk")
 
         # device GUI
         device_group = QGroupBox()
