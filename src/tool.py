@@ -1230,7 +1230,11 @@ class DiffFitTool(ToolInstance):
         from chimerax.map.molmap import molecule_map
         mol_vol = molecule_map(self.session, mol.atoms, self._single_fit_res.value(), grid_spacing=self.fit_vol.data.step[0])
 
-        input_coords = mol.atoms.scene_coords
+        backbone_atoms = ['N', 'CA', 'C', 'O']
+        is_backbone = np.isin(mol.atoms.names, backbone_atoms)
+
+        input_coords = mol.atoms.scene_coords[is_backbone]
+        # input_coords = mol.atoms.scene_coords
 
         # Fit
         timer_start = datetime.now()

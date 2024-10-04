@@ -452,6 +452,10 @@ def read_file_and_get_coordinates(file_path):
 
     # Initialize a list to hold all atom coordinates
     all_atom_coordinates = []
+    backbone_coords = []
+    backbone_chains = []
+
+    backbone_atoms = ['N', 'CA', 'C', 'O']
 
     # Iterate through each model, chain, and residue in the structure to get atoms
     for model in structure:
@@ -459,11 +463,15 @@ def read_file_and_get_coordinates(file_path):
             chain_id = chain.get_id()
             for residue in chain:
                 for atom in residue:
-                    # Append the atom's coordinates to the list
-                    all_atom_coordinates.append(atom.get_coord())
+                    if atom.get_name() in backbone_atoms:
+                        # Append the atom's coordinates to the list
+                        backbone_coords.append(atom.get_coord())
+                        # backbone_chains.append(chain_id)
+
+    # interp_backbone_coords = interp_backbone(backbone_coords, backbone_chains)
 
     # Return the numpy array of coordinates
-    return np.array(all_atom_coordinates)
+    return np.array(backbone_coords)
 
 
 def pad_and_convert_to_tensor(atom_coords_list, device):
