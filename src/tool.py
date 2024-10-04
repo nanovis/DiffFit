@@ -192,7 +192,7 @@ class DiffFitTool(ToolInstance):
         # the base layout is Vertical
         
         tab_widget = QTabWidget()
-        tab_widget.setTabPosition(QTabWidget.West)
+        tab_widget.setTabPosition(QTabWidget.North)
 
         # single fit GUI
         single_fit_group = QGroupBox()
