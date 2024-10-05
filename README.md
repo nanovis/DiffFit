@@ -13,10 +13,17 @@ IEEE VIS 2024 Submission [arXiv preprint](https://arxiv.org/abs/2404.02465), [Vi
 
 ## Install 
 
-1. Download the latest distribution at https://github.com/nanovis/DiffFitViewer/releases/latest
-2. Open ChimeraX and run command `toolshed install <path to the downloaded .whl file>`
+Option 1 - From the official ChimeraX Toolshed: 
+1. Download, install, and open [ChimeraX](https://www.cgl.ucsf.edu/chimerax/download.html)
+2. From the top menu bar, click `Tools > More Tools...`
+3. From the newly opened ChimeraX's built-in browser page, find and click "DiffFit". You may click "more newest releases »" if you cannot find it on the home page.
+4. Click `Install` (a big blue button). If it's your first time installing, it might take several minutes because it needs to install dependent packages such as PyTorch. 
 
-Now, DiffFit should be fully installed. Launch it via `Tools > Volume Data > DiffFit`
+Option 2 - From the GitHub release page: 
+1. Download the [latest distribution](https://github.com/nanovis/DiffFit/releases/latest) (download the `.whl` file)
+2. Open ChimeraX and run the command `toolshed install <path to the downloaded .whl file>`
+
+Now, DiffFit should be fully installed. Launch it via `Tools > Volume Data > DiffFit`. 
 
 ![image](https://github.com/nanovis/DiffFitViewer/assets/8460424/7c44d942-6c03-40bd-9791-5383214bafc1)
 
