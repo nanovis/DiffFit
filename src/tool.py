@@ -209,6 +209,13 @@ class DiffFitTool(ToolInstance):
         self.build_compute_ui(compute_group_layout)
         tab_widget.addTab(compute_group, "Disk")
 
+        # Utilities GUI
+        utilities_group = QGroupBox()
+        utilities_group_layout = QGridLayout()
+        utilities_group.setLayout(utilities_group_layout)
+        self.build_utilities_ui(utilities_group_layout)
+        tab_widget.addTab(utilities_group, "Utilities")
+
         # Settings GUI
         settings_group = QGroupBox()
         settings_group_layout = QVBoxLayout()
@@ -673,6 +680,98 @@ class DiffFitTool(ToolInstance):
 
         vertical_spacer = QSpacerItem(1, 1, QSizePolicy.Minimum, QSizePolicy.Expanding)
         layout.addItem(vertical_spacer, row+1, 0)
+
+
+    def build_utilities_ui(self, layout):
+        row = 0
+
+        doc_label = QLabel("<b>Split a structure into individual chains</b>")
+        doc_label.setWordWrap(True)
+        layout.addWidget(doc_label, row, 0, 1, 3)
+        row = row + 1
+
+        split_model_label = QLabel()
+        split_model_label.setText("Structure:")
+
+        from chimerax.map import Volume
+        from chimerax.atomic import Structure
+        from chimerax.ui.widgets import ModelMenuButton
+        self._split_model = sm = ModelMenuButton(self.session, class_filter=Structure)
+        mlist = self.session.models.list(type=Structure)
+        if mlist:
+            sm.value = mlist[0]
+
+        layout.addWidget(split_model_label, row, 0)
+        layout.addWidget(sm, row, 1, 1, 2)
+        row = row + 1
+
+        split_out_dir_label = QLabel()
+        split_out_dir_label.setText("Output Folder:")
+        self.split_out_dir = QLineEdit()
+        self.split_out_dir.textChanged.connect(lambda: self.store_settings())
+        split_out_dir_select = QPushButton("Select")
+        split_out_dir_select.clicked.connect(
+            lambda: self.select_clicked("Output folder for the individual chains", self.split_out_dir))
+        layout.addWidget(split_out_dir_label, row, 0)
+        layout.addWidget(self.split_out_dir, row, 1)
+        layout.addWidget(split_out_dir_select, row, 2)
+        row = row + 1
+
+        button = QPushButton()
+        button.setText("Split")
+        # button.clicked.connect(lambda: self.run_button_clicked())
+        layout.addWidget(button, row, 0, 1, 3)
+        row = row + 1
+
+        doc_label = QLabel("<b>Simulate a map for each structure in the folder</b>")
+        doc_label.setWordWrap(True)
+        layout.addWidget(doc_label, row, 0, 1, 3)
+        row = row + 1
+
+        sim_dir_label = QLabel()
+        sim_dir_label.setText("Structures Folder:")
+        self.sim_dir = QLineEdit()
+        self.sim_dir.textChanged.connect(lambda: self.store_settings())
+        sim_dir_select = QPushButton("Select")
+        sim_dir_select.clicked.connect(
+            lambda: self.select_clicked("Folder containing the structures", self.sim_dir))
+        layout.addWidget(sim_dir_label, row, 0)
+        layout.addWidget(self.sim_dir, row, 1)
+        layout.addWidget(sim_dir_select, row, 2)
+        row = row + 1
+
+        sim_out_dir_label = QLabel()
+        sim_out_dir_label.setText("Output Folder:")
+        self.sim_out_dir = QLineEdit()
+        self.sim_out_dir.textChanged.connect(lambda: self.store_settings())
+        sim_out_dir_select = QPushButton("Select")
+        sim_out_dir_select.clicked.connect(
+            lambda: self.select_clicked("Output folder for the simulated maps", self.sim_out_dir))
+        layout.addWidget(sim_out_dir_label, row, 0)
+        layout.addWidget(self.sim_out_dir, row, 1)
+        layout.addWidget(sim_out_dir_select, row, 2)
+        row = row + 1
+
+        sim_resolution_label = QLabel()
+        sim_resolution_label.setText("Resolution:")
+        self.sim_resolution = QDoubleSpinBox()
+        self.sim_resolution.setMinimum(0.0)
+        self.sim_resolution.setMaximum(100.0)
+        self.sim_resolution.setSingleStep(0.01)
+        self.sim_resolution.setDecimals(4)
+        self.sim_resolution.valueChanged.connect(lambda: self.store_settings())
+        layout.addWidget(sim_resolution_label, row, 0)
+        layout.addWidget(self.sim_resolution, row, 1, 1, 2)
+        row = row + 1
+
+        button = QPushButton()
+        button.setText("Simulate")
+        # button.clicked.connect(lambda: self.run_button_clicked())
+        layout.addWidget(button, row, 0, 1, 3)
+        row = row + 1
+
+        vertical_spacer = QSpacerItem(1, 1, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        layout.addItem(vertical_spacer, row + 1, 0)
 
 
     def build_settings_ui(self, layout):
