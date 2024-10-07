@@ -534,7 +534,7 @@ class DiffFitTool(ToolInstance):
         row = row + 1
         
         structures_sim_map_dir_label = QLabel()
-        structures_sim_map_dir_label.setText("Structures sim-map Folder:")
+        structures_sim_map_dir_label.setText("Structures Sim-map Folder:")
         self.structures_sim_map_dir = QLineEdit()
         self.structures_sim_map_dir.textChanged.connect(lambda: self.store_settings())   
         structures_sim_map_dir_select = QPushButton("Select")        
