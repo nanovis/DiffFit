@@ -1271,7 +1271,7 @@ class DiffFitTool(ToolInstance):
                                    device=self._device.currentText()
                                    )
         timer_stop = datetime.now()
-        print(f"Fit time elapsed: {timer_stop - timer_start}\n\n")
+        print(f"Optimization time elapsed: {timer_stop - timer_start}\n\n")
 
         mol_vol.delete()
 
@@ -1282,20 +1282,23 @@ class DiffFitTool(ToolInstance):
 
         self.tab_widget.setCurrentWidget(self.tab_view_group)
 
-        timer_stop = datetime.now()
-        print(f"Single fit time elapsed: {timer_stop - single_fit_timer_start}\n\n")
-
         self.select_table_item(0)
+
+        timer_stop = datetime.now()
+        print(f"Total time elapsed: {timer_stop - single_fit_timer_start}\n\n")
 
 
     def run_button_clicked(self):
         self.disable_spheres_clicked()
+        disk_fit_timer_start = datetime.now()
 
         print("Running the computation...")
 
         #target_vol_path = "D:\\GIT\\DiffFit\dev_data\input\domain_fit_demo_3domains\density2.mrc"
         #output_folder = "D:\\GIT\\DiffFit\dev_data\output"
-        
+
+        timer_start = datetime.now()
+
         mol_centers, e_sqd_log = diff_atom_comp(
             target_vol_path=self.settings.target_vol_path,
             target_surface_threshold=self.settings.target_surface_threshold,
@@ -1316,17 +1319,22 @@ class DiffFitTool(ToolInstance):
             device=self._device.currentText()
         )
 
+        timer_stop = datetime.now()
+        print(f"Optimization time elapsed: {timer_stop - timer_start}\n\n")
+
         # copy the directories
         self.target_vol.setText(self.settings.target_vol_path)     
         self.structures_folder.setText(self.settings.structures_directory)
         self.dataset_folder.setText("{0}".format(self.settings.output_directory))
         #print(self.settings)
         
-        # output is tensor
         # output is tensor, convert to numpy
         self.show_results(e_sqd_log.detach().cpu().numpy(), mol_centers)
         self.tab_widget.setCurrentWidget(self.tab_view_group)
         self.select_table_item(0)
+
+        timer_stop = datetime.now()
+        print(f"Total time elapsed: {timer_stop - disk_fit_timer_start}\n\n")
 
     def load_button_clicked(self):
         if self.fit_input_mode == "interactive":
