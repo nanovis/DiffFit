@@ -1323,6 +1323,7 @@ class DiffFitTool(ToolInstance):
         #print(self.settings)
         
         # output is tensor
+        # output is tensor, convert to numpy
         self.show_results(e_sqd_log.detach().cpu().numpy(), mol_centers)
         self.tab_widget.setCurrentWidget(self.tab_view_group)
         self.select_table_item(0)
