@@ -503,7 +503,7 @@ class DiffFitTool(ToolInstance):
 
         doc_label = QLabel("Fit <b>multiple</b> atomic models to a map by specifying the file paths.\n"
                            "The number of models can be up to hundreds to thousands, limited by the available device memory.\n"
-                           "You may change the device in use from the Device tab.\n"
+                           "You may change the device in use from the Setting tab.\n"
                            "Check the doc and tutorial videos for how to set the parameters, especially the \"Sim-map Folder\".\n"
                            "You may also run this tab's functionality by a Python command independently from ChimeraX "
                            "on a supercomputer and then view the results in the View tab.")
