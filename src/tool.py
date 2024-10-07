@@ -175,7 +175,7 @@ class DiffFitTool(ToolInstance):
         self.fit_input_mode = "disk file"
         self.fit_atom_mode = "Backbone"
 
-        self.fit_result_ready = False
+        self.interactive_fit_result_ready = False
         self.fit_result = None
         self.mol_centers = None
 
@@ -1277,7 +1277,7 @@ class DiffFitTool(ToolInstance):
 
         self._view_input_mode.setCurrentText("interactive")
         self._view_input_mode_changed()
-        self.fit_result_ready = True
+        self.interactive_fit_result_ready = True
         self.show_results(self.fit_result, self.mol_centers)
 
         self.tab_widget.setCurrentWidget(self.tab_view_group)
@@ -1289,6 +1289,14 @@ class DiffFitTool(ToolInstance):
 
 
     def run_button_clicked(self):
+
+        if self.interactive_fit_result_ready:
+            self.session.logger.error("You have run the fitting in Interactive mode. "
+                                      "Please run the following command: \n\n"
+                                      "close session\n\n"
+                                      "and then launch DiffFit again to run the fitting in Disk mode.")
+            return
+
         self.disable_spheres_clicked()
         disk_fit_timer_start = datetime.now()
 
@@ -1338,12 +1346,12 @@ class DiffFitTool(ToolInstance):
 
     def load_button_clicked(self):
         if self.fit_input_mode == "interactive":
-            if self.fit_result_ready:
+            if self.interactive_fit_result_ready:
                 self.show_results(self.fit_result, self.mol_centers)
                 return
             else:
                 from chimerax.log.cmd import log
-                log(self.session, text="Fitting is not performed yet.", error_dialog=True)
+                self.session.logger.error("Interactive fitting has not been performed yet.")
                 return
 
         if self.settings is None:
