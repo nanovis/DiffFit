@@ -1066,7 +1066,7 @@ class DiffFitTool(ToolInstance):
 
         self.session.logger.info(f"Showing cluster ID: {self.cluster_idx + 1}")
         self.session.logger.info(f"Cluster size: {int(self.e_sqd_clusters_ordered[self.cluster_idx, 3])}")
-        self.session.logger.info(f"Highest metric reached at iter : {iter_idx}")
+        self.session.logger.info(f"Highest metric reached at iter : {iter_idx}\n")
 
         self.progress.setMinimum(1)
         self.progress.setMaximum(N_iter)
@@ -1271,7 +1271,7 @@ class DiffFitTool(ToolInstance):
                                    device=self._device.currentText()
                                    )
         timer_stop = datetime.now()
-        print(f"Optimization time elapsed: {timer_stop - timer_start}\n\n")
+        print(f"\nDiffFit optimization time elapsed: {timer_stop - timer_start}\n\n")
 
         mol_vol.delete()
 
@@ -1285,7 +1285,7 @@ class DiffFitTool(ToolInstance):
         self.select_table_item(0)
 
         timer_stop = datetime.now()
-        print(f"Total time elapsed: {timer_stop - single_fit_timer_start}\n\n")
+        print(f"\nDiffFit total time elapsed: {timer_stop - single_fit_timer_start}\n\n")
 
 
     def run_button_clicked(self):
@@ -1320,7 +1320,7 @@ class DiffFitTool(ToolInstance):
         )
 
         timer_stop = datetime.now()
-        print(f"Optimization time elapsed: {timer_stop - timer_start}\n\n")
+        print(f"\nDiffFit optimization time elapsed: {timer_stop - timer_start}\n\n")
 
         # copy the directories
         self.target_vol.setText(self.settings.target_vol_path)     
@@ -1334,7 +1334,7 @@ class DiffFitTool(ToolInstance):
         self.select_table_item(0)
 
         timer_stop = datetime.now()
-        print(f"Total time elapsed: {timer_stop - disk_fit_timer_start}\n\n")
+        print(f"\nDiffFit total time elapsed: {timer_stop - disk_fit_timer_start}\n\n")
 
     def load_button_clicked(self):
         if self.fit_input_mode == "interactive":
