@@ -1303,6 +1303,7 @@ class DiffFitTool(ToolInstance):
             min_cluster_size=self.settings.min_cluster_size,
             structures_dir=self.settings.structures_directory,
             structures_sim_map_dir=self.settings.structures_sim_map_dir,
+            fit_atom_mode=self.fit_atom_mode,
             N_shifts=self.settings.N_shifts,
             N_quaternions=self.settings.N_quaternions,
             negative_space_value=self.settings.negative_space_value,

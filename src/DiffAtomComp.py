@@ -434,7 +434,7 @@ def transform_to_angstrom_space(ndc_shift, box_size, box_origin, atom_center_in_
     return angstrom_space_shift
 
 
-def read_file_and_get_coordinates(file_path):
+def read_file_and_get_coordinates(file_path, fit_atom_mode="Backbone"):
     # Determine file extension
     file_extension = os.path.splitext(file_path)[1].lower()
 
@@ -451,27 +451,28 @@ def read_file_and_get_coordinates(file_path):
     structure = parser.get_structure(structure_id, file_path)
 
     # Initialize a list to hold all atom coordinates
-    all_atom_coordinates = []
-    backbone_coords = []
-    backbone_chains = []
+    input_coords = []
 
     backbone_atoms = ['N', 'CA', 'C', 'O']
 
     # Iterate through each model, chain, and residue in the structure to get atoms
     for model in structure:
         for chain in model:
-            chain_id = chain.get_id()
+            # chain_id = chain.get_id()
             for residue in chain:
                 for atom in residue:
-                    if atom.get_name() in backbone_atoms:
-                        # Append the atom's coordinates to the list
-                        backbone_coords.append(atom.get_coord())
-                        # backbone_chains.append(chain_id)
+                    if fit_atom_mode == "Backbone":
+                        if atom.get_name() in backbone_atoms:
+                            # Append the atom's coordinates to the list
+                            input_coords.append(atom.get_coord())
+                            # backbone_chains.append(chain_id)
+                    elif fit_atom_mode == "All":
+                        input_coords.append(atom.get_coord())
 
     # interp_backbone_coords = interp_backbone(backbone_coords, backbone_chains)
 
     # Return the numpy array of coordinates
-    return np.array(backbone_coords)
+    return np.array(input_coords)
 
 
 def pad_and_convert_to_tensor(atom_coords_list, device):
@@ -605,7 +606,7 @@ def center_atom_coords_list(atom_coords_list, mol_centers):
     return [coords - mol_center for coords, mol_center in zip(atom_coords_list, mol_centers)]
 
 
-def read_all_files_to_atom_coords_list(structures_dir):
+def read_all_files_to_atom_coords_list(structures_dir, fit_atom_mode="Backbone"):
     atom_coords_list = []
     # List all files in the given directory
     for file_name in os.listdir(structures_dir):
@@ -613,7 +614,7 @@ def read_all_files_to_atom_coords_list(structures_dir):
         # Check if the current path is a file and not a directory
         if os.path.isfile(full_path):
             # Read the atom coordinates from the file
-            atom_coords = read_file_and_get_coordinates(full_path)
+            atom_coords = read_file_and_get_coordinates(full_path, fit_atom_mode)
             # Append the coordinates to the list
             atom_coords_list.append(atom_coords)
     return atom_coords_list
@@ -863,6 +864,7 @@ def diff_atom_comp(target_vol_path: str,
                    min_cluster_size: float,
                    structures_dir: str,
                    structures_sim_map_dir: str,
+                   fit_atom_mode:str = "Backbone",
                    N_shifts: int = 10,
                    N_quaternions: int = 100,
                    negative_space_value: float = -0.5,
@@ -915,7 +917,7 @@ def diff_atom_comp(target_vol_path: str,
     target_gaussian_conv_list = conv_volume(target_no_negative, device, conv_loops, conv_kernel_sizes,
                                             negative_space_value, kernel_type="Gaussian")
 
-    atom_coords_list = read_all_files_to_atom_coords_list(structures_dir)  # atom coords as [x, y, z]
+    atom_coords_list = read_all_files_to_atom_coords_list(structures_dir, fit_atom_mode)  # atom coords as [x, y, z]
     num_molecules = len(atom_coords_list)
 
     # read simulated map
