@@ -1064,13 +1064,14 @@ class DiffFitTool(ToolInstance):
         elif self.fit_input_mode == "disk file":
             self.mol = look_at_record(self.mol_folder, self.mol_idx, self.transformation, self.session)
 
+        self.session.logger.info(f"Showing cluster ID: {self.cluster_idx + 1}")
         self.session.logger.info(f"Cluster size: {int(self.e_sqd_clusters_ordered[self.cluster_idx, 3])}")
         self.session.logger.info(f"Highest metric reached at iter : {iter_idx}")
 
         self.progress.setMinimum(1)
         self.progress.setMaximum(N_iter)
-        self.progress.setValue(iter_idx + 1)        
-        
+        self.progress.setValue(iter_idx + 1)
+
     def select_clicked(self, text, target, save = False, pattern = "dir"):
         fileName = ""
         ext = ""
@@ -1145,8 +1146,7 @@ class DiffFitTool(ToolInstance):
         self.view.show()  
         
         self.stats.setText("stats: {0} entries".format(self.model.rowCount())) 
-        
-        print("showing the first cluster")
+
         self.mol_folder = self.settings.view_structures_directory
         self.cluster_idx = 0
         # look_at_cluster(self.e_sqd_clusters_ordered, self.mol_folder, self.cluster_idx, self.session)
