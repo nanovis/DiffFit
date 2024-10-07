@@ -210,7 +210,6 @@ class DiffFitTool(ToolInstance):
         tab_widget.addTab(compute_group, "Disk")
 
         # device GUI
-        self._device_changed()
         setting_group = QGroupBox()
         setting_group_layout = QVBoxLayout()
         setting_group.setLayout(setting_group_layout)
