@@ -209,12 +209,12 @@ class DiffFitTool(ToolInstance):
         self.build_compute_ui(compute_group_layout)
         tab_widget.addTab(compute_group, "Disk")
 
-        # device GUI
-        setting_group = QGroupBox()
-        setting_group_layout = QVBoxLayout()
-        setting_group.setLayout(setting_group_layout)
-        self.build_setting_ui(setting_group_layout)
-        tab_widget.addTab(setting_group, "Setting")
+        # Settings GUI
+        settings_group = QGroupBox()
+        settings_group_layout = QVBoxLayout()
+        settings_group.setLayout(settings_group_layout)
+        self.build_settings_ui(settings_group_layout)
+        tab_widget.addTab(settings_group, "Settings")
 
         # view GUI
         view_group = QGroupBox()
@@ -675,7 +675,7 @@ class DiffFitTool(ToolInstance):
         layout.addItem(vertical_spacer, row+1, 0)
 
 
-    def build_setting_ui(self, layout):
+    def build_settings_ui(self, layout):
         row = QHBoxLayout()
         layout.addLayout(row)
 
