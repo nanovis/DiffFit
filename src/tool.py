@@ -173,6 +173,7 @@ class DiffFitTool(ToolInstance):
         self._build_ui()
 
         self.fit_input_mode = "disk file"
+        self.fit_atom_mode = "Backbone"
 
         self.fit_result_ready = False
         self.fit_result = None
@@ -699,6 +700,15 @@ class DiffFitTool(ToolInstance):
         self._device_info_label.setWordWrap(True)
         row.addWidget(self._device_info_label)
 
+        row = QHBoxLayout()
+        layout.addLayout(row)
+
+        fit_atoms_label = QLabel("Fit atoms:")
+        self._fit_atoms = QComboBox()
+        self._fit_atoms.addItems(["Backbone (N, CA, C, O) atoms only", "All atoms"])
+        self._fit_atoms.currentIndexChanged.connect(lambda: self._fit_atoms_changed())
+        row.addWidget(fit_atoms_label)
+        row.addWidget(self._fit_atoms)
         row.addStretch()
 
         layout.addStretch()
@@ -979,6 +989,13 @@ class DiffFitTool(ToolInstance):
             )
 
         self._device_info_label.setText(info_text)
+
+
+    def _fit_atoms_changed(self):
+        if self._fit_atoms.currentText() == "Backbone (N, CA, C, O) atoms only":
+            self.fit_atom_mode = "Backbone"
+        elif self._fit_atoms.currentText() == "All atoms":
+            self.fit_atom_mode = "All"
 
 
     def _view_input_mode_changed(self):
