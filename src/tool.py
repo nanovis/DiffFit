@@ -393,7 +393,7 @@ class DiffFitTool(ToolInstance):
 
         # resolution row
         row = create_row(f.layout(), top=20)
-        single_fit_res_label = QLabel("Use map simulated from atoms, resolution")
+        single_fit_res_label = QLabel("Use map simulated from atoms, resolution (Å)")
         self._single_fit_res = QDoubleSpinBox()
         self._single_fit_res.setValue(5.0)
         self._single_fit_res.setMinimum(0.0001)
@@ -753,7 +753,7 @@ class DiffFitTool(ToolInstance):
         row = row + 1
 
         sim_resolution_label = QLabel()
-        sim_resolution_label.setText("Resolution:")
+        sim_resolution_label.setText("Resolution (Å):")
         self.sim_resolution = QDoubleSpinBox()
         self.sim_resolution.setMinimum(0.0)
         self.sim_resolution.setMaximum(100.0)
