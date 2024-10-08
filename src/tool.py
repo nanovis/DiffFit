@@ -732,7 +732,7 @@ class DiffFitTool(ToolInstance):
         sim_out_dir_label = QLabel()
         sim_out_dir_label.setText("Output Folder:")
         self.sim_out_dir = QLineEdit()
-        self.sim_out_dir.textChanged.connect(lambda: self.store_settings())
+        self.sim_out_dir.setText("sim_out")
         sim_out_dir_select = QPushButton("Select")
         sim_out_dir_select.clicked.connect(
             lambda: self.select_clicked("Output folder for the simulated maps", self.sim_out_dir))
@@ -744,7 +744,7 @@ class DiffFitTool(ToolInstance):
         sim_dir_label = QLabel()
         sim_dir_label.setText("Structures Folder:")
         self.sim_dir = QLineEdit()
-        self.sim_dir.textChanged.connect(lambda: self.store_settings())
+        self.sim_dir.setText("split_out")
         sim_dir_select = QPushButton("Select")
         sim_dir_select.clicked.connect(
             lambda: self.select_clicked("Folder containing the structures", self.sim_dir))
@@ -760,13 +760,13 @@ class DiffFitTool(ToolInstance):
         self.sim_resolution.setMaximum(100.0)
         self.sim_resolution.setSingleStep(0.01)
         self.sim_resolution.setDecimals(4)
-        self.sim_resolution.valueChanged.connect(lambda: self.store_settings())
+        self.sim_resolution.setValue(5.0)
         layout.addWidget(sim_resolution_label, row, 0)
         layout.addWidget(self.sim_resolution, row, 1)
 
         button = QPushButton()
         button.setText("Simulate")
-        # button.clicked.connect(lambda: self.run_button_clicked())
+        button.clicked.connect(lambda: self.sim_button_clicked())
         layout.addWidget(button, row, 2)
         row = row + 1
 
@@ -1385,6 +1385,25 @@ class DiffFitTool(ToolInstance):
 
         timer_stop = datetime.now()
         print(f"\nDiffFit total time elapsed: {timer_stop - single_fit_timer_start}\n\n")
+
+
+    def sim_button_clicked(self):
+        output_dir = self.sim_out_dir.text()
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        sim_structures_dir = self.sim_dir.text()
+        for file_name in os.listdir(sim_structures_dir):
+            file_path = os.path.join(sim_structures_dir, file_name)
+            structure = run(self.session, f'open {file_path}')[0]
+            structure_basename = file_name.split('.')[0]
+
+            mrc_filename = f"{structure_basename}.mrc"
+            mrc_filepath = os.path.join(output_dir, mrc_filename)
+
+            vol = run(self.session, f'molmap #{structure.id[0]} {self.sim_resolution.value()} gridSpacing 1.0')
+            run(self.session, f"save {mrc_filepath} #{vol.id[0]}")
+            run(self.session, f"close #{vol.id[0]}")
 
 
     def split_button_clicked(self):
