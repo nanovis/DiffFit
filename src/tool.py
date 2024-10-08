@@ -693,7 +693,7 @@ class DiffFitTool(ToolInstance):
         split_out_dir_label = QLabel()
         split_out_dir_label.setText("Output Folder:")
         self.split_out_dir = QLineEdit()
-        self.split_out_dir.textChanged.connect(lambda: self.store_settings())
+        self.split_out_dir.setText("split_out")
         split_out_dir_select = QPushButton("Select")
         split_out_dir_select.clicked.connect(
             lambda: self.select_clicked("Output folder for the individual chains", self.split_out_dir))
@@ -718,7 +718,7 @@ class DiffFitTool(ToolInstance):
 
         button = QPushButton()
         button.setText("Split")
-        # button.clicked.connect(lambda: self.run_button_clicked())
+        button.clicked.connect(lambda: self.split_button_clicked())
         layout.addWidget(button, row, 2)
 
         row = row + 1
@@ -1385,6 +1385,35 @@ class DiffFitTool(ToolInstance):
 
         timer_stop = datetime.now()
         print(f"\nDiffFit total time elapsed: {timer_stop - single_fit_timer_start}\n\n")
+
+
+    def split_button_clicked(self):
+        output_dir = self.split_out_dir.text()
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        structure = self._split_model.value
+        structure_basename = os.path.basename(structure.filename).split('.')[0]
+
+        chain_id_name_list = []
+        for chain in structure.chains:
+            chain_id = chain.chain_id
+            print(f"\n======= Processing {chain_id} =======")
+
+            chain_id_name = f"{chain_id}"
+
+            if chain_id_name.upper() in chain_id_name_list:
+                chain_id_name = f"{chain_id}_"
+
+            chain_id_name_list.append(chain_id_name.upper())
+
+            # Save the chain as a cif file
+            chain_filename = f"{structure_basename}_chain_{chain_id_name}.cif"
+            chain_filepath = os.path.join(output_dir, chain_filename)
+
+            run(self.session, f"select #{structure.id[0]}/{chain_id}")
+            run(self.session, f"save {chain_filepath} selectedOnly true")
+            run(self.session, "select clear")
 
 
     def run_button_clicked(self):
