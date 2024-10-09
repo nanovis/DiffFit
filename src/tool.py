@@ -1674,7 +1674,7 @@ class DiffFitTool(ToolInstance):
 
             sphere_size = 0.3
 
-            mol_center = self.mol.atoms.scene_coords.mean(axis=0)
+            mol_center = np.array([0.0, 0.0, 0.0])
 
             spheres_default_offset = 100
             spheres_default_scale = 40
