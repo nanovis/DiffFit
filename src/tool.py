@@ -41,7 +41,7 @@ import torch
 import psutil
 import platform
 import ast
-from scipy.interpolate import interp1d
+
         
 
 def create_row(parent_layout, left=0, top=0, right=0, bottom=0, spacing=5):
@@ -56,8 +56,9 @@ def create_row(parent_layout, left=0, top=0, right=0, bottom=0, spacing=5):
 def interpolate_coords(coords, inter_folds, inter_kind='quadratic'):
     """Interpolate backbone coordinates."""
     # inter_kind = 'cubic'
-
+    
     x = np.arange(len(coords))
+    from scipy.interpolate import interp1d
     interp_func = interp1d(x, coords, axis=0, kind=inter_kind)
     new_x = np.linspace(0, len(coords) - 1, len(coords) * inter_folds - inter_folds + 1)
     return interp_func(new_x)
