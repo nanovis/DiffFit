@@ -179,6 +179,8 @@ class DiffFitTool(ToolInstance):
         self.fit_result = None
         self.mol_centers = None
 
+        self.cluster_color_map = {}
+
         # Register the selection change callback
         self.session.triggers.add_handler(SELECTION_CHANGED, self.selection_callback)
         self.session.triggers.add_handler('graphics update', self.graphics_update_callback)
@@ -1126,6 +1128,9 @@ class DiffFitTool(ToolInstance):
         return
 
 
+    def get_table_item_mol_id(self, cluster_idx):
+        return int(self.e_sqd_clusters_ordered[cluster_idx, 0])
+
     def get_table_item_size(self, cluster_idx):
         return int(self.e_sqd_clusters_ordered[cluster_idx, 3])
 
@@ -1641,16 +1646,20 @@ class DiffFitTool(ToolInstance):
             run(self.session, command)             
 
     # coloring of the sphere
-    def get_sphere_color(self, idx, count):
-        # TODO: based on some feature
-        value = idx / (count - 1)
+    def get_sphere_color(self, cluster_idx, count):
 
-        g = 255 * (1 - value)
-        r = 255 * value
-        b = 0
-        a = 255
+        mol_id = self.get_table_item_mol_id(cluster_idx)
 
-        return [r, g, b, a]
+        if mol_id not in self.cluster_color_map:
+            # Generate a random color (R, G, B, A), where each channel is between 0 and 255
+            import random
+            r = random.randint(0, 255)
+            g = random.randint(0, 255)
+            b = random.randint(0, 255)
+            a = 255
+            self.cluster_color_map[mol_id] = [r, g, b, a]
+
+        return self.cluster_color_map[mol_id]
 
     def disable_spheres_clicked(self):
         if self.spheres:
@@ -1689,7 +1698,7 @@ class DiffFitTool(ToolInstance):
 
                 spheres.add([ClusterSphereModel(str(entry_id), self.session, color, place_position,
                                                 sphere_size * math.pow(hit_number, 20.0/(120 - spheres_default_scale)),
-                                                original_position, hit_number, num_triangles=100)])
+                                                original_position, hit_number, num_triangles=500)])
 
             self.spheres = spheres
 
