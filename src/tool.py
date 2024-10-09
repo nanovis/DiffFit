@@ -22,8 +22,6 @@ from Qt.QtCore import QSortFilterProxyModel, Qt
 from chimerax.core.tools import ToolInstance
 from chimerax.core.commands import run
 from chimerax.map.volume import volume_list
-from chimerax.atomic import AtomicStructure
-from chimerax.geometry import Place
 from chimerax.ui import MainToolWindow
 
 from chimerax.core.models import Model
@@ -31,14 +29,13 @@ from .cluster_viewer import ClusterSphereModel
 from chimerax.core.selection import SELECTION_CHANGED
 from chimerax.geometry import translation
 
-from .parse_log import look_at_record, look_at_cluster, look_at_MQS_idx, animate_MQS, animate_MQS_2
+from .parse_log import look_at_record
 from .parse_log import simulate_volume, get_transformation_at_record, zero_cluster_density
 from .tablemodel import TableModel
 from .DiffAtomComp import diff_atom_comp, cluster_and_sort_sqd_fast, diff_fit, conv_volume, numpy2tensor, \
     linear_norm_tensor
 
-import sys
-import numpy as np        
+import numpy as np
 import os
 import torch
 import psutil
