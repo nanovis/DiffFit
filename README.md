@@ -6,6 +6,28 @@ IEEE VIS 2024 Submission [arXiv preprint](https://arxiv.org/abs/2404.02465), [Vi
 
 [![Image from Gyazo](https://i.gyazo.com/3bacb110ddbadb4cfffa34fb061b8f34.gif)](https://gyazo.com/3bacb110ddbadb4cfffa34fb061b8f34)
 
+If you use material from this repository, please cite the associated paper:
+
+Deng Luo, Zainab Alsuwaykit, Dawar Khan, Ondřej Strnad, Tobias Isenberg, and Ivan Viola. DiffFit: Visually-Guided Differentiable Fitting of Molecule Structures to a Cryo-EM Map. IEEE Transactions on Visualization and Computer Graphics, 31, 2025. To appear. doi: [10.1109/TVCG.2024.3456404](https://doi.org/10.1109/TVCG.2024.3456404)
+
+bibTeX:
+```
+@article{Luo:2025:DVG,
+  author      = {Deng Luo and Zainab Alsuwaykit and Dawar Khan and Ond{\v{r}}ej Strnad and Tobias Isenberg and Ivan Viola},
+  title       = {{DiffFit}: Visually-Guided Differentiable Fitting of Molecule Structures to a Cryo-{EM} Map},
+  journal     = {IEEE Transactions on Visualization and Computer Graphics},
+  year        = {2025},
+  volume      = {31},
+  doi         = {10.1109/TVCG.2024.3456404},
+  doi_url     = {https://doi.org/10.1109/TVCG.2024.3456404},
+  github_url  = {https://github.com/nanovis/DiffFit},
+  osf_url     = {https://osf.io/5tx4q/},
+  preprint    = {https://doi.org/10.48550/arXiv.2404.02465},
+  hal_url     = {https://hal.science/hal-04665408},
+  video       = {https://youtu.be/dWcHDWT9_mw},
+}
+```
+
 ## YouTube tutorial videos (coming soon)
 
 1. [Install](https://youtu.be/aYqNZ0SNUfk)
