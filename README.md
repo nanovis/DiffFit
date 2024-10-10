@@ -46,13 +46,10 @@ Option 2 - From the GitHub release page:
 1. Download the [latest distribution](https://github.com/nanovis/DiffFit/releases/latest) (download the `.whl` file)
 2. Open ChimeraX and run the command `toolshed install <path to the downloaded .whl file>`
 
-Now, DiffFit should be fully installed. Launch it via `Tools > Volume Data > DiffFit`. 
-
-![image](https://github.com/nanovis/DiffFitViewer/assets/8460424/7c44d942-6c03-40bd-9791-5383214bafc1)
-
-Right-click in the panel to access DiffFit's help page. 
-
-![image](https://github.com/nanovis/DiffFitViewer/assets/8460424/d94283cd-4b4c-4d69-aa20-68e78f81e75f)
+Now, DiffFit should be fully installed. 
+1. Launch it via `Tools > Volume Data > DiffFit`.
+2. Right-click inside the DiffFit panel to access its `Help` page, and put it `In Favorites Menu`.
+3. By default, the DiffFit panel floats above the ChimeraX window. You may right-click, check `Dockable Tool`, and move the panel around to dock it (suggest docking at the less preferred side, which usually is the left side). Then you may right-click and click `Save Tool Position`. 
 
 ## Demo usage scenarios
 
