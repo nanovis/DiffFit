@@ -2,6 +2,9 @@
 
 IEEE VIS 2024 Submission [arXiv preprint](https://arxiv.org/abs/2404.02465), [Video](https://youtu.be/dWcHDWT9_mw), [OSF repo](https://osf.io/5tx4q/)
 
+[![Image from Gyazo](https://i.gyazo.com/54a2b17ff4f914e6c87e78c01d4982dc.gif)](https://gyazo.com/54a2b17ff4f914e6c87e78c01d4982dc)
+
+[![Image from Gyazo](https://i.gyazo.com/3bacb110ddbadb4cfffa34fb061b8f34.gif)](https://gyazo.com/3bacb110ddbadb4cfffa34fb061b8f34)
 
 ## YouTube tutorial videos (coming soon)
 
