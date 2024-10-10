@@ -2,7 +2,7 @@
 
 IEEE VIS 2024 Submission [arXiv preprint](https://arxiv.org/abs/2404.02465), [Video](https://youtu.be/dWcHDWT9_mw), [OSF repo](https://osf.io/5tx4q/)
 
-[![DiffFit_Teaser_30sec](https://github.com/nanovis/DiffFit/blob/51b03a45ada78340f949acb0953503fbc72cfb18/images/DiffFit_Teaser_30sec.gif)](https://github.com/nanovis/DiffFit/blob/51b03a45ada78340f949acb0953503fbc72cfb18/images/DiffFit_Teaser_30sec.gif)
+[![DiffFit_Teaser_30sec](https://github.com/nanovis/DiffFit/blob/51b03a45ada78340f949acb0953503fbc72cfb18/images/DiffFit_Teaser_30sec.gif?raw=true)](https://github.com/nanovis/DiffFit/blob/51b03a45ada78340f949acb0953503fbc72cfb18/images/DiffFit_Teaser_30sec.gif)
 
 
 If you use material from this repository, please cite the associated paper:
