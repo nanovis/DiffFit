@@ -55,35 +55,27 @@ Now, DiffFit should be fully installed.
 
 ### Scenario 1: Fit a single structure
 
-1. Download [PDB-8JGF](https://www.rcsb.org/structure/8JGF) and [EMD-36232](https://www.ebi.ac.uk/emdb/EMD-36232) 
-   1. note the resolution as `2.7`Å from the webpage
-   2. extract the map
-   3. put the files (`8jgf.cif` and `emd_36232.map`) under, for example, `D:\GIT\DiffFitViewer\run\input\8JGF` 
-2. Drop both files into ChimeraX, 
-   1. take a note for the `pixel` value from the log, which represents the grid spacing for this volume, which is `1.04` in this case
-   2. move and rotate the molecule and then save it (select it, choose "Save selected atoms only", uncheck "Use untransformed coordinates") as `8JGF_transformed.cif`. This step is only for demo purpose and is not necessary for real use cases
-3. Put `8JGF_transformed.cif` under `D:\GIT\DiffFitViewer\run\input\8JGF\subunits_cif`
-4. Simulate a map for the molecule
-   1. Create two folders, `subunits_mrc` and `subunits_npy`, under `D:\GIT\DiffFitViewer\run\input\8JGF\`
-   2. Open a new ChimeraX session and run `runscript "D:\GIT\DiffFitViewer\src\convert2mrc_npy.py" "D:\GIT\DiffFitViewer\run\input\8JGF\subunits_cif" "D:\GIT\DiffFitViewer\run\input\8JGF\subunits_mrc" "D:\GIT\DiffFitViewer\run\input\8JGF\subunits_npy" 2.7 1.04`
-5. Run DiffFit. Set the parameters as follows and hit `Run!`
-   1. Target volume: `D:\GIT\DiffFitViewer\run\input\8JGF\emd_36232.map`
-   2. Structures folder: `D:\GIT\DiffFitViewer\run\input\8JGF\subunits_cif`
-   3. Structures sim-map folder: `D:\GIT\DiffFitViewer\run\input\8JGF\subunits_mrc`
-   4. Output folder: `D:\GIT\DiffFitViewer\run\output\8JGF`
-   5. Experiment name: `fit_single_demo`
-   6. Target surface threshold: `0.20`. Or use the author recommended contour level `0.162`. DiffFit is very robust against this parameter, a value between 0.02 - 0.4 is fine in this case.
-   7. Leave the rest as default and hit `Run!`
-6. After freezing for a couple of seconds (less than 15 seconds on one RTX 4090), ChimeraX should be back and responsive to you. Click the `View` tab to examine the results.
-   1. Save the molecule if desired
-   2. You may take a look at the optimization steps
-7. If you want to change the cluster tolerance, or if you run Compute on a cluster, or if you accidentally close ChimeraX after _Compute_ run, you can _View_ the results by the following parameter settings
-   1. Target volume: `D:\GIT\DiffFitViewer\run\input\8JGF\emd_36232.map`
-   2. Structures folder: `D:\GIT\DiffFitViewer\run\input\8JGF\subunits_cif`
-   3. Data folder: `D:\GIT\DiffFitViewer\run\output\8JGF\fit_single_demo`
-   4. Clustering - Shift Tolerance: `0.5` or the value you desire
-   5. Clustering - Angle Tolerance: `0.5` or the value you desire
-   6. Hit `Load`
+1. Open the source structure and the target map in ChimeraX. Let's use [`6WTI`](https://www.rcsb.org/structure/6wti) and its associated EM Map [`EMD-21897`](https://www.ebi.ac.uk/emdb/EMD-21897) as an example.
+   1. Option 1, via ChimeraX command line. Run the following command in the command line at the very bottom of the ChimeraX windows. 
+      1. `open 6WTI`
+      2. `open 21897 from emdb`
+   2. Option 2, via download the files and drag and drop.
+      1. You can find the official RCSB webpage for a PDB ID by either Googling the ID or composing a URL: https://www.rcsb.org/structure/6WTI. Change `6WTI` to another ID if needed.
+      2. `Download Files > PDBx/mmCIF Format`
+      3. Click the first `EMDB`, after `EM Map EMD-ID` to access its EM map webpage
+      4. `Download > 3D volume (map.gz)`; unzip the downloaded map file.
+      5. Drag and drop both files (`6wti.cif` and `emd_21897.map`) into the ChimeraX window.
+2. Change the iso-surface threshold level of the map.
+      1. The Volume Viewer is usually located at the bottom-right of the ChimeraX window. Move the slide to change.
+      2. DiffFit is very robust against this parameter, so very often, you don't have to change it. 
+      3. To get the best performance, change the level to a value where you can see some secondary structures (alpha-helices or beta sheets). 
+4. In the DiffFit panel, go to the `Interactive` tab. Click `Fit`.
+5. After computing, DiffFit will automatically go to the `View` tab and select the top fit. You may change the threshold values. Usually, the defaults work fine. We explain all the parameters at the end. 
+6. In the `Interactive` tab, you may click `Options` to change the fitting parameters.
+7. In the `Settings` tab, you may change the global settings of DiffFit. The benchmark table in our paper uses `Fit atoms: All atoms` on an Nvidia RTX 4090 GPU.
+8. You can find the computing time in the ChimeraX log window, usually at the right. Look for `DiffFit total time elapsed: `. The first run is slightly slower as there are some global initialization processes.
+9. If you are interested in comparing DiffFit with the ChimeraX Fit in Map command, you may run a command similar to `fit #1 in #2 search 1000`. Check its [doc](https://www.cgl.ucsf.edu/chimerax/docs/user/commands/fitmap.html) for more. 
+
 
 
 ### Scenario 2: Composite multiple structures
