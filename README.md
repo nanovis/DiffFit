@@ -73,7 +73,14 @@ Now, DiffFit should be fully installed.
 5. After computing, DiffFit will automatically go to the `View` tab and select the top fit. You may change the threshold values. Usually, the defaults work fine. We explain all the parameters at the end.
 6. You can now click on the rows to go through the fitting results. You may sort the table by a different metric by clicking the header (by default, the table is sorted by `Density`).
 7. Once you find a plausible fit, you may use ChimeraX's Fit in Map tool (or a command similar to `fit #1 in #2`) to refine the placement.
-8. If you have a ground truth structure to compare with, you may open that structure and use a command similar to `rmsd #1 to #3` to calculate the RMSD. Check the [RMSD doc](https://www.cgl.ucsf.edu/chimerax/docs/user/commands/rmsd.html) for more. 
+8. If you have a ground truth structure to compare with, you may open that structure and use a command similar to `rmsd #1 to #3` to calculate the RMSD. Check the [RMSD doc](https://www.cgl.ucsf.edu/chimerax/docs/user/commands/rmsd.html) for more.
+9. Save a molecule by clicking `Structure` if desired; and zero the density occupied by the current molecule:
+    1. Click `Simulate volume`
+    2. Change the surface level threshold for the simulated volume if necessary
+    3. Click `Zero density`
+7. Repeat the last step (Save, Simulate, Zero) for other plausible fits
+8. Save the last `working volume` by `File > Save > Files of type: MRC > Map: working volume` 
+   and use it as the input for another round if needed.
 9. In the `Interactive` tab, you may click `Options` to change the fitting parameters.
 10. In the `Settings` tab, you may change the global settings of DiffFit. The benchmark table in our paper uses `Fit atoms: All atoms` on an Nvidia RTX 4090 GPU.
 11. You can find the computing time in the ChimeraX log window, usually at the right. Look for `DiffFit total time elapsed: `. The first run is slightly slower as there are some global initialization processes.
@@ -95,14 +102,21 @@ into [EMD-40589](https://www.ebi.ac.uk/emdb/EMD-40589).
 
 2. Go to the `Utilities` tab. Under the `Split a structure into individual chains` section:
    1. Set an `Output Folder`. The default is a new folder called `split_out` in your working directory, 
-      which usually is you desktop.
+      which usually is your desktop.
    2. Select `8smk.cif` as the `Structure`.
    3. Press `Split`.
    4. Optional: Go to the output folder, delete chain D, E, and F. Because they are the same as chain A, B, and C.
 
 3. Go to the `Utilities` tab. Under the `Simulate a map for each structure in the folder` section:
-   1. If your individual chains are in `split_out`. Then you may directly click `Simulate`.  
-   2. We explain all the parameters at the end. Please check them if you want to change the default values. 
+   1. If your individual chains are in `split_out`. Then you may directly click `Simulate`. 
+      By default, the simulated maps are in a new folder called `sim_out` in your working directory, 
+      which usually is your desktop. 
+   2. We explain all the parameters at the end. Please check them if you want to change the default values.
+
+4. Go to the `Disk` tab, set all the file and folder paths, set the `Target Surface Threshold` 
+   (you may open the map in the same ChimeraX window to decide a good surface level value).
+5. Click `Run!`.
+6. Use the same way as in `Scenario 1: Fit a single structure` to view the results. 
 
 
 
