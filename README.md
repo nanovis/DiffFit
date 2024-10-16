@@ -55,7 +55,7 @@ Now, DiffFit should be fully installed.
 
 ### Scenario 1: Fit a single structure
 
-1. Open the source structure and the target map in ChimeraX. Let's use [`6WTI`](https://www.rcsb.org/structure/6wti) and its associated EM Map [`EMD-21897`](https://www.ebi.ac.uk/emdb/EMD-21897) as an example.
+1. Open the source structure and the target map in ChimeraX. Let's use [`PDB-6WTI`](https://www.rcsb.org/structure/6wti) and its associated EM Map [`EMD-21897`](https://www.ebi.ac.uk/emdb/EMD-21897) as an example.
    1. Option 1, via ChimeraX command line. Run the following command in the command line at the very bottom of the ChimeraX windows. 
       1. `open 6WTI`
       2. `open 21897 from emdb`
@@ -83,10 +83,29 @@ Now, DiffFit should be fully installed.
 
 ### Scenario 2: Composite multiple structures
 
-1. Download [PDB-8SMK](https://www.rcsb.org/structure/8SMK) and [EMD-40589](https://www.ebi.ac.uk/emdb/EMD-40589) 
-   1. note the resolution as `3.5`Å from the webpage
-   2. extract the map
-   3. put the files (`8smk.cif` and `emd_40589.map`) under, for example, `D:\GIT\DiffFitViewer\run\input\8SMK` 
+The logic of compositing is you fit multiple structures in one run to one Cryo-EM volume map. 
+Apart from the target volume file, you will also need to prepare all the individual structures
+that you want to fit and simulate a map for each structure. 
+You will run this functionality in `Disk` mode by specify the path to the involved files or folders.
+
+As a demo, let's composite the individual chains from [PDB-8SMK](https://www.rcsb.org/structure/8SMK) 
+into [EMD-40589](https://www.ebi.ac.uk/emdb/EMD-40589).   
+
+1. Open `8SMK` in ChimeraX
+
+2. Go to the `Utilities` tab. Under the `Split a structure into individual chains` section:
+   1. Set an `Output Folder`. The default is a new folder called `split_out` in your working directory, 
+      which usually is you desktop.
+   2. Select `8smk.cif` as the `Structure`.
+   3. Press `Split`.
+   4. Optional: Go to the output folder, delete chain D, E, and F. Because they are the same as chain A, B, and C.
+
+3. Go to the `Utilities` tab. Under the `Simulate a map for each structure in the folder` section:
+   1. If your individual chains are in `split_out`. Then you may directly click `Simulate`.  
+   2. We explain all the parameters at the end. Please check them if you want to change the default values. 
+
+
+
 2. Drop both files into ChimeraX, 
    1. take a note for the `pixel` value from the log, which represents the grid spacing for this volume, which is `0.835` in this case
    2. move and rotate the molecule and then save it (select it, choose "Save selected atoms only", uncheck "Use untransformed coordinates") as `8SMK_transformed.cif`. This step is only for demo purpose and is not necessary for real use cases
