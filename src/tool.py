@@ -846,7 +846,7 @@ class DiffFitTool(ToolInstance):
         row = row + 1
         
         # data folder - where the data is stored
-        dataset_folder_label = QLabel("Data Folder:")
+        dataset_folder_label = QLabel("Result Folder:")
         self.dataset_folder = QLineEdit()    
         self.dataset_folder.textChanged.connect(lambda: self.store_settings())                
         self.dataset_folder_select = QPushButton("Select")
