@@ -568,26 +568,48 @@ def transform_coords(atom_coords, e_quaternions, e_shifts, target_size_x_y_z_ten
 
 
 def conv_volume(volume, device, conv_loops, kernel_sizes,
-                negative_space_value, kernel_type="Gaussian"):
+                negative_space_value, kernel_type="Gaussian", mode="Gaussian with negative (shrink)"):
     volume_conv_list = [None] * (conv_loops + 1)
     volume_conv_list[0] = volume
-    for conv_idx in range(1, conv_loops + 1):
 
-        if kernel_type == "Gaussian":
-            filter = generate_3d_gaussian_filter(kernel_sizes[conv_idx - 1], 1.0, device)
-        elif kernel_type == "Laplacian":
-            filter = generate_3d_laplacian_filter(kernel_sizes[conv_idx - 1], device)
+    if mode == "Gaussian with negative (shrink)":
+        for conv_idx in range(1, conv_loops + 1):
 
-        filter_padding = compute_padding(filter.shape)
-        filter.unsqueeze_(0).unsqueeze_(0)
+            if kernel_type == "Gaussian":
+                filter = generate_3d_gaussian_filter(kernel_sizes[conv_idx - 1], 1.0, device)
+            elif kernel_type == "Laplacian":
+                filter = generate_3d_laplacian_filter(kernel_sizes[conv_idx - 1], device)
 
-        volume_pad = F.pad(volume_conv_list[conv_idx - 1], filter_padding, mode="reflect")
-        volume_conv = F.conv3d(volume_pad, filter)
+            filter_padding = compute_padding(filter.shape)
+            filter.unsqueeze_(0).unsqueeze_(0)
 
-        eligible_volume_tensor = volume_conv > 0.0
-        volume_conv[~eligible_volume_tensor] = negative_space_value
+            volume_pad = F.pad(volume_conv_list[conv_idx - 1], filter_padding, mode="reflect")
+            volume_conv = F.conv3d(volume_pad, filter)
 
-        volume_conv_list[conv_idx] = volume_conv
+            eligible_volume_tensor = volume_conv > 0.0
+            volume_conv[~eligible_volume_tensor] = negative_space_value
+
+            volume_conv_list[conv_idx] = volume_conv
+    elif mode == "Gaussian then negative (expand)":
+        for conv_idx in range(1, conv_loops + 1):
+
+            if kernel_type == "Gaussian":
+                filter = generate_3d_gaussian_filter(kernel_sizes[conv_idx - 1], 1.0, device)
+            elif kernel_type == "Laplacian":
+                filter = generate_3d_laplacian_filter(kernel_sizes[conv_idx - 1], device)
+
+            filter_padding = compute_padding(filter.shape)
+            filter.unsqueeze_(0).unsqueeze_(0)
+
+            volume_pad = F.pad(volume_conv_list[conv_idx - 1], filter_padding, mode="reflect")
+            volume_conv = F.conv3d(volume_pad, filter)
+            volume_conv_list[conv_idx] = volume_conv
+
+        for conv_idx in range(1, conv_loops + 1):
+            volume_conv = volume_conv_list[conv_idx]
+            eligible_volume_tensor = volume_conv > 0.0
+            volume_conv[~eligible_volume_tensor] = negative_space_value
+            volume_conv_list[conv_idx] = volume_conv
 
     return volume_conv_list
 
@@ -865,6 +887,7 @@ def diff_atom_comp(target_vol_path: str,
                    structures_dir: str,
                    structures_sim_map_dir: str,
                    fit_atom_mode:str = "Backbone",
+                   Gaussian_mode:str = "Gaussian with negative (shrink)",
                    N_shifts: int = 10,
                    N_quaternions: int = 100,
                    negative_space_value: float = -0.5,
@@ -915,7 +938,7 @@ def diff_atom_comp(target_vol_path: str,
         raise ValueError("Length of conv_weights does not match conv_loops! ")
 
     target_gaussian_conv_list = conv_volume(target_no_negative, device, conv_loops, conv_kernel_sizes,
-                                            negative_space_value, kernel_type="Gaussian")
+                                            negative_space_value, kernel_type="Gaussian", mode=Gaussian_mode)
 
     atom_coords_list = read_all_files_to_atom_coords_list(structures_dir, fit_atom_mode)  # atom coords as [x, y, z]
     num_molecules = len(atom_coords_list)

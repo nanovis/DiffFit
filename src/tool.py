@@ -174,6 +174,7 @@ class DiffFitTool(ToolInstance):
 
         self.fit_input_mode = "disk file"
         self.fit_atom_mode = "Backbone"
+        self.Gaussian_mode = "Gaussian with negative (shrink)"
 
         self.interactive_fit_result_ready = False
         self.fit_result = None
@@ -793,12 +794,14 @@ class DiffFitTool(ToolInstance):
         row.addWidget(self._device)
         row.addStretch()
 
+
         row = QHBoxLayout()
         layout.addLayout(row)
 
         self._device_info_label = QLabel()
         self._device_info_label.setWordWrap(True)
         row.addWidget(self._device_info_label)
+
 
         row = QHBoxLayout()
         layout.addLayout(row)
@@ -810,6 +813,27 @@ class DiffFitTool(ToolInstance):
         row.addWidget(fit_atoms_label)
         row.addWidget(self._fit_atoms)
         row.addStretch()
+
+
+        row = QHBoxLayout()
+        layout.addLayout(row)
+
+        Gaussian_mode_label = QLabel("Gaussian mode:")
+        self._Gaussian_mode_box = QComboBox()
+        self._Gaussian_mode_box.addItems(["Gaussian with negative (shrink)", "Gaussian then negative (expand)"])
+        self._Gaussian_mode_box.currentIndexChanged.connect(lambda: self._Gaussian_mode_changed())
+        row.addWidget(Gaussian_mode_label)
+        row.addWidget(self._Gaussian_mode_box)
+        row.addStretch()
+
+
+        row = QHBoxLayout()
+        layout.addLayout(row)
+
+        doc_label = QLabel("If the map's resolution < 5.0, we suggest using \"Gaussian with negative (shrink)\".\n"
+                           "Otherwise, we suggest using \"Gaussian then negative (expand)\".\n")
+        doc_label.setWordWrap(True)
+        row.addWidget(doc_label)
 
         layout.addStretch()
 
@@ -1098,6 +1122,10 @@ class DiffFitTool(ToolInstance):
             self.fit_atom_mode = "All"
 
 
+    def _Gaussian_mode_changed(self):
+        self.Gaussian_mode = self._Gaussian_mode_box.currentText()
+
+
     def _view_input_mode_changed(self):
         if self._view_input_mode.currentText() == "interactive":
             self.fit_input_mode = "interactive"
@@ -1273,7 +1301,8 @@ class DiffFitTool(ToolInstance):
                                            smooth_loops,
                                            ast.literal_eval(self.smooth_kernel_sizes.text()),
                                            negative_space_value=negative_space_value,
-                                           kernel_type="Gaussian")
+                                           kernel_type="Gaussian",
+                                           mode=self.Gaussian_mode)
             volume_conv_list = [v.squeeze().detach().cpu().numpy() for v in volume_conv_list]
         elif smooth_by == "ChimeraX incremental Gaussian":
             for conv_idx in range(1, smooth_loops + 1):
@@ -1466,6 +1495,7 @@ class DiffFitTool(ToolInstance):
             structures_dir=self.settings.structures_directory,
             structures_sim_map_dir=self.settings.structures_sim_map_dir,
             fit_atom_mode=self.fit_atom_mode,
+            Gaussian_mode=self.Gaussian_mode,
             N_shifts=self.settings.N_shifts,
             N_quaternions=self.settings.N_quaternions,
             negative_space_value=self.settings.negative_space_value,
