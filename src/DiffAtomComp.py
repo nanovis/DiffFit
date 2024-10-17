@@ -583,10 +583,12 @@ def conv_volume(volume, device, conv_loops, kernel_sizes,
 
         volume_pad = F.pad(volume_conv_list[conv_idx - 1], filter_padding, mode="reflect")
         volume_conv = F.conv3d(volume_pad, filter)
+        volume_conv_list[conv_idx] = volume_conv
 
+    for conv_idx in range(1, conv_loops + 1):
+        volume_conv = volume_conv_list[conv_idx]
         eligible_volume_tensor = volume_conv > 0.0
         volume_conv[~eligible_volume_tensor] = negative_space_value
-
         volume_conv_list[conv_idx] = volume_conv
 
     return volume_conv_list
