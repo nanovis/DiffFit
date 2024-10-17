@@ -174,6 +174,7 @@ class DiffFitTool(ToolInstance):
 
         self.fit_input_mode = "disk file"
         self.fit_atom_mode = "Backbone"
+        self.Gaussian_mode = "Gaussian with negative (shrink)"
 
         self.interactive_fit_result_ready = False
         self.fit_result = None
@@ -818,11 +819,11 @@ class DiffFitTool(ToolInstance):
         layout.addLayout(row)
 
         Gaussian_mode_label = QLabel("Gaussian mode:")
-        self._Gaussian_mode = QComboBox()
-        self._Gaussian_mode.addItems(["Gaussian with negative (shrink)", "Gaussian then negative (expand)"])
-        # self._Gaussian_mode.currentIndexChanged.connect(lambda: self._fit_atoms_changed())
+        self._Gaussian_mode_box = QComboBox()
+        self._Gaussian_mode_box.addItems(["Gaussian with negative (shrink)", "Gaussian then negative (expand)"])
+        self._Gaussian_mode_box.currentIndexChanged.connect(lambda: self._Gaussian_mode_changed())
         row.addWidget(Gaussian_mode_label)
-        row.addWidget(self._Gaussian_mode)
+        row.addWidget(self._Gaussian_mode_box)
         row.addStretch()
 
         layout.addStretch()
@@ -1110,6 +1111,10 @@ class DiffFitTool(ToolInstance):
             self.fit_atom_mode = "Backbone"
         elif self._fit_atoms.currentText() == "All atoms":
             self.fit_atom_mode = "All"
+
+
+    def _Gaussian_mode_changed(self):
+        self.Gaussian_mode = self._Gaussian_mode_box.currentText()
 
 
     def _view_input_mode_changed(self):
