@@ -793,12 +793,14 @@ class DiffFitTool(ToolInstance):
         row.addWidget(self._device)
         row.addStretch()
 
+
         row = QHBoxLayout()
         layout.addLayout(row)
 
         self._device_info_label = QLabel()
         self._device_info_label.setWordWrap(True)
         row.addWidget(self._device_info_label)
+
 
         row = QHBoxLayout()
         layout.addLayout(row)
@@ -809,6 +811,18 @@ class DiffFitTool(ToolInstance):
         self._fit_atoms.currentIndexChanged.connect(lambda: self._fit_atoms_changed())
         row.addWidget(fit_atoms_label)
         row.addWidget(self._fit_atoms)
+        row.addStretch()
+
+
+        row = QHBoxLayout()
+        layout.addLayout(row)
+
+        Gaussian_mode_label = QLabel("Gaussian mode:")
+        self._Gaussian_mode = QComboBox()
+        self._Gaussian_mode.addItems(["Gaussian with negative (shrink)", "Gaussian then negative (expand)"])
+        # self._Gaussian_mode.currentIndexChanged.connect(lambda: self._fit_atoms_changed())
+        row.addWidget(Gaussian_mode_label)
+        row.addWidget(self._Gaussian_mode)
         row.addStretch()
 
         layout.addStretch()
