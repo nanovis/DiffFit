@@ -887,6 +887,7 @@ def diff_atom_comp(target_vol_path: str,
                    structures_dir: str,
                    structures_sim_map_dir: str,
                    fit_atom_mode:str = "Backbone",
+                   Gaussian_mode:str = "Gaussian with negative (shrink)",
                    N_shifts: int = 10,
                    N_quaternions: int = 100,
                    negative_space_value: float = -0.5,
@@ -937,7 +938,7 @@ def diff_atom_comp(target_vol_path: str,
         raise ValueError("Length of conv_weights does not match conv_loops! ")
 
     target_gaussian_conv_list = conv_volume(target_no_negative, device, conv_loops, conv_kernel_sizes,
-                                            negative_space_value, kernel_type="Gaussian")
+                                            negative_space_value, kernel_type="Gaussian", mode=Gaussian_mode)
 
     atom_coords_list = read_all_files_to_atom_coords_list(structures_dir, fit_atom_mode)  # atom coords as [x, y, z]
     num_molecules = len(atom_coords_list)

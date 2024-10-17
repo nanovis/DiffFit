@@ -1292,7 +1292,8 @@ class DiffFitTool(ToolInstance):
                                            smooth_loops,
                                            ast.literal_eval(self.smooth_kernel_sizes.text()),
                                            negative_space_value=negative_space_value,
-                                           kernel_type="Gaussian")
+                                           kernel_type="Gaussian",
+                                           mode=self.Gaussian_mode)
             volume_conv_list = [v.squeeze().detach().cpu().numpy() for v in volume_conv_list]
         elif smooth_by == "ChimeraX incremental Gaussian":
             for conv_idx in range(1, smooth_loops + 1):
@@ -1485,6 +1486,7 @@ class DiffFitTool(ToolInstance):
             structures_dir=self.settings.structures_directory,
             structures_sim_map_dir=self.settings.structures_sim_map_dir,
             fit_atom_mode=self.fit_atom_mode,
+            Gaussian_mode=self.Gaussian_mode,
             N_shifts=self.settings.N_shifts,
             N_quaternions=self.settings.N_quaternions,
             negative_space_value=self.settings.negative_space_value,
