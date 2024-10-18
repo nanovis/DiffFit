@@ -271,8 +271,7 @@ class DiffFitTool(ToolInstance):
         # view
         self.target_vol.setText(self.settings.view_target_vol_path)     
         self.dataset_folder.setText(self.settings.view_output_directory)        
-        self.structures_folder.setText(self.settings.view_structures_directory)        
-        
+
         # clustering
         self.clustering_in_contour_threshold.setValue(self.settings.clustering_in_contour_threshold)
         self.clustering_correlation_threshold.setValue(self.settings.clustering_correlation_threshold)
@@ -309,7 +308,6 @@ class DiffFitTool(ToolInstance):
         
         #view
         self.settings.view_output_directory = self.dataset_folder.text()
-        self.settings.view_structures_directory = self.structures_folder.text()
         self.settings.view_target_vol_path = self.target_vol.text()
         
         # clustering
@@ -849,16 +847,6 @@ class DiffFitTool(ToolInstance):
         layout.addWidget(self.target_vol_select, row, 2)
         row = row + 1
         
-        structures_folder_label = QLabel("Structures Folder:")
-        self.structures_folder = QLineEdit()
-        self.structures_folder.textChanged.connect(lambda: self.store_settings()) 
-        self.structures_folder_select = QPushButton("Select")
-        self.structures_folder_select.clicked.connect(lambda: self.select_clicked("Structures folder (containing *.cif)", self.structures_folder))
-        layout.addWidget(structures_folder_label, row, 0)
-        layout.addWidget(self.structures_folder, row, 1)
-        layout.addWidget(self.structures_folder_select, row, 2)
-        row = row + 1
-        
         # data folder - where the data is stored
         dataset_folder_label = QLabel("Result Folder:")
         self.dataset_folder = QLineEdit()    
@@ -1121,16 +1109,12 @@ class DiffFitTool(ToolInstance):
             self.fit_input_mode = "interactive"
             self.target_vol.setEnabled(False)
             self.target_vol_select.setEnabled(False)
-            self.structures_folder.setEnabled(False)
-            self.structures_folder_select.setEnabled(False)
             self.dataset_folder.setEnabled(False)
             self.dataset_folder_select.setEnabled(False)
         elif self._view_input_mode.currentText() == "disk file":
             self.fit_input_mode = "disk file"
             self.target_vol.setEnabled(True)
             self.target_vol_select.setEnabled(True)
-            self.structures_folder.setEnabled(True)
-            self.structures_folder_select.setEnabled(True)
             self.dataset_folder.setEnabled(True)
             self.dataset_folder_select.setEnabled(True)
 
@@ -1620,7 +1604,6 @@ class DiffFitTool(ToolInstance):
 
         # copy the directories
         self.target_vol.setText(self.settings.target_vol_path)     
-        self.structures_folder.setText(self.settings.structures_directory)
         self.dataset_folder.setText("{0}".format(self.settings.output_directory))
         #print(self.settings)
         
