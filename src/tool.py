@@ -1662,10 +1662,11 @@ class DiffFitTool(ToolInstance):
                 
         print("loading data...")
         fit_res = np.load("{0}\\fit_res.npz".format(datasetoutput))
+        mol_paths = fit_res['mol_paths']
         mol_centers = fit_res['mol_centers']
         opt_res = fit_res['opt_res']
 
-        self.show_results(opt_res, mol_centers)
+        self.show_results(opt_res, mol_centers, mol_paths)
         self.select_table_item(0)
 
     def save_working_vol_button_clicked(self):
