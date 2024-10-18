@@ -385,7 +385,6 @@ class DiffFitTool(ToolInstance):
 
     def _update_smooth_fields(self, value):
         self.smooth_kernel_sizes.setText(str([5] * value))
-        self.smooth_weights.setText(str([1.0] * value))
 
     def _create_single_fit_options_gui(self, parent):
 
@@ -470,15 +469,6 @@ class DiffFitTool(ToolInstance):
         self.smooth_kernel_sizes.setText("[5, 5, 5]")
         row.addWidget(smooth_kernel_sizes_label)
         row.addWidget(self.smooth_kernel_sizes)
-        row.addStretch()
-
-        row = create_row(f.layout())
-        smooth_weights_label = QLabel()
-        smooth_weights_label.setText("Smooth weights [list]:")
-        self.smooth_weights = QLineEdit()
-        self.smooth_weights.setText("[1.0, 1.0, 1.0]")
-        row.addWidget(smooth_weights_label)
-        row.addWidget(self.smooth_weights)
         row.addStretch()
 
 
