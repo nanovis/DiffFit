@@ -1402,6 +1402,7 @@ class DiffFitTool(ToolInstance):
                                f"Smooth by: {self._smooth_by.currentText()}\n"
                                f"Smooth loops: {self._single_fit_gaussian_loops.value()}\n"
                                f"Kernel sizes: {self.smooth_kernel_sizes.text()}\n"
+                               f"Gaussian mode: {self.Gaussian_mode}\n"
                                f"-------\n")
 
         self.disable_spheres_clicked()
