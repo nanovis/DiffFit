@@ -7,7 +7,10 @@ class TableModel(QAbstractTableModel):
         QAbstractTableModel.__init__(self, parent)
         self._sqd_data = sqd_data
         self._sqd_cluster_data = sqd_cluster_data
-        self._mol_paths = mol_paths
+
+        import os
+        self._mol_names = [os.path.splitext(os.path.basename(path))[0] for path in mol_paths]
+
 
         self._header = ["Id", "Mol name", "Hits",
                         "Density", "Overlap", "Correlation", "Cam", "Inside"]
@@ -54,7 +57,7 @@ class TableModel(QAbstractTableModel):
             if column == 0:
                 return int(index.row() + 1)
             elif column == 1:
-                return str(f"{mol_idx}-{self._mol_paths[mol_idx]}")
+                return str(f"{mol_idx}-{self._mol_names[mol_idx]}")
             elif column == 2:
                 return int(self._sqd_cluster_data[index.row(), 3])
             elif 3 <= column <= 7:
