@@ -1190,7 +1190,7 @@ class DiffFitTool(ToolInstance):
             self.mol.display = True
             self.mol.scene_position = self.transformation
         elif self.fit_input_mode == "disk file":
-            self.mol = look_at_record(self.mol_folder, self.mol_idx, self.transformation, self.session)
+            self.mol = look_at_record(self.mol_paths, self.mol_idx, self.transformation, self.session)
 
         record_row = self.e_sqd_log[self.mol_idx, self.record_idx, iter_idx]
 
@@ -1232,7 +1232,7 @@ class DiffFitTool(ToolInstance):
             self.mol.display = True
             self.mol.scene_position = self.transformation
         elif self.fit_input_mode == "disk file":
-            self.mol = look_at_record(self.mol_folder, self.mol_idx, self.transformation, self.session)
+            self.mol = look_at_record(self.mol_paths, self.mol_idx, self.transformation, self.session)
 
         self.session.logger.info(f"Showing cluster ID: {self.cluster_idx + 1}")
         self.session.logger.info(f"Cluster size: {int(self.e_sqd_clusters_ordered[self.cluster_idx, 3])}")
@@ -1317,9 +1317,8 @@ class DiffFitTool(ToolInstance):
         
         self.stats.setText("stats: {0} entries".format(self.model.rowCount())) 
 
-        self.mol_folder = self.settings.view_structures_directory
+        self.mol_paths = mol_paths
         self.cluster_idx = 0
-        # look_at_cluster(self.e_sqd_clusters_ordered, self.mol_folder, self.cluster_idx, self.session)
 
     def _create_volume_conv_list(self, vol, smooth_by, smooth_loops, session, negative_space_value=-0.5):
         # From here on, there are three strategies for utilizing gaussian smooth
@@ -1698,7 +1697,7 @@ class DiffFitTool(ToolInstance):
     def simulate_volume_clicked(self):
         res = self.simulate_volume_resolution.value()
         if self.fit_input_mode == "disk file":
-            self.mol_vol = simulate_volume(self.session, self.vol, self.mol_folder, self.mol_idx, self.transformation,
+            self.mol_vol = simulate_volume(self.session, self.vol, self.mol_paths, self.mol_idx, self.transformation,
                                            res)
         elif self.fit_input_mode == "interactive":
             from chimerax.map.molmap import molecule_map
