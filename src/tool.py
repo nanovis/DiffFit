@@ -1340,7 +1340,20 @@ class DiffFitTool(ToolInstance):
         if _save_results:
             os.makedirs(_out_dir, exist_ok=_out_dir_exist_ok)
             with open(f"{_out_dir}/log.log", "a") as log_file:
-                log_file.write(f"Wall clock time: {datetime.now()}\n")
+                log_file.write(f"Wall clock time: {datetime.now()}\n"
+                               f"-------\n"
+                               f"Interactive mode\n"
+                               f"Target Volume: {self.fit_vol.path}\n"
+                               f"Structure: {self._object_menu.value.filename}\n"
+                               f"Target Surface Threshold: {self.fit_vol.maximum_surface_level}\n"
+                               f"-------\n"
+                               f"Sim-map resolution: {self._single_fit_res.value()}\n"
+                               f"# shifts: {self._single_fit_n_shifts.value()}\n"
+                               f"# quaternions: {self._single_fit_n_quaternions.value()}\n"
+                               f"Smooth by: {self._smooth_by.currentText()}\n"
+                               f"Smooth loops: {self._single_fit_gaussian_loops.value()}\n"
+                               f"Kernel sizes: {self.smooth_kernel_sizes.text()}\n"
+                               f"-------\n")
 
         self.disable_spheres_clicked()
 
