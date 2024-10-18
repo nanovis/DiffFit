@@ -1343,6 +1343,15 @@ class DiffFitTool(ToolInstance):
 
 
     def single_fit_button_clicked(self):
+        _save_results = self._single_fit_result_save_checkbox.isChecked()
+        _out_dir_exist_ok = True
+        _out_dir = self._single_fit_out_dir.text()
+
+        if _save_results:
+            os.makedirs(_out_dir, exist_ok=_out_dir_exist_ok)
+            with open(f"{_out_dir}/log.log", "a") as log_file:
+                log_file.write(f"Wall clock time: {datetime.now()}\n")
+
         self.disable_spheres_clicked()
 
         single_fit_timer_start = datetime.now()
@@ -1390,6 +1399,11 @@ class DiffFitTool(ToolInstance):
 
         # Fit
         timer_start = datetime.now()
+
+        if _save_results:
+            with open(f"{_out_dir}/log.log", "a") as log_file:
+                log_file.write(f"DiffFit optimization starts: {timer_start}\n")
+
         self.mol_centers, self.fit_result = diff_fit(volume_conv_list,
                                    self.fit_vol.data.step,
                                    self.fit_vol.data.origin,
@@ -1398,13 +1412,17 @@ class DiffFitTool(ToolInstance):
                                    [(mol_vol.full_matrix(), mol_vol.data.step, mol_vol.data.origin)],
                                    N_shifts=self._single_fit_n_shifts.value(),
                                    N_quaternions=self._single_fit_n_quaternions.value(),
-                                   save_results=self._single_fit_result_save_checkbox.isChecked(),
-                                   out_dir=self._single_fit_out_dir.text(),
-                                   out_dir_exist_ok=True,
+                                   save_results=_save_results,
+                                   out_dir=_out_dir,
+                                   out_dir_exist_ok=_out_dir_exist_ok,
                                    device=self._device.currentText()
                                    )
         timer_stop = datetime.now()
         print(f"\nDiffFit optimization time elapsed: {timer_stop - timer_start}\n\n")
+
+        if _save_results:
+            with open(f"{_out_dir}/log.log", "a") as log_file:
+                log_file.write(f"DiffFit optimization time elapsed: {timer_stop - timer_start}\n")
 
         mol_vol.delete()
 
@@ -1419,6 +1437,10 @@ class DiffFitTool(ToolInstance):
 
         timer_stop = datetime.now()
         print(f"\nDiffFit total time elapsed: {timer_stop - single_fit_timer_start}\n\n")
+
+        if _save_results:
+            with open(f"{_out_dir}/log.log", "a") as log_file:
+                log_file.write(f"DiffFit total time elapsed: {timer_stop - single_fit_timer_start}\n\n")
 
 
     def sim_button_clicked(self):

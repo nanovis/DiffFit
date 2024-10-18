@@ -713,11 +713,6 @@ def diff_fit(volume_list: list,
              ):
     timer_start = datetime.now()
 
-    if save_results:
-        os.makedirs(out_dir, exist_ok=out_dir_exist_ok)
-        with open(f"{out_dir}/log.log", "a") as log_file:
-            log_file.write(f"Wall clock time: {datetime.now()}\n")
-
     # ======= load target volume to fit into
     target_no_negative = volume_list[0]
     target_steps = volume_steps
