@@ -700,6 +700,7 @@ def diff_fit(volume_list: list,
              volume_origin: list,
              min_island_size: int,
              mol_coords: list,
+             mol_path:str,
              mol_sim_maps: list,
              N_shifts: int = 10,
              N_quaternions: int = 100,
@@ -863,7 +864,7 @@ def diff_fit(volume_list: list,
     e_sqd_log_np = e_sqd_log.detach().cpu().numpy()
 
     if save_results:
-        np.savez_compressed(f"{out_dir}/fit_res.npz", mol_centers=mol_centers, opt_res=e_sqd_log_np)
+        np.savez_compressed(f"{out_dir}/fit_res.npz", mol_paths=[mol_path], mol_centers=mol_centers, opt_res=e_sqd_log_np)
         # np.save(f"{out_dir}/sampled_coords.npy", sampled_coords)
 
     # e_sqd_log_np = e_sqd_log.detach().cpu().numpy()
@@ -873,7 +874,7 @@ def diff_fit(volume_list: list,
 
     # Each record is in length of 11 as [shift 3, quat 4, quality metric 4]
     # quality metric: occupied_density_avg (idx: 7), overlap (idx: 8), correlation (idx: 9), cam (idx: 10)
-    return mol_centers, e_sqd_log_np
+    return [mol_path], mol_centers, e_sqd_log_np
 
 
 def diff_atom_comp(target_vol_path: str,

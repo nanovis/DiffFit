@@ -1269,7 +1269,7 @@ class DiffFitTool(ToolInstance):
             
         return fileName, ext
     
-    def show_results(self, e_sqd_log, mol_centers):
+    def show_results(self, e_sqd_log, mol_centers, mol_paths):
         if e_sqd_log is None:
             return
 
@@ -1305,7 +1305,7 @@ class DiffFitTool(ToolInstance):
             self.proxyModel = None
             return
 
-        self.model = TableModel(self.e_sqd_clusters_ordered, self.e_sqd_log)
+        self.model = TableModel(self.e_sqd_clusters_ordered, self.e_sqd_log, mol_paths)
         self.proxyModel = QSortFilterProxyModel()
         self.proxyModel.setSourceModel(self.model)
         
@@ -1457,11 +1457,12 @@ class DiffFitTool(ToolInstance):
             with open(f"{_out_dir}/log.log", "a") as log_file:
                 log_file.write(f"DiffFit optimization starts: {timer_start}\n")
 
-        self.mol_centers, self.fit_result = diff_fit(volume_conv_list,
+        self.mol_paths, self.mol_centers, self.fit_result = diff_fit(volume_conv_list,
                                    self.fit_vol.data.step,
                                    self.fit_vol.data.origin,
                                    10,
                                    [input_coords],
+                                   self.mol.filename,
                                    [(mol_vol.full_matrix(), mol_vol.data.step, mol_vol.data.origin)],
                                    N_shifts=self._single_fit_n_shifts.value(),
                                    N_quaternions=self._single_fit_n_quaternions.value(),
@@ -1483,7 +1484,7 @@ class DiffFitTool(ToolInstance):
         self._view_input_mode.setCurrentText("interactive")
         self._view_input_mode_changed()
         self.interactive_fit_result_ready = True
-        self.show_results(self.fit_result, self.mol_centers)
+        self.show_results(self.fit_result, self.mol_centers, self.mol_paths)
 
         self.tab_widget.setCurrentWidget(self.tab_view_group)
 
