@@ -850,7 +850,7 @@ def diff_fit(volume_list: list,
 
     if save_results:
         with open(f"{out_dir}/log.log", "a") as log_file:
-            log_file.write(f"Time elapsed: {timer_stop - timer_start}\n\n")
+            log_file.write(f"Time elapsed: {timer_stop - timer_start}\n")
 
     # convert quaternion to ChimeraX, Houdini, scipy system and normalize it
 
