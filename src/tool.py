@@ -1388,7 +1388,7 @@ class DiffFitTool(ToolInstance):
         if _save_results:
             os.makedirs(_out_dir, exist_ok=_out_dir_exist_ok)
             with open(f"{_out_dir}/log.log", "a") as log_file:
-                log_file.write(f"-------\n"
+                log_file.write(f"=======\n"
                                f"Wall clock time: {datetime.now()}\n"
                                f"-------\n"
                                f"Interactive mode\n"
@@ -1498,7 +1498,7 @@ class DiffFitTool(ToolInstance):
                                f"-------\n"
                                f"DiffFit top fit metric:\n"
                                f"{metric_json}\n"
-                               f"-------\n\n")
+                               f"=======\n\n")
 
 
     def sim_button_clicked(self):
