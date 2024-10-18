@@ -1161,6 +1161,54 @@ class DiffFitTool(ToolInstance):
 
         return get_transformation_at_record(self.e_sqd_log, mol_idx, record_idx, iter_idx)
 
+    # Custom converter function to handle NumPy data types
+    @staticmethod
+    def numpy_converter(obj):
+        if isinstance(obj, np.float32):
+            return float(obj)
+        elif isinstance(obj, np.int32):
+            return int(obj)
+        raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
+
+    def return_cluster_metric_json(self, index):
+        if self.proxyModel is None:
+            return
+
+        proxyIndex = self.proxyModel.index(index, 0)
+        sourceIndex = self.proxyModel.mapToSource(proxyIndex)
+
+        self.cluster_idx = sourceIndex.row()
+        self.mol_idx = int(self.e_sqd_clusters_ordered[self.cluster_idx, 0])
+        self.record_idx = int(self.e_sqd_clusters_ordered[self.cluster_idx, 1])
+
+        N_iter = len(self.e_sqd_log[self.mol_idx, self.record_idx])
+        iter_idx = int(self.e_sqd_clusters_ordered[self.cluster_idx, 2])
+
+        if self.fit_input_mode == "interactive":
+            if self.mol is None:
+                self.mol = self.fit_mol_list[self.mol_idx]
+            self.mol.display = True
+            self.mol.scene_position = self.transformation
+        elif self.fit_input_mode == "disk file":
+            self.mol = look_at_record(self.mol_folder, self.mol_idx, self.transformation, self.session)
+
+        record_row = self.e_sqd_log[self.mol_idx, self.record_idx, iter_idx]
+
+        metric_dict = {
+            "Mol_path": self.mol.filename,
+            "Cluster_size": int(self.e_sqd_clusters_ordered[self.cluster_idx, 3]),
+            "Density": record_row[7],
+            "Overlap": record_row[8],
+            "Correlation": record_row[9],
+            "Cam": record_row[10],
+            "Inside": record_row[11]
+        }
+
+        import json
+
+        metric_json = json.dumps(metric_dict, default=self.numpy_converter, indent=4)
+        return metric_json
+
     def select_table_item(self, index):
         if self.proxyModel is None:
             return
@@ -1422,12 +1470,12 @@ class DiffFitTool(ToolInstance):
                                    device=self._device.currentText()
                                    )
         timer_stop = datetime.now()
-        print(f"-------\n"
-              f"\nDiffFit optimization time elapsed: {timer_stop - timer_start}\n\n")
+        print(f"\nDiffFit optimization time elapsed: {timer_stop - timer_start}\n\n")
 
         if _save_results:
             with open(f"{_out_dir}/log.log", "a") as log_file:
-                log_file.write(f"DiffFit optimization time elapsed: {timer_stop - timer_start}\n")
+                log_file.write(f"-------\n"
+                               f"DiffFit optimization time elapsed: {timer_stop - timer_start}\n")
 
         mol_vol.delete()
 
@@ -1444,8 +1492,13 @@ class DiffFitTool(ToolInstance):
         print(f"\nDiffFit total time elapsed: {timer_stop - single_fit_timer_start}\n\n")
 
         if _save_results:
+            metric_json = self.return_cluster_metric_json(0)
             with open(f"{_out_dir}/log.log", "a") as log_file:
-                log_file.write(f"DiffFit total time elapsed: {timer_stop - single_fit_timer_start}\n\n")
+                log_file.write(f"DiffFit total time elapsed: {timer_stop - single_fit_timer_start}\n"
+                               f"-------\n"
+                               f"DiffFit top fit metric:\n"
+                               f"{metric_json}\n"
+                               f"-------\n\n")
 
 
     def sim_button_clicked(self):
