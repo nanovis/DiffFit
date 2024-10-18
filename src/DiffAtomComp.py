@@ -986,9 +986,6 @@ def diff_atom_comp(target_vol_path: str,
     log_idx = 0
     os.makedirs(out_dir, exist_ok=out_dir_exist_ok)
 
-    with open(f"{out_dir}/log.log", "a") as log_file:
-        log_file.write(f"Wall clock time: {datetime.now()}\n")
-
     # Create the optimizer with different learning rates
     optimizer = torch.optim.Adam([
         {'params': [e_shifts], 'lr': target_size.mean() * 0.01},

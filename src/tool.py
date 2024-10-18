@@ -1559,16 +1559,37 @@ class DiffFitTool(ToolInstance):
                                       "and then launch DiffFit again to run the fitting in Disk mode.")
             return
 
+        _out_dir_exist_ok = self.settings.out_dir_exist_ok
+        _out_dir = self.settings.output_directory
+        os.makedirs(_out_dir, exist_ok=_out_dir_exist_ok)
+        with open(f"{_out_dir}/log.log", "a") as log_file:
+            log_file.write(f"=======\n"
+                           f"Wall clock time: {datetime.now()}\n"
+                           f"-------\n"
+                           f"Disk mode\n"
+                           f"Target Volume: {self.settings.target_vol_path}\n"
+                           f"Structures Folder: {self.settings.structures_directory}\n"
+                           f"Sim-map Folder: {self.settings.structures_sim_map_dir}\n"
+                           f"Target Surface Threshold: {self.settings.target_surface_threshold}\n"
+                           f"-------\n"
+                           f"# shifts: {self.settings.N_shifts}\n"
+                           f"# quaternions: {self.settings.N_quaternions}\n"
+                           f"Gaussian mode: {self.Gaussian_mode}\n"
+                           f"Conv. loops: {self.settings.conv_loops}\n"
+                           f"Conv. kernel sizes: {self.settings.conv_kernel_sizes}\n"
+                           f"Conv. weights: {self.settings.conv_weights}\n"
+                           f"-------\n")
+
+
         self.disable_spheres_clicked()
         disk_fit_timer_start = datetime.now()
 
         print("Running the computation...")
 
-        #target_vol_path = "D:\\GIT\\DiffFit\dev_data\input\domain_fit_demo_3domains\density2.mrc"
-        #output_folder = "D:\\GIT\\DiffFit\dev_data\output"
+        with open(f"{_out_dir}/log.log", "a") as log_file:
+            log_file.write(f"DiffFit optimization starts: {disk_fit_timer_start}\n")
 
         timer_start = datetime.now()
-
         mol_centers, e_sqd_log = diff_atom_comp(
             target_vol_path=self.settings.target_vol_path,
             target_surface_threshold=self.settings.target_surface_threshold,
@@ -1593,6 +1614,10 @@ class DiffFitTool(ToolInstance):
         timer_stop = datetime.now()
         print(f"\nDiffFit optimization time elapsed: {timer_stop - timer_start}\n\n")
 
+        with open(f"{_out_dir}/log.log", "a") as log_file:
+            log_file.write(f"-------\n"
+                           f"DiffFit optimization time elapsed: {timer_stop - timer_start}\n")
+
         # copy the directories
         self.target_vol.setText(self.settings.target_vol_path)     
         self.structures_folder.setText(self.settings.structures_directory)
@@ -1606,6 +1631,14 @@ class DiffFitTool(ToolInstance):
 
         timer_stop = datetime.now()
         print(f"\nDiffFit total time elapsed: {timer_stop - disk_fit_timer_start}\n\n")
+
+        metric_json = self.return_cluster_metric_json(0)
+        with open(f"{_out_dir}/log.log", "a") as log_file:
+            log_file.write(f"DiffFit total time elapsed: {timer_stop - disk_fit_timer_start}\n"
+                           f"-------\n"
+                           f"DiffFit top fit metric:\n"
+                           f"{metric_json}\n"
+                           f"=======\n\n")
 
     def load_button_clicked(self):
         if self.fit_input_mode == "interactive":
