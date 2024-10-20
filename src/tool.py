@@ -1650,6 +1650,7 @@ class DiffFitTool(ToolInstance):
 
         self.show_results(opt_res, mol_centers, mol_paths)
         self.select_table_item(0)
+        run(self.session, f"view orient")
 
     def save_working_vol_button_clicked(self):
         if not self.vol:
