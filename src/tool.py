@@ -1440,20 +1440,27 @@ class DiffFitTool(ToolInstance):
             with open(f"{_out_dir}/log.log", "a") as log_file:
                 log_file.write(f"DiffFit optimization starts: {timer_start}\n")
 
-        self.mol_paths, self.mol_centers, self.fit_result = diff_fit(volume_conv_list,
-                                   self.fit_vol.data.step,
-                                   self.fit_vol.data.origin,
-                                   10,
-                                   [input_coords],
-                                   self.mol.filename,
-                                   [(mol_vol.full_matrix(), mol_vol.data.step, mol_vol.data.origin)],
-                                   N_shifts=self._single_fit_n_shifts.value(),
-                                   N_quaternions=self._single_fit_n_quaternions.value(),
-                                   save_results=_save_results,
-                                   out_dir=_out_dir,
-                                   out_dir_exist_ok=_out_dir_exist_ok,
-                                   device=self._device.currentText()
-                                   )
+        (_,
+         _,
+         self.mol_paths,
+         self.mol_centers,
+         self.fit_result) = diff_fit(
+            volume_conv_list,
+            self.fit_vol.path,
+            self.fit_vol.maximum_surface_level,
+            self.fit_vol.data.step,
+            self.fit_vol.data.origin,
+            10,
+            [input_coords],
+            self.mol.filename,
+            [(mol_vol.full_matrix(), mol_vol.data.step, mol_vol.data.origin)],
+            N_shifts=self._single_fit_n_shifts.value(),
+            N_quaternions=self._single_fit_n_quaternions.value(),
+            save_results=_save_results,
+            out_dir=_out_dir,
+            out_dir_exist_ok=_out_dir_exist_ok,
+            device=self._device.currentText()
+        )
         timer_stop = datetime.now()
         print(f"\nDiffFit optimization time elapsed: {timer_stop - timer_start}\n\n")
 
