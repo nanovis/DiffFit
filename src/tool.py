@@ -1581,7 +1581,11 @@ class DiffFitTool(ToolInstance):
             log_file.write(f"DiffFit optimization starts: {disk_fit_timer_start}\n")
 
         timer_start = datetime.now()
-        mol_paths, mol_centers, e_sqd_log = diff_atom_comp(
+        (_,
+         _,
+         mol_paths,
+         mol_centers,
+         e_sqd_log) = diff_atom_comp(
             target_vol_path=self.settings.target_vol_path,
             target_surface_threshold=self.settings.target_surface_threshold,
             min_cluster_size=self.settings.min_cluster_size,

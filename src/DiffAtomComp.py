@@ -1068,7 +1068,12 @@ def diff_atom_comp(target_vol_path: str,
         full_path = os.path.join(structures_dir, file_name)
         mol_paths.append(full_path)
 
-    np.savez_compressed(f"{out_dir}/fit_res.npz", mol_paths=mol_paths, mol_centers=mol_centers, opt_res=e_sqd_log.detach().cpu().numpy())
+    np.savez_compressed(f"{out_dir}/fit_res.npz",
+                        vol_path=target_vol_path,
+                        target_surface_threshold=target_surface_threshold,
+                        mol_paths=mol_paths,
+                        mol_centers=mol_centers,
+                        opt_res=e_sqd_log.detach().cpu().numpy())
     # np.save(f"{out_dir}/sampled_coords.npy", sampled_coords)
 
     # e_sqd_log_np = e_sqd_log.detach().cpu().numpy()
@@ -1078,7 +1083,11 @@ def diff_atom_comp(target_vol_path: str,
 
     # Each record is in length of 11 as [shift 3, quat 4, quality metric 4]
     # quality metric: occupied_density_avg (idx: 7), overlap (idx: 8), correlation (idx: 9), cam (idx: 10)
-    return mol_paths, mol_centers, e_sqd_log
+    return (target_vol_path,
+            target_surface_threshold,
+            mol_paths,
+            mol_centers,
+            e_sqd_log)
 
 
 def parse_floats(arg):
