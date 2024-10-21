@@ -512,9 +512,9 @@ class DiffFitTool(ToolInstance):
         target_vol_path_label = QLabel()
         target_vol_path_label.setText("Target Volume:")
         self.target_vol_path = QLineEdit()
-        self.target_vol_path.textChanged.connect(lambda: self.store_settings())                
-        target_vol_path_select = QPushButton("Select")        
-        target_vol_path_select.clicked.connect(lambda: self.select_clicked("Target Volume", self.target_vol_path, False, "MRC Files(*.mrc);;MAP Files(*.map)"))        
+        self.target_vol_path.textChanged.connect(lambda: self.store_settings())
+        target_vol_path_select = QPushButton("Select")
+        target_vol_path_select.clicked.connect(lambda: self.select_clicked("Target Volume", self.target_vol_path, False, "MRC Files(*.mrc);;MAP Files(*.map)"))
         layout.addWidget(target_vol_path_label, row, 0)
         layout.addWidget(self.target_vol_path, row, 1)
         layout.addWidget(target_vol_path_select, row, 2)
@@ -1253,7 +1253,7 @@ class DiffFitTool(ToolInstance):
             
         return fileName, ext
     
-    def show_results(self, e_sqd_log, mol_centers, mol_paths):
+    def show_results(self, e_sqd_log, mol_centers, mol_paths, target_vol_path=None, target_surface_threshold=None):
         if e_sqd_log is None:
             return
 
@@ -1265,10 +1265,9 @@ class DiffFitTool(ToolInstance):
                 v.delete()
 
             print("opening the volume...")
-            # print(self.settings)
-            print(self.settings.view_target_vol_path)
-            self.vol = run(self.session, "open {0}".format(self.settings.view_target_vol_path))[0]
-            run(self.session,f"volume #{self.vol.id[0]} level {self.settings.target_surface_threshold}")
+            print(target_vol_path)
+            self.vol = run(self.session, "open {0}".format(target_vol_path))[0]
+            run(self.session,f"volume #{self.vol.id[0]} level {target_surface_threshold}")
 
             # TODO: define mol_centers
 
@@ -1581,8 +1580,8 @@ class DiffFitTool(ToolInstance):
             log_file.write(f"DiffFit optimization starts: {disk_fit_timer_start}\n")
 
         timer_start = datetime.now()
-        (_,
-         _,
+        (target_vol_path,
+         target_surface_threshold,
          mol_paths,
          mol_centers,
          e_sqd_log) = diff_atom_comp(
@@ -1619,7 +1618,11 @@ class DiffFitTool(ToolInstance):
         #print(self.settings)
         
         # output is tensor, convert to numpy
-        self.show_results(e_sqd_log.detach().cpu().numpy(), mol_centers, mol_paths)
+        self.show_results(e_sqd_log.detach().cpu().numpy(),
+                          mol_centers,
+                          mol_paths,
+                          target_vol_path,
+                          target_surface_threshold)
         self.tab_widget.setCurrentWidget(self.tab_view_group)
         self.select_table_item(0)
 
@@ -1655,11 +1658,13 @@ class DiffFitTool(ToolInstance):
                 
         print("loading data...")
         fit_res = np.load("{0}\\fit_res.npz".format(datasetoutput))
+        target_vol_path = fit_res['target_vol_path']
+        target_surface_threshold = fit_res['target_surface_threshold']
         mol_paths = fit_res['mol_paths']
         mol_centers = fit_res['mol_centers']
         opt_res = fit_res['opt_res']
 
-        self.show_results(opt_res, mol_centers, mol_paths)
+        self.show_results(opt_res, mol_centers, mol_paths, target_vol_path, target_surface_threshold)
         self.select_table_item(0)
         run(self.session, f"view orient")
 
