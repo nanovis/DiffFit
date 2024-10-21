@@ -1644,6 +1644,7 @@ class DiffFitTool(ToolInstance):
             if self.interactive_fit_result_ready:
                 self.show_results(self.fit_result,
                                   self.mol_centers,
+                                  [self.mol.filename],
                                   self.fit_vol.path,
                                   self.fit_vol.maximum_surface_level)
                 return
