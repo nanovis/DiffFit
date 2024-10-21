@@ -840,7 +840,9 @@ class DiffFitTool(ToolInstance):
         target_vol_label = QLabel("Target Volume:")
         self.target_vol = QLineEdit()        
         self.target_vol.textChanged.connect(lambda: self.store_settings())
+        self.target_vol.setEnabled(False)
         self.target_vol_select = QPushButton("Select")
+        self.target_vol_select.setEnabled(False)
         self.target_vol_select.clicked.connect(lambda: self.select_clicked("Target Volume", self.target_vol, False, "MRC Files(*.mrc);;MAP Files(*.map)"))
         layout.addWidget(target_vol_label, row, 0)
         layout.addWidget(self.target_vol, row, 1)
@@ -1113,8 +1115,8 @@ class DiffFitTool(ToolInstance):
             self.dataset_folder_select.setEnabled(False)
         elif self._view_input_mode.currentText() == "disk file":
             self.fit_input_mode = "disk file"
-            self.target_vol.setEnabled(True)
-            self.target_vol_select.setEnabled(True)
+            self.target_vol.setEnabled(False)
+            self.target_vol_select.setEnabled(False)
             self.dataset_folder.setEnabled(True)
             self.dataset_folder_select.setEnabled(True)
 
