@@ -1642,7 +1642,10 @@ class DiffFitTool(ToolInstance):
     def load_button_clicked(self):
         if self.fit_input_mode == "interactive":
             if self.interactive_fit_result_ready:
-                self.show_results(self.fit_result, self.mol_centers)
+                self.show_results(self.fit_result,
+                                  self.mol_centers,
+                                  self.fit_vol.path,
+                                  self.fit_vol.maximum_surface_level)
                 return
             else:
                 from chimerax.log.cmd import log
