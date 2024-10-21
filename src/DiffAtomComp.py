@@ -867,7 +867,7 @@ def diff_fit(volume_list: list,
 
     if save_results:
         np.savez_compressed(f"{out_dir}/fit_res.npz",
-                            vol_path=vol_path,
+                            target_vol_path=vol_path,
                             target_surface_threshold=target_surface_threshold,
                             mol_paths=[mol_path],
                             mol_centers=mol_centers,
@@ -1069,7 +1069,7 @@ def diff_atom_comp(target_vol_path: str,
         mol_paths.append(full_path)
 
     np.savez_compressed(f"{out_dir}/fit_res.npz",
-                        vol_path=target_vol_path,
+                        target_vol_path=target_vol_path,
                         target_surface_threshold=target_surface_threshold,
                         mol_paths=mol_paths,
                         mol_centers=mol_centers,
