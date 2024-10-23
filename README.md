@@ -116,51 +116,8 @@ into [EMD-40589](https://www.ebi.ac.uk/emdb/EMD-40589).
 4. Go to the `Disk` tab, set all the file and folder paths, set the `Target Surface Threshold` 
    (you may open the map in the same ChimeraX window to decide a good surface level value).
 5. Click `Run!`.
-6. Use the same way as in `Scenario 1: Fit a single structure` to view the results. 
-
-
-
-2. Drop both files into ChimeraX, 
-   1. take a note for the `pixel` value from the log, which represents the grid spacing for this volume, which is `0.835` in this case
-   2. move and rotate the molecule and then save it (select it, choose "Save selected atoms only", uncheck "Use untransformed coordinates") as `8SMK_transformed.cif`. This step is only for demo purpose and is not necessary for real use cases
-3. Create a folder `subunits` under `D:\GIT\DiffFitViewer\run\input\8SMK`
-4. Split the chains into individual .cif files and simulate a map for each chain
-   1. Open a new ChimeraX session and run `runscript "D:\GIT\DiffFitViewer\src\split_chains.py" "D:\GIT\DiffFitViewer\run\input\8SMK\8SMK_transformed.cif" "D:\GIT\DiffFitViewer\run\input\8SMK\subunits" 3.5 0.835`
-   2. Put all generated .cif files under `D:\GIT\DiffFitViewer\run\input\8SMK\subunits_cif`
-   3. Put all generated .mrc files under `D:\GIT\DiffFitViewer\run\input\8SMK\subunits_mrc`
-   4. Delete all generated .npy files, or put them under `D:\GIT\DiffFitViewer\run\input\8SMK\subunits_npy`
-   5. Keep only the unique chains (A, B, C) in `subunits_cif` and `subunits_mrc`
-5. Run DiffFit. Set the parameters as follows and hit `Run!`
-   1. Target volume: `D:\GIT\DiffFitViewer\run\input\8SMK\emd_40589.map`
-   2. Structures folder: `D:\GIT\DiffFitViewer\run\input\8SMK\subunits_cif`
-   3. Structures sim-map folder: `D:\GIT\DiffFitViewer\run\input\8SMK\subunits_mrc`
-   4. Output folder: `D:\GIT\DiffFitViewer\run\output\8SMK`
-   5. Experiment name: `round1`
-   6. Target surface threshold: `0.8`. Or use the author recommended contour level `5.0`. DiffFit is very robust against this parameter, a value between 0.1 - 5.0 is fine in this case.
-   7. \# shifts: `30`
-   8. \# quaternions: `300`
-   9. Leave the rest as default and hit `Run!`
-6. After freezing for a couple of seconds (less than 30 seconds on one RTX 4090), ChimeraX should be back and responsive to you. Click the `View` tab to examine the results.
-   1. Examine the fit, sort by a different metric
-   2. If you want to change the cluster tolerance, or if you run Compute on a cluster, or if you accidentally close ChimeraX after _Compute_ run, you can _View_ the results by the following parameter settings
-      1. Target volume: `D:\GIT\DiffFitViewer\run\input\8SMK\emd_40589.map`
-      2. Structures folder: `D:\GIT\DiffFitViewer\run\input\8SMK\subunits_cif`
-      3. Data folder: `D:\GIT\DiffFitViewer\run\output\8SMK\composite_unique_chains`
-      4. Clustering - Shift Tolerance: `6` or the value you desire
-      5. Clustering - Angle Tolerance: `15` or the value you desire
-      6. Hit `Load`
-   3. Save a molecule if desired
-   4. Set the Resolution as `3.5`, and click `Simulate volume`
-   5. Change the surface level threshold for the simulated volume if necessary
-   6. Click `Zero density`
-   7. Repeat the last 4 steps (Save, Simulate, Zero) for the same `Mol Id` at a different place, or for a different `Mol Id` until there is no good fit
-   8. Save the last `working volume` by `File > Save > Files of type as MRC > Map as the desired one` as a new name, for example, `emd_40589_round_1.mrc`  
-7. Repeat Step 5-6 until satisfied with the whole compositing
-   1. Change the Target volume as: `D:\GIT\DiffFitViewer\run\input\8SMK\emd_40589_round_1.mrc`
-   2. If needed, take out the already fitted chains from `subunits_cif` and `subunits_mrc`
-   3. Give a new Experiment name: `round2`
-   4. You may lower the \# shifts, for example, to `10`, and the \# quaternions to `100`
-   5. Hit `Run!`
+6. Use the same way as in `Scenario 1: Fit a single structure` to view the results.
+7. Save the working volume and go for another round of fitting if needed. 
    
 
 ### Scenario 3: Identify unknown densities
