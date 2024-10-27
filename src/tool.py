@@ -483,7 +483,7 @@ class DiffFitTool(ToolInstance):
         self._single_fit_out_dir_select = QPushButton("Select")
         self._single_fit_out_dir_select.clicked.connect(
             lambda: self.select_clicked("Output folder", self._single_fit_out_dir))
-        self._single_fit_out_dir.setText("DiffFit_out/single_fit")
+        self._single_fit_out_dir.setText("DiffFit_out/interactive")
         self._single_fit_out_dir_select.setDisabled(True)
 
         row.addWidget(self._single_fit_out_dir)
