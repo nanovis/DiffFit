@@ -10,6 +10,20 @@ This is especially the case if the user is familiar with ChimeraX's
 or [fitmap command](https://www.cgl.ucsf.edu/chimerax/docs/user/commands/fitmap.html). 
 We provide a detailed Doc below for different usage scenarios. 
 
+## Heads-up 
+
+We suggest using DiffFit as an initial fitting tool and 
+then using the ChimeraX built-in "Fit in Map" to refine DiffFit's results. 
+Because we observed in most cases, 
+the "Fit in Map" refined results' RMSD is slightly better than DiffFit's. 
+
+A CUDA-compatible GPU will give the best performance. 
+But you can also run DiffFit on the CPU. 
+If you run on the CPU, 
+you may click `Fast` in the `Options` button to get the results faster. 
+You may even decrease `# shifts` and/or `# quaternions` if you are really in a hurry. 
+However, the chance that you find a plausible fit is lower. 
+
 ## Demo usage scenarios
 
 ### Scenario 1: Fit a single structure
