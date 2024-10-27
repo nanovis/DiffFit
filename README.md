@@ -53,7 +53,7 @@ Now, DiffFit should be fully installed.
 
 ## Doc
 
-Open the structure, the volume map, and click `Fit`. 
+Open the structure and the volume map, click `Fit`. 
 
 ---
 
