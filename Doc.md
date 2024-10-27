@@ -1,3 +1,15 @@
+# Doc 
+
+Open the structure and the volume map, open the `Interactive` tab, click `Fit`. 
+
+---
+
+The whole UI design is with the hope to allow users to be able to use DiffFit without training.
+This is especially the case if the user is familiar with ChimeraX's 
+[Fit in Map tool](https://www.cgl.ucsf.edu/chimerax/docs/user/tools/fitmap.html) 
+or [fitmap command](https://www.cgl.ucsf.edu/chimerax/docs/user/commands/fitmap.html). 
+We provide a detailed Doc below for different usage scenarios. 
+
 ## Demo usage scenarios
 
 ### Scenario 1: Fit a single structure
