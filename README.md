@@ -133,6 +133,6 @@ All the necessary files are at: https://github.com/nanovis/DiffFit/tree/main/dev
 
 Use the volume map from the above link. 
 
-Use the structure files from [https://osf.io/download/vgk7f/](https://osf.io/download/vgk7f/).
+Use the structure files from https://osf.io/download/vgk7f/.
 
 The computing time for searching the whole candidate library on one RTX 4090 is about 7 minutes. 
