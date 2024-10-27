@@ -70,7 +70,7 @@ Now, DiffFit should be fully installed.
       2. DiffFit is very robust against this parameter, so very often, you don't have to change it. 
       3. To get the best performance, change the level to a value where you can see some secondary structures (alpha-helices or beta sheets). 
 4. In the DiffFit panel, go to the `Interactive` tab. Click `Fit`.
-5. After computing, DiffFit will automatically go to the `View` tab and select the top fit. You may change the threshold values. Usually, the defaults work fine. We explain all the parameters at the end.
+5. After computing, DiffFit will automatically go to the `View` tab and select the top fit. You may change the threshold values. Usually, the defaults work fine. 
 6. You can now click on the rows to go through the fitting results. You may sort the table by a different metric by clicking the header (by default, the table is sorted by `Density`).
 7. Once you find a plausible fit, you may use ChimeraX's Fit in Map tool (or a command similar to `fit #1 in #2`) to refine the placement.
 8. If you have a ground truth structure to compare with, you may open that structure and use a command similar to `rmsd #1 to #3` to calculate the RMSD. Check the [RMSD doc](https://www.cgl.ucsf.edu/chimerax/docs/user/commands/rmsd.html) for more.
@@ -110,8 +110,7 @@ into [EMD-40589](https://www.ebi.ac.uk/emdb/EMD-40589).
 3. Go to the `Utilities` tab. Under the `Simulate a map for each structure in the folder` section:
    1. If your individual chains are in `split_out`. Then you may directly click `Simulate`. 
       By default, the simulated maps are in a new folder called `sim_out` in your working directory, 
-      which usually is your desktop. 
-   2. We explain all the parameters at the end. Please check them if you want to change the default values.
+      which usually is your desktop.
 
 4. Go to the `Disk` tab, set all the file and folder paths, set the `Target Surface Threshold` 
    (you may open the map in the same ChimeraX window to decide a good surface level value).
