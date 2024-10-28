@@ -37,7 +37,7 @@ IEEE VIS 2024 Presentation Rehearsal https://youtu.be/xhUklGhR2FI
 
 1. [Install](https://youtu.be/JkAL7-T1U-U) 
 2. [Demo Usage Scenario 1: Fit a single structure](https://youtu.be/SHRRcUg8QQ8)
-3. Demo Usage Scenario 2: Composite multiple structures
+3. [Demo Usage Scenario 2: Composite multiple structures](https://youtu.be/oFHuqBBT-oo)
 4. Demo Usage Scenario 3: Identify unknown densities
 
 <details>
