@@ -6,7 +6,10 @@ If you use material from this repository, please cite the associated paper:
 
 Deng Luo, Zainab Alsuwaykit, Dawar Khan, Ondřej Strnad, Tobias Isenberg, and Ivan Viola. DiffFit: Visually-Guided Differentiable Fitting of Molecule Structures to a Cryo-EM Map. IEEE Transactions on Visualization and Computer Graphics, 31, 2025. To appear. doi: [10.1109/TVCG.2024.3456404](https://doi.org/10.1109/TVCG.2024.3456404)
 
-bibTeX:
+<details>
+<summary>bibTeX and more</summary>
+<br>
+
 ```
 @article{Luo:2025:DVG,
   author      = {Deng Luo and Zainab Alsuwaykit and Dawar Khan and Ond{\v{r}}ej Strnad and Tobias Isenberg and Ivan Viola},
@@ -25,6 +28,10 @@ bibTeX:
 ```
 
 IEEE VIS 2024 Submission [arXiv preprint](https://arxiv.org/abs/2404.02465), [Video](https://youtu.be/dWcHDWT9_mw), [OSF repo](https://osf.io/5tx4q/)
+
+IEEE VIS 2024 Presentation Rehearsal https://youtu.be/xhUklGhR2FI
+
+</details>
 
 ## YouTube tutorial videos
 
