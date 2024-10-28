@@ -26,9 +26,11 @@ bibTeX:
 
 IEEE VIS 2024 Submission [arXiv preprint](https://arxiv.org/abs/2404.02465), [Video](https://youtu.be/dWcHDWT9_mw), [OSF repo](https://osf.io/5tx4q/)
 
-## YouTube tutorial videos (coming soon)
+## YouTube tutorial videos
 
-1. [Install](https://youtu.be/aYqNZ0SNUfk)
+1. Install
+   1. For users (demo version: v0.6.0): https://youtu.be/JkAL7-T1U-U
+   2. For developers (demo version: before v0.2.0): https://youtu.be/aYqNZ0SNUfk
 2. Demo Usage [Scenario 1: Fit a single structure](https://youtu.be/dHquT2Lsh54)
 3. Demo Usage Scenario 2: Composite multiple structures
 4. Demo Usage [Scenario 3: Identify unknown densities](https://youtu.be/4fV-qHO9spw)
