@@ -28,18 +28,20 @@ IEEE VIS 2024 Submission [arXiv preprint](https://arxiv.org/abs/2404.02465), [Vi
 
 ## YouTube tutorial videos
 
-1. Install
-   1. For users (demo DiffFit version: v0.6.0): https://youtu.be/JkAL7-T1U-U
-   2. For developers (demo DiffFit version: before v0.2.0): https://youtu.be/aYqNZ0SNUfk
+1. [Install](https://youtu.be/JkAL7-T1U-U) 
 2. Demo Usage Scenario 1: Fit a single structure
-   1. For DiffFit version v0.6.0 and after: 
-   2. For DiffFit version before v0.2.0: https://youtu.be/dHquT2Lsh54
 3. Demo Usage Scenario 2: Composite multiple structures
-   1. For DiffFit version v0.6.0 and after: 
 4. Demo Usage Scenario 3: Identify unknown densities
-   1. For DiffFit version v0.6.0 and after: 
-   2. For DiffFit version before v0.2.0: https://youtu.be/4fV-qHO9spw
 
+<details>
+<summary>Old tutorial videos</summary>
+<br>
+
+1. [Install for developers](https://youtu.be/aYqNZ0SNUfk)
+2. Demo Usage Scenario 1: Fit a single structure [before v0.2.0](https://youtu.be/dHquT2Lsh54)
+3. Demo Usage Scenario 3: Identify unknown densities [before v0.2.0](https://youtu.be/4fV-qHO9spw)
+
+</details>
 
 ## Install 
 
