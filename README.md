@@ -67,9 +67,9 @@ Now, DiffFit should be fully installed.
 2. Right-click inside the DiffFit panel to access its `Help` page, and put it `In Favorites Menu`.
 3. By default, the DiffFit panel floats above the ChimeraX window. You may right-click, check `Dockable Tool`, and move the panel around to dock it (suggest docking at the less preferred side, which usually is the left side). Then you may right-click and click `Save Tool Position`. 
 
-## Doc
+## Documentation for using the approach
 
-Open the structure and the volume map, click `Fit`. 
+In the general approach, open the structure and the volume map, click `Fit`. 
 
 ---
 
@@ -79,11 +79,11 @@ This is especially the case if the user is familiar with ChimeraX's
 or [fitmap command](https://www.cgl.ucsf.edu/chimerax/docs/user/commands/fitmap.html).
 
 We do also provide a detailed 
-[Doc](https://github.com/nanovis/DiffFit/blob/main/Doc.md).
+[step-by-step documentation document](https://github.com/nanovis/DiffFit/blob/main/Doc.md).
 
-If you want to reproduce the figures in our paper, please refer to 
-[Reproduce](https://github.com/nanovis/DiffFit/blob/main/Reproduce.md). 
+If you want to reproduce the figures in our paper, please refer to the 
+[reproduction guidelines](https://github.com/nanovis/DiffFit/blob/main/Reproduce.md). 
 
-If you see anywhere we can improve the design or the doc, please raise an 
+If you see anything we can improve the design or the documentation, please raise an 
 [issue](https://github.com/nanovis/DiffFit/issues).  
 
