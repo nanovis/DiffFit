@@ -42,6 +42,6 @@ This guide is to reproduce Fig. 4 of our paper.
 
 ---
 
-Follow a similar process and with the help of the detailed 
+Following a similar process and with the help of the detailed 
 [documentation](https://github.com/nanovis/DiffFit/blob/main/Doc.md), 
 one should also be able to roughly reproduce Fig. 1, 5, 6, 7, and Table 1, 2, 3. 
