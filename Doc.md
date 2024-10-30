@@ -26,7 +26,9 @@ However, the chance that you find a plausible fit is lower.
 
 ## Demo usage scenarios
 
-### Scenario 1: Fit a single structure
+### Scenario 1: Fit a single structure 
+
+[YouTube Tutorial](https://youtu.be/SHRRcUg8QQ8)
 
 1. Open the source structure and the target map in ChimeraX. Let's use [`PDB-6WTI`](https://www.rcsb.org/structure/6wti) and its associated EM Map [`EMD-21897`](https://www.ebi.ac.uk/emdb/EMD-21897) as an example.
    1. Option 1, via ChimeraX command line. Run the following command in the command line at the very bottom of the ChimeraX windows. 
@@ -63,6 +65,8 @@ However, the chance that you find a plausible fit is lower.
 
 ### Scenario 2: Composite multiple structures
 
+[YouTube Tutorial](https://youtu.be/oFHuqBBT-oo)
+
 The logic of compositing is you fit multiple structures in one run to one Cryo-EM volume map. 
 Apart from the target volume file, you will also need to prepare all the individual structures
 that you want to fit and simulate a map for each structure. 
@@ -93,6 +97,8 @@ into [EMD-40589](https://www.ebi.ac.uk/emdb/EMD-40589).
    
 
 ### Scenario 3: Identify unknown densities
+
+[YouTube Tutorial](https://youtu.be/q4Au3DQ4vHU)
 
 The whole procedure is similar to [Scenario 2: Composite multiple structures](#scenario-2-composite-multiple-structures), 
 only that the input files are different.

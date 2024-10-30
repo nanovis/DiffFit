@@ -6,6 +6,9 @@ This guide is to reproduce Fig. 4 of our paper.
 
 ### Video guide
 
+1. [Install](https://youtu.be/JkAL7-T1U-U)
+2. [Demo Usage Scenario 3: Identify unknown densities](https://youtu.be/q4Au3DQ4vHU)
+
 ### Text guide
 
 1. Follow the [installation guide](https://github.com/nanovis/DiffFit?tab=readme-ov-file#install)
@@ -21,10 +24,10 @@ This guide is to reproduce Fig. 4 of our paper.
 
 ---
 
-Follow a similar process and with the help of the 
-[Doc](https://github.com/nanovis/DiffFit/blob/main/Doc.md), 
+Follow a similar process and with the help of the detailed 
+[documentation](https://github.com/nanovis/DiffFit/blob/main/Doc.md), 
 one should also be able to roughly reproduce Fig. 1, 5, 6, 7, and Table 1, 2, 3. 
 
 To get the results as close to our paper as possible: 
-1. please use [DiffFit-0.6.0-py3-none-any.whl](https://github.com/nanovis/DiffFit/releases/download/v0.6.0/DiffFit-0.6.0-py3-none-any.whl)
+1. please use [DiffFit-0.6.1-py3-none-any.whl](https://github.com/nanovis/DiffFit/releases/download/v0.6.1/DiffFit-0.6.1-py3-none-any.whl)
 2. go to the `Settings` tab, change `Fit atoms:` to `All atoms`. 
