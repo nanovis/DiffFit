@@ -148,18 +148,15 @@ def look_at_cluster(e_sqd_clusters_ordered, mol_folder, cluster_idx, session, cl
     return mol
 
 
-def look_at_record(mol_folder, mol_idx, transformation, session, clean_scene=True):
+def look_at_record(mol_paths, mol_idx, transformation, session, clean_scene=True):
     if clean_scene:
         # delete all other structures
         structures = session.models.list(type=AtomicStructure)
         for structure in structures:
             structure.delete()
 
-    mol_files = os.listdir(mol_folder)
-    # mol_files[idx] pairs with e_sqd_log[idx]
-
-    mol_path = os.path.join(mol_folder, mol_files[mol_idx])
-    mol = run(session, f"open {mol_path}")[0]
+    # mol_paths[idx] pairs with e_sqd_log[idx]
+    mol = run(session, f"open {mol_paths[mol_idx]}")[0]
 
     from chimerax.geometry import Place
     mol_center = mol.atoms.coords.mean(axis=0)
@@ -171,13 +168,10 @@ def look_at_record(mol_folder, mol_idx, transformation, session, clean_scene=Tru
     return mol
 
 
-def simulate_volume(session, vol, mol_folder, mol_idx, transformation, res=4.0):
+def simulate_volume(session, vol, mol_paths, mol_idx, transformation, res=4.0):
 
-    mol_files = os.listdir(mol_folder)
     # mol_files[idx] pairs with e_sqd_log[idx]
-
-    mol_path = os.path.join(mol_folder, mol_files[mol_idx])
-    mol = run(session, f"open {mol_path}")[0]
+    mol = run(session, f"open {mol_paths[mol_idx]}")[0]
 
     from chimerax.geometry import Place
     mol_center = mol.atoms.coords.mean(axis=0)
