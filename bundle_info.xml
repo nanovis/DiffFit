@@ -32,7 +32,7 @@ will be displayed without the ChimeraX- prefix.
     <Dependency name="ChimeraX-UI" version="~=1.0"/>
     <Dependency name="torch" version="==2.2.1"/>
     <Dependency name="biopython" version="==1.83"/>
-    <Dependency name="mrcfile" version="==1.5"/>
+    <Dependency name="mrcfile" version="==1.5.0"/>
   </Dependencies>
 
   <!-- Non-Python files that are part of package -->
