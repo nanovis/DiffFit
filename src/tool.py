@@ -713,6 +713,23 @@ class DiffFitTool(ToolInstance):
         row = row + 1
 
 
+        doc_label = QLabel("If you have an Nvidia GPU card, "
+                           "but in the Settings tab you don't see <b>cuda:0</b> next to <b>Device</b>, "
+                           "then you should click the <b>Install</b> button in the section below "
+                           "to install the CUDA-enabled version of PyTorch. "
+                           "The installation takes a few minutes. "
+                           "Please relaunch ChimeraX after the installation.\n\n"
+                           "If the default version or the default index-url doesn't work for you, "
+                           "you should consult PyTorch's official installation guide.\n\n"
+                           "The recommended versions are the ones used during development. "
+                           "You may use different versions, "
+                           "as long as the results make sense.\n"
+                           "")
+        doc_label.setWordWrap(True)
+        layout.addWidget(doc_label, row, 0, 1, 3)
+        row = row + 1
+
+
         doc_label = QLabel("<b>(Re-)Install a package</b>")
         doc_label.setWordWrap(True)
         layout.addWidget(doc_label, row, 0, 1, 3)
@@ -1591,7 +1608,8 @@ class DiffFitTool(ToolInstance):
         cmd_list.extend([
             "--user",
             "-q",
-            "--force-reinstall"])
+            "--force-reinstall",
+            "--no-warn-script-location"])
 
         from chimerax.core.python_utils import run_logged_pip
         run_logged_pip(cmd_list, self.session.logger)
