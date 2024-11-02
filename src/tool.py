@@ -696,18 +696,20 @@ class DiffFitTool(ToolInstance):
         row = row + 1
 
         layout.addWidget(QLabel("torch"), row, 0)
-        layout.addWidget(QLabel("2.2.1"), row, 1)
+        layout.addWidget(QLabel(f"{torch.__version__}"), row, 1)
         layout.addWidget(QLabel("2.2.1+cu121"), row, 2)
         row = row + 1
 
         layout.addWidget(QLabel("biopython"), row, 0)
-        layout.addWidget(QLabel("1.83"), row, 1)
+        import Bio
+        layout.addWidget(QLabel(f"{Bio.__version__}"), row, 1)
         layout.addWidget(QLabel("1.83"), row, 2)
         row = row + 1
 
         layout.addWidget(QLabel("mrcfile"), row, 0)
-        layout.addWidget(QLabel("1.5"), row, 1)
-        layout.addWidget(QLabel("1.5"), row, 2)
+        import mrcfile
+        layout.addWidget(QLabel(f"{mrcfile.__version__}"), row, 1)
+        layout.addWidget(QLabel("1.5.0"), row, 2)
         row = row + 1
 
 
