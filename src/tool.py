@@ -700,11 +700,6 @@ class DiffFitTool(ToolInstance):
         layout.addWidget(QLabel("2.2.1+cu121"), row, 2)
         row = row + 1
 
-        layout.addWidget(QLabel("scikit-learn"), row, 0)
-        layout.addWidget(QLabel("1.4"), row, 1)
-        layout.addWidget(QLabel("1.4"), row, 2)
-        row = row + 1
-
         layout.addWidget(QLabel("biopython"), row, 0)
         layout.addWidget(QLabel("1.83"), row, 1)
         layout.addWidget(QLabel("1.83"), row, 2)
