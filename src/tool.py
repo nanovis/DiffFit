@@ -690,9 +690,9 @@ class DiffFitTool(ToolInstance):
         layout.addWidget(doc_label, row, 0, 1, 3)
         row = row + 1
 
-        layout.addWidget(QLabel("Name"), row, 0)
-        layout.addWidget(QLabel("Installed version"), row, 1)
-        layout.addWidget(QLabel("Recommended version"), row, 2)
+        layout.addWidget(QLabel("<b>Name</b>"), row, 0)
+        layout.addWidget(QLabel("<b>Installed version</b>"), row, 1)
+        layout.addWidget(QLabel("<b>Recommended version</b>"), row, 2)
         row = row + 1
 
         layout.addWidget(QLabel("torch"), row, 0)
@@ -725,9 +725,9 @@ class DiffFitTool(ToolInstance):
         row = row + 1
 
         layout.addWidget(QLabel("version:"), row, 0)
-        self.dependency_name = QLineEdit()
-        self.dependency_name.setText("2.2.1")
-        layout.addWidget(self.dependency_name, row, 1)
+        self.dependency_version = QLineEdit()
+        self.dependency_version.setText("2.2.1")
+        layout.addWidget(self.dependency_version, row, 1)
         row = row + 1
 
         layout.addWidget(QLabel("index-url:"), row, 0)
@@ -738,7 +738,7 @@ class DiffFitTool(ToolInstance):
 
         button = QPushButton()
         button.setText("Install")
-        button.clicked.connect(lambda: self.sim_button_clicked())
+        button.clicked.connect(lambda: self.dependency_install_button_clicked())
         layout.addWidget(button, row, 2)
 
         row = row + 1
@@ -1572,6 +1572,29 @@ class DiffFitTool(ToolInstance):
                                f"DiffFit top fit metric:\n"
                                f"{metric_json}\n"
                                f"=======\n\n")
+
+
+    def dependency_install_button_clicked(self):
+        if self.dependency_name.text() is "":
+            self.session.logger.error("You have to specify a package name.")
+            return
+
+        package_name = self.dependency_name.text()
+        if self.dependency_version.text() is not "":
+            package_name += f"=={self.dependency_version.text()}"
+
+        cmd_list = ["install", package_name]
+
+        if self.dependency_index_url.text() is not "":
+            cmd_list.extend(["--index-url", self.dependency_index_url.text()])
+
+        cmd_list.extend([
+            "--user",
+            "-q",
+            "--force-reinstall"])
+
+        from chimerax.core.python_utils import run_logged_pip
+        run_logged_pip(cmd_list, self.session.logger)
 
 
     def sim_button_clicked(self):
