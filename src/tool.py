@@ -226,6 +226,13 @@ class DiffFitTool(ToolInstance):
         self.build_settings_ui(settings_group_layout)
         tab_widget.addTab(settings_group, "Settings")
 
+        # Dependencies GUI
+        dependencies_group = QGroupBox()
+        dependencies_group_layout = QGridLayout()
+        dependencies_group.setLayout(dependencies_group_layout)
+        self.build_dependencies_ui(dependencies_group_layout)
+        tab_widget.addTab(dependencies_group, "Dependencies")
+
         # view GUI
         view_group = QGroupBox()
         view_group_layout = QGridLayout()
@@ -673,6 +680,74 @@ class DiffFitTool(ToolInstance):
 
         vertical_spacer = QSpacerItem(1, 1, QSizePolicy.Minimum, QSizePolicy.Expanding)
         layout.addItem(vertical_spacer, row+1, 0)
+
+
+    def build_dependencies_ui(self, layout):
+        row = 0
+
+        doc_label = QLabel("<b>Required Python packages</b>")
+        doc_label.setWordWrap(True)
+        layout.addWidget(doc_label, row, 0, 1, 3)
+        row = row + 1
+
+        layout.addWidget(QLabel("Name"), row, 0)
+        layout.addWidget(QLabel("Installed version"), row, 1)
+        layout.addWidget(QLabel("Recommended version"), row, 2)
+        row = row + 1
+
+        layout.addWidget(QLabel("torch"), row, 0)
+        layout.addWidget(QLabel("2.2.1"), row, 1)
+        layout.addWidget(QLabel("2.2.1+cu121"), row, 2)
+        row = row + 1
+
+        layout.addWidget(QLabel("scikit-learn"), row, 0)
+        layout.addWidget(QLabel("1.4"), row, 1)
+        layout.addWidget(QLabel("1.4"), row, 2)
+        row = row + 1
+
+        layout.addWidget(QLabel("biopython"), row, 0)
+        layout.addWidget(QLabel("1.83"), row, 1)
+        layout.addWidget(QLabel("1.83"), row, 2)
+        row = row + 1
+
+        layout.addWidget(QLabel("mrcfile"), row, 0)
+        layout.addWidget(QLabel("1.5"), row, 1)
+        layout.addWidget(QLabel("1.5"), row, 2)
+        row = row + 1
+
+
+        doc_label = QLabel("<b>(Re-)Install a package</b>")
+        doc_label.setWordWrap(True)
+        layout.addWidget(doc_label, row, 0, 1, 3)
+        row = row + 1
+
+        layout.addWidget(QLabel("name:"), row, 0)
+        self.dependency_name = QLineEdit()
+        self.dependency_name.setText("torch")
+        layout.addWidget(self.dependency_name, row, 1)
+        row = row + 1
+
+        layout.addWidget(QLabel("version:"), row, 0)
+        self.dependency_name = QLineEdit()
+        self.dependency_name.setText("2.2.1")
+        layout.addWidget(self.dependency_name, row, 1)
+        row = row + 1
+
+        layout.addWidget(QLabel("index-url:"), row, 0)
+
+        self.dependency_index_url = QLineEdit()
+        self.dependency_index_url.setText("https://download.pytorch.org/whl/cu121")
+        layout.addWidget(self.dependency_index_url, row, 1)
+
+        button = QPushButton()
+        button.setText("Install")
+        button.clicked.connect(lambda: self.sim_button_clicked())
+        layout.addWidget(button, row, 2)
+
+        row = row + 1
+
+        vertical_spacer = QSpacerItem(1, 1, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        layout.addItem(vertical_spacer, row + 1, 0)
 
 
     def build_utilities_ui(self, layout):
