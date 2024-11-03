@@ -226,6 +226,13 @@ class DiffFitTool(ToolInstance):
         self.build_settings_ui(settings_group_layout)
         tab_widget.addTab(settings_group, "Settings")
 
+        # Dependencies GUI
+        dependencies_group = QGroupBox()
+        dependencies_group_layout = QGridLayout()
+        dependencies_group.setLayout(dependencies_group_layout)
+        self.build_dependencies_ui(dependencies_group_layout)
+        tab_widget.addTab(dependencies_group, "Dependencies")
+
         # view GUI
         view_group = QGroupBox()
         view_group_layout = QGridLayout()
@@ -419,7 +426,7 @@ class DiffFitTool(ToolInstance):
         
         # Parameter row
         row = create_row(f.layout())
-        n_shifts_label = QLabel("# shifts:")
+        n_shifts_label = QLabel("# positions:")
         self._single_fit_n_shifts = QSpinBox()
         self._single_fit_n_shifts.setMinimum(1)
         self._single_fit_n_shifts.setMaximum(500)
@@ -427,7 +434,7 @@ class DiffFitTool(ToolInstance):
         row.addWidget(n_shifts_label)
         row.addWidget(self._single_fit_n_shifts)
 
-        n_quaternions_label = QLabel("# quaternions:")
+        n_quaternions_label = QLabel("# rotations:")
         self._single_fit_n_quaternions = QSpinBox()
         self._single_fit_n_quaternions.setMinimum(1)
         self._single_fit_n_quaternions.setMaximum(1000)
@@ -601,7 +608,7 @@ class DiffFitTool(ToolInstance):
         row = row + 1
         
         n_shifts_label = QLabel()
-        n_shifts_label.setText("# shifts:")
+        n_shifts_label.setText("# positions:")
         self.n_shifts = QSpinBox()
         self.n_shifts.setMinimum(1)
         self.n_shifts.setMaximum(500)
@@ -611,7 +618,7 @@ class DiffFitTool(ToolInstance):
         row = row + 1
         
         n_quaternions_label = QLabel()
-        n_quaternions_label.setText("# quaternions:")
+        n_quaternions_label.setText("# rotations:")
         self.n_quaternions = QSpinBox()
         self.n_quaternions.setMinimum(1)
         self.n_quaternions.setMaximum(500)
@@ -671,6 +678,88 @@ class DiffFitTool(ToolInstance):
 
         vertical_spacer = QSpacerItem(1, 1, QSizePolicy.Minimum, QSizePolicy.Expanding)
         layout.addItem(vertical_spacer, row+1, 0)
+
+
+    def build_dependencies_ui(self, layout):
+        row = 0
+
+        doc_label = QLabel("<b>Required Python packages</b>")
+        doc_label.setWordWrap(True)
+        layout.addWidget(doc_label, row, 0, 1, 3)
+        row = row + 1
+
+        layout.addWidget(QLabel("<b>Name</b>"), row, 0)
+        layout.addWidget(QLabel("<b>Installed version</b>"), row, 1)
+        layout.addWidget(QLabel("<b>Recommended version</b>"), row, 2)
+        row = row + 1
+
+        layout.addWidget(QLabel("torch"), row, 0)
+        layout.addWidget(QLabel(f"{torch.__version__}"), row, 1)
+        layout.addWidget(QLabel("2.2.1+cu121"), row, 2)
+        row = row + 1
+
+        layout.addWidget(QLabel("biopython"), row, 0)
+        import Bio
+        layout.addWidget(QLabel(f"{Bio.__version__}"), row, 1)
+        layout.addWidget(QLabel("1.83"), row, 2)
+        row = row + 1
+
+        layout.addWidget(QLabel("mrcfile"), row, 0)
+        import mrcfile
+        layout.addWidget(QLabel(f"{mrcfile.__version__}"), row, 1)
+        layout.addWidget(QLabel("1.5.0"), row, 2)
+        row = row + 1
+
+
+        doc_label = QLabel("If you have an Nvidia GPU card, "
+                           "but in the Settings tab you don't see <b>cuda:0</b> next to <b>Device</b>, "
+                           "then you should click the <b>Install</b> button in the section below "
+                           "to install the CUDA-enabled version of PyTorch. "
+                           "The installation takes a few minutes. "
+                           "Please relaunch ChimeraX after the installation.\n\n"
+                           "If the default version or the default index-url doesn't work for you, "
+                           "you should consult PyTorch's official installation guide.\n\n"
+                           "The recommended versions are the ones used during development. "
+                           "You may use different versions, "
+                           "as long as the results make sense.\n"
+                           "")
+        doc_label.setWordWrap(True)
+        layout.addWidget(doc_label, row, 0, 1, 3)
+        row = row + 1
+
+
+        doc_label = QLabel("<b>(Re-)Install a package</b>")
+        doc_label.setWordWrap(True)
+        layout.addWidget(doc_label, row, 0, 1, 3)
+        row = row + 1
+
+        layout.addWidget(QLabel("name:"), row, 0)
+        self.dependency_name = QLineEdit()
+        self.dependency_name.setText("torch")
+        layout.addWidget(self.dependency_name, row, 1)
+        row = row + 1
+
+        layout.addWidget(QLabel("version:"), row, 0)
+        self.dependency_version = QLineEdit()
+        self.dependency_version.setText("2.2.1")
+        layout.addWidget(self.dependency_version, row, 1)
+        row = row + 1
+
+        layout.addWidget(QLabel("index-url:"), row, 0)
+
+        self.dependency_index_url = QLineEdit()
+        self.dependency_index_url.setText("https://download.pytorch.org/whl/cu121")
+        layout.addWidget(self.dependency_index_url, row, 1)
+
+        button = QPushButton()
+        button.setText("Install")
+        button.clicked.connect(lambda: self.dependency_install_button_clicked())
+        layout.addWidget(button, row, 2)
+
+        row = row + 1
+
+        vertical_spacer = QSpacerItem(1, 1, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        layout.addItem(vertical_spacer, row + 1, 0)
 
 
     def build_utilities_ui(self, layout):
@@ -1381,8 +1470,8 @@ class DiffFitTool(ToolInstance):
                                f"Target Surface Threshold: {self._map_menu.value.maximum_surface_level}\n"
                                f"-------\n"
                                f"Sim-map resolution: {self._single_fit_res.value()}\n"
-                               f"# shifts: {self._single_fit_n_shifts.value()}\n"
-                               f"# quaternions: {self._single_fit_n_quaternions.value()}\n"
+                               f"# positions: {self._single_fit_n_shifts.value()}\n"
+                               f"# rotations: {self._single_fit_n_quaternions.value()}\n"
                                f"Smooth by: {self._smooth_by.currentText()}\n"
                                f"Smooth loops: {self._single_fit_gaussian_loops.value()}\n"
                                f"Kernel sizes: {self.smooth_kernel_sizes.text()}\n"
@@ -1494,6 +1583,30 @@ class DiffFitTool(ToolInstance):
                                f"=======\n\n")
 
 
+    def dependency_install_button_clicked(self):
+        if self.dependency_name.text() is "":
+            self.session.logger.error("You have to specify a package name.")
+            return
+
+        package_name = self.dependency_name.text()
+        if self.dependency_version.text() is not "":
+            package_name += f"=={self.dependency_version.text()}"
+
+        cmd_list = ["install", package_name]
+
+        if self.dependency_index_url.text() is not "":
+            cmd_list.extend(["--index-url", self.dependency_index_url.text()])
+
+        cmd_list.extend([
+            "--user",
+            "-q",
+            "--force-reinstall",
+            "--no-warn-script-location"])
+
+        from chimerax.core.python_utils import run_logged_pip
+        run_logged_pip(cmd_list, self.session.logger)
+
+
     def sim_button_clicked(self):
         output_dir = self.sim_out_dir.text()
         if not os.path.exists(output_dir):
@@ -1564,8 +1677,8 @@ class DiffFitTool(ToolInstance):
                            f"Sim-map Folder: {self.settings.structures_sim_map_dir}\n"
                            f"Target Surface Threshold: {self.settings.target_surface_threshold}\n"
                            f"-------\n"
-                           f"# shifts: {self.settings.N_shifts}\n"
-                           f"# quaternions: {self.settings.N_quaternions}\n"
+                           f"# positions: {self.settings.N_shifts}\n"
+                           f"# rotations: {self.settings.N_quaternions}\n"
                            f"Gaussian mode: {self.Gaussian_mode}\n"
                            f"Conv. loops: {self.settings.conv_loops}\n"
                            f"Conv. kernel sizes: {self.settings.conv_kernel_sizes}\n"

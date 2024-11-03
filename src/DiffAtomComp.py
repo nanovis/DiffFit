@@ -18,7 +18,6 @@ from scipy.ndimage import label, center_of_mass
 
 from scipy.spatial.transform import Rotation as R
 
-from sklearn.cluster import Birch
 import math
 
 from math import pi
