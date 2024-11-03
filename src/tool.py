@@ -428,7 +428,7 @@ class DiffFitTool(ToolInstance):
         
         # Parameter row
         row = create_row(f.layout())
-        n_shifts_label = QLabel("# shifts:")
+        n_shifts_label = QLabel("# positions:")
         self._single_fit_n_shifts = QSpinBox()
         self._single_fit_n_shifts.setMinimum(1)
         self._single_fit_n_shifts.setMaximum(500)
@@ -436,7 +436,7 @@ class DiffFitTool(ToolInstance):
         row.addWidget(n_shifts_label)
         row.addWidget(self._single_fit_n_shifts)
 
-        n_quaternions_label = QLabel("# quaternions:")
+        n_quaternions_label = QLabel("# rotations:")
         self._single_fit_n_quaternions = QSpinBox()
         self._single_fit_n_quaternions.setMinimum(1)
         self._single_fit_n_quaternions.setMaximum(1000)
@@ -610,7 +610,7 @@ class DiffFitTool(ToolInstance):
         row = row + 1
         
         n_shifts_label = QLabel()
-        n_shifts_label.setText("# shifts:")
+        n_shifts_label.setText("# positions:")
         self.n_shifts = QSpinBox()
         self.n_shifts.setMinimum(1)
         self.n_shifts.setMaximum(500)
@@ -620,7 +620,7 @@ class DiffFitTool(ToolInstance):
         row = row + 1
         
         n_quaternions_label = QLabel()
-        n_quaternions_label.setText("# quaternions:")
+        n_quaternions_label.setText("# rotations:")
         self.n_quaternions = QSpinBox()
         self.n_quaternions.setMinimum(1)
         self.n_quaternions.setMaximum(500)
@@ -1486,8 +1486,8 @@ class DiffFitTool(ToolInstance):
                                f"Target Surface Threshold: {self._map_menu.value.maximum_surface_level}\n"
                                f"-------\n"
                                f"Sim-map resolution: {self._single_fit_res.value()}\n"
-                               f"# shifts: {self._single_fit_n_shifts.value()}\n"
-                               f"# quaternions: {self._single_fit_n_quaternions.value()}\n"
+                               f"# positions: {self._single_fit_n_shifts.value()}\n"
+                               f"# rotations: {self._single_fit_n_quaternions.value()}\n"
                                f"Smooth by: {self._smooth_by.currentText()}\n"
                                f"Smooth loops: {self._single_fit_gaussian_loops.value()}\n"
                                f"Kernel sizes: {self.smooth_kernel_sizes.text()}\n"
@@ -1685,8 +1685,8 @@ class DiffFitTool(ToolInstance):
                            f"Sim-map Folder: {self.settings.structures_sim_map_dir}\n"
                            f"Target Surface Threshold: {self.settings.target_surface_threshold}\n"
                            f"-------\n"
-                           f"# shifts: {self.settings.N_shifts}\n"
-                           f"# quaternions: {self.settings.N_quaternions}\n"
+                           f"# positions: {self.settings.N_shifts}\n"
+                           f"# rotations: {self.settings.N_quaternions}\n"
                            f"Gaussian mode: {self.Gaussian_mode}\n"
                            f"Conv. loops: {self.settings.conv_loops}\n"
                            f"Conv. kernel sizes: {self.settings.conv_kernel_sizes}\n"
