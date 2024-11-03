@@ -31,6 +31,16 @@ dfit_desc = CmdDesc(required=[("atoms", Or(AtomsArg, EmptyArg))],
                     optional=[("weighted", BoolArg),
                               ("transformed", BoolArg)])
 
+# Example commands
+# dfit #1 in #2
+# dfit #1 in #2 level 0.7 sim_res 5.0 num_p 10 num_r 100 smooth_by smooth_loops kernel_sizes gaussian_mode fit_atom_mode out_dir device
+#
+# dfit multi str_dir sim_dir in map level 0.7 num_p 10 num_r 100
+# smooth_by smooth_loops smooth_weights kernel_sizes gaussian_mode fit_atom_mode out_dir device
+# negative_space
+# learning_rate
+# n_iters
+
 
 
 def dfit_disk(session, atoms, color, weighted=False, transformed=True, count=1):
