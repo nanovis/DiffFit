@@ -35,7 +35,7 @@ IEEE VIS 2024 Presentation Rehearsal https://youtu.be/xhUklGhR2FI
 
 ## YouTube tutorial videos ([playlist](https://www.youtube.com/playlist?list=PLv1qDzaqPI7izX1oUZb3a_1hJCWay6gSU))
 
-1. [Install](https://youtu.be/JkAL7-T1U-U) 
+1. [Install](https://youtu.be/JkAL7-T1U-U), and [enable CUDA](https://youtu.be/LCiVb9nA_Xo) 
 2. [Demo Usage Scenario 1: Fit a single structure](https://youtu.be/SHRRcUg8QQ8)
 3. [Demo Usage Scenario 2: Composite multiple structures](https://youtu.be/oFHuqBBT-oo)
 4. [Demo Usage Scenario 3: Identify unknown densities](https://youtu.be/q4Au3DQ4vHU)
@@ -71,7 +71,8 @@ Now, DiffFit should be fully installed.
 If you have an Nvidia GPU card, but in the `Settings` tab you don't see `cuda:0` next to `Device`, 
 you should go to the `Dependencies` tab and follow the instructions there to install CUDA-enabled PyTorch. 
 From our experience, this extra step has only been needed for Windows. 
-For Linux, CUDA has always been enabled automatically after installation.   
+For Linux, CUDA has always been enabled automatically after installation.
+A [video guide](https://youtu.be/LCiVb9nA_Xo) is also available for enabling CUDA. 
 
 ## Documentation for using the approach
 
