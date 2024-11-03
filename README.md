@@ -64,8 +64,14 @@ IEEE VIS 2024 Presentation Rehearsal https://youtu.be/xhUklGhR2FI
 
 Now, DiffFit should be fully installed. 
 1. Launch it via `Tools > Volume Data > DiffFit`.
-2. Right-click inside the DiffFit panel to access its `Help` page, and put it `In Favorites Menu`.
-3. By default, the DiffFit panel floats above the ChimeraX window. You may right-click, check `Dockable Tool`, and move the panel around to dock it (suggest docking at the less preferred side, which usually is the left side). Then you may right-click and click `Save Tool Position`. 
+2. By default, the DiffFit panel floats above the ChimeraX window. You may right-click, check `Dockable Tool`, and move the panel around to dock it (suggest docking at the less preferred side, which usually is the left side). Then you may right-click and click `Save Tool Position`.
+
+### Enable CUDA
+
+If you have an Nvidia GPU card, but in the `Settings` tab you don't see `cuda:0` next to `Device`, 
+you should go to the `Dependencies` tab and follow the instructions there to install CUDA-enabled PyTorch. 
+From our experience, this extra step has only been needed for Windows. 
+For Linux, CUDA has always been enabled automatically after installation.   
 
 ## Documentation for using the approach
 
