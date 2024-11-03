@@ -25,97 +25,14 @@ class="clRight" title="User Guide Index"/></a>
 
 <h3><a href="../index.html#tools">Tool</a>: DiffFit</h3>
 <p>
-	<b>DiffFit</b>: Visually-Guided <b>Diff</b>erentiable <b>Fit</b>ting of Molecule Structures to Cryo-EM Map
+	DiffFit is a tool for rapid differentiable fitting of molecular atomic moles to a Cryo-EM map on a CUDA-compatible GPU.
+	It can fit a single model in an interactive mode or multiple models in a "disk" mode by specifying the file path.
 
-	<br>
-	IEEE VIS 2024 Submission <a href="https://youtu.be/dWcHDWT9_mw" target="_blank">Video</a>
-
-	<br><br>
-	If you cannot watch the videos in this page in the ChimeraX browser, right-click and copy the link to open in another browser.
-</p>
-<h3>Get started</h3>
-
-YouTube tutorial videos (coming soon)
-
-<ul>
-	<li><a href="" target="_blank">Install</a>
-	<li><a href="" target="_blank">Demo Usage Scenario 1: Fit a single structure</a>
-	<li><a href="" target="_blank">Demo Usage Scenario 2: Composite multiple structures</a>
-	<li><a href="" target="_blank">Demo Usage Scenario 3: Identify unknown densities</a>
-</ul>
-
-
-<br><br>
-Doc on GitHub:
-
-<ul>
-	<li><a href="https://github.com/nanovis/DiffFitViewer?tab=readme-ov-file#install" target="_blank">Install</a>
-	<li><a href="https://github.com/nanovis/DiffFitViewer?tab=readme-ov-file#scenario-1-fit-a-single-structure" target="_blank">Demo Usage Scenario 1: Fit a single structure</a>
-	<li><a href="https://github.com/nanovis/DiffFitViewer?tab=readme-ov-file#scenario-2-composite-multiple-structures" target="_blank">Demo Usage Scenario 2: Composite multiple structures</a>
-	<li><a href="https://github.com/nanovis/DiffFitViewer?tab=readme-ov-file#scenario-3-identify-unknown-densities" target="_blank">Demo Usage Scenario 3: Identify unknown densities</a>
-</ul>
-
-<h3>Compute Tab</h3>
-
-Parameters
-
-<ul>
-	<li><b>Target volume</b>: Path to the target volume
-	<li><b>Structures folder</b>: Path to the folder containing the .cif or .pdb files to be fit
-	<li><b>Structures sim-map folder</b>: Path to the folder containing the .mrc or .map files. The number of the files and their names should match with those under <b>Structures folder</b>.
-	<li><b>Output folder</b>: Path to the output folder
-	<li><b>Experiment name</b>: Name of the sub-folder that will be created under <b>Output folder</b>
-	<li><b>Target surface threshold</b>: Usually the same as the "Level" in the Volume Viewer
-	<li>Usually the rest of the parameters can be left as default
-	<li><b>Min island size</b>: The minimum number of voxels on an island to be qualified to pass the filter
-	<li><b># iters</b>: The number of iterations the optimizer will run
-	<li><b># shifts</b>: The number of initial placements positions
-	<li><b># quaternions</b>: The number of initial placements rotations
-	<li><b>Negative space value</b>: The value to put in the negative space, -0.5 will work for most cases
-	<li><b>Learning rate</b>: The learning rate of the optimizer, 0.01 works for most cases
-	<li><b>Conv. loops</b>: The Gaussian convolution layers
-	<li><b>Conv. kernel sizes [list]</b>: The Gaussian convolution kernel size for each layer. The length of the list should be the same as <b>Conv. loops</b>
-	<li><b>Conv. weights [list]</b>: The Gaussian convolution weight for each layer. The length of the list should be the same as <b>Conv. loops</b>
-</ul>
-
-<h3>View Tab</h3>
-
-Parameters
-
-<ul>
-	<li><b>Target volume</b>: Path to the target volume
-	<li><b>Structures folder</b>: Path to the folder containing the .cif or .pdb files to be fit
-	<li><b>Data Folder</b>: Path to the <b>Output folder</b>/<b>Experiment name</b> from the Compute tab
-	<li><b>Clustering - Shift Tolerance</b>: The translational difference required for a fit to be considered unique (default 6°), the same as <b>clusterShift</b> in the <a href="help:user/commands/fitmap.html#global" target="_blank">fitmap</a> command
-	<li><b>Clustering - Angle Tolerance</b>: The rotational difference required for a fit to be considered unique (default 3 Å), the same as <b>clusterAngle</b> in the <a href="help:user/commands/fitmap.html#global" target="_blank">fitmap</a> command
-	<li><b>Resolution</b>: The resolution to simulate the map, usually the same as the target volume's resolution
-</ul>
-
-Buttons, etc.
-
-<ul>
-	<li><b>Simulate volume</b>: Simulate a volume with the specified resolution for the selected placement of the molecule
-	<li><b>Zero density</b>: Zero out the densities from the target volume for the selected placement of the molecule
-	<li><b>Save</b>: Save the selected placement of the molecule
-	<li><b>Step</b>: The placement of the molecule in the optimization step
-</ul>
+	Documentation, installation guide, tutorial, code, and more will be updated at <a href="https://github.com/nanovis/DiffFit">https://github.com/nanovis/DiffFit</a>.
 
 <h3>Cite</h3>
 
-Luo, D., Alsuwaykit, Z., Khan, D., Strnad, O., Isenberg, T., & Viola, I. (2024). DiffFit: Visually-Guided Differentiable Fitting of Molecule Structures to Cryo-EM Map. arXiv preprint arXiv:2404.02465.
-
-<br><br>
-BibTeX
-<br>
-
-<code id="bibtex-text">
-@article{luo2024difffit,
-  title={DiffFit: Visually-Guided Differentiable Fitting of Molecule Structures to Cryo-EM Map},
-  author={Luo, Deng and Alsuwaykit, Zainab and Khan, Dawar and Strnad, Ond{\v{r}}ej and Isenberg, Tobias and Viola, Ivan},
-  journal={arXiv preprint arXiv:2404.02465},
-  year={2024}
-}
-</code>
+Deng Luo, Zainab Alsuwaykit, Dawar Khan, Ondřej Strnad, Tobias Isenberg, and Ivan Viola. DiffFit: Visually-Guided Differentiable Fitting of Molecule Structures to a Cryo-EM Map. IEEE Transactions on Visualization and Computer Graphics, 31, 2025. To appear. <a href="https://doi.org/10.1109/TVCG.2024.3456404">doi: 10.1109/TVCG.2024.3456404</a>
 
 <hr>
 <address>KAUST <a href="https://cemse.kaust.edu.sa/nanovis">Nanovisualization</a> Research Group - <a href="https://www.nanovis.org">nanovis.org</a> /

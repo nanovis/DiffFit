@@ -278,8 +278,7 @@ class DiffFitTool(ToolInstance):
         # view
         self.target_vol.setText(self.settings.view_target_vol_path)     
         self.dataset_folder.setText(self.settings.view_output_directory)        
-        self.structures_folder.setText(self.settings.view_structures_directory)        
-        
+
         # clustering
         self.clustering_in_contour_threshold.setValue(self.settings.clustering_in_contour_threshold)
         self.clustering_correlation_threshold.setValue(self.settings.clustering_correlation_threshold)
@@ -316,7 +315,6 @@ class DiffFitTool(ToolInstance):
         
         #view
         self.settings.view_output_directory = self.dataset_folder.text()
-        self.settings.view_structures_directory = self.structures_folder.text()
         self.settings.view_target_vol_path = self.target_vol.text()
         
         # clustering
@@ -521,9 +519,9 @@ class DiffFitTool(ToolInstance):
         target_vol_path_label = QLabel()
         target_vol_path_label.setText("Target Volume:")
         self.target_vol_path = QLineEdit()
-        self.target_vol_path.textChanged.connect(lambda: self.store_settings())                
-        target_vol_path_select = QPushButton("Select")        
-        target_vol_path_select.clicked.connect(lambda: self.select_clicked("Target Volume", self.target_vol_path, False, "MRC Files(*.mrc);;MAP Files(*.map)"))        
+        self.target_vol_path.textChanged.connect(lambda: self.store_settings())
+        target_vol_path_select = QPushButton("Select")
+        target_vol_path_select.clicked.connect(lambda: self.select_clicked("Target Volume", self.target_vol_path, False, "MRC Files(*.mrc);;MAP Files(*.map)"))
         layout.addWidget(target_vol_path_label, row, 0)
         layout.addWidget(self.target_vol_path, row, 1)
         layout.addWidget(target_vol_path_select, row, 2)
@@ -931,21 +929,13 @@ class DiffFitTool(ToolInstance):
         target_vol_label = QLabel("Target Volume:")
         self.target_vol = QLineEdit()        
         self.target_vol.textChanged.connect(lambda: self.store_settings())
+        self.target_vol.setEnabled(False)
         self.target_vol_select = QPushButton("Select")
+        self.target_vol_select.setEnabled(False)
         self.target_vol_select.clicked.connect(lambda: self.select_clicked("Target Volume", self.target_vol, False, "MRC Files(*.mrc);;MAP Files(*.map)"))
         layout.addWidget(target_vol_label, row, 0)
         layout.addWidget(self.target_vol, row, 1)
         layout.addWidget(self.target_vol_select, row, 2)
-        row = row + 1
-        
-        structures_folder_label = QLabel("Structures Folder:")
-        self.structures_folder = QLineEdit()
-        self.structures_folder.textChanged.connect(lambda: self.store_settings()) 
-        self.structures_folder_select = QPushButton("Select")
-        self.structures_folder_select.clicked.connect(lambda: self.select_clicked("Structures folder (containing *.cif)", self.structures_folder))
-        layout.addWidget(structures_folder_label, row, 0)
-        layout.addWidget(self.structures_folder, row, 1)
-        layout.addWidget(self.structures_folder_select, row, 2)
         row = row + 1
         
         # data folder - where the data is stored
@@ -1210,16 +1200,12 @@ class DiffFitTool(ToolInstance):
             self.fit_input_mode = "interactive"
             self.target_vol.setEnabled(False)
             self.target_vol_select.setEnabled(False)
-            self.structures_folder.setEnabled(False)
-            self.structures_folder_select.setEnabled(False)
             self.dataset_folder.setEnabled(False)
             self.dataset_folder_select.setEnabled(False)
         elif self._view_input_mode.currentText() == "disk file":
             self.fit_input_mode = "disk file"
-            self.target_vol.setEnabled(True)
-            self.target_vol_select.setEnabled(True)
-            self.structures_folder.setEnabled(True)
-            self.structures_folder_select.setEnabled(True)
+            self.target_vol.setEnabled(False)
+            self.target_vol_select.setEnabled(False)
             self.dataset_folder.setEnabled(True)
             self.dataset_folder_select.setEnabled(True)
 
@@ -1279,7 +1265,7 @@ class DiffFitTool(ToolInstance):
             self.mol.display = True
             self.mol.scene_position = self.transformation
         elif self.fit_input_mode == "disk file":
-            self.mol = look_at_record(self.mol_folder, self.mol_idx, self.transformation, self.session)
+            self.mol = look_at_record(self.mol_paths, self.mol_idx, self.transformation, self.session)
 
         record_row = self.e_sqd_log[self.mol_idx, self.record_idx, iter_idx]
 
@@ -1321,7 +1307,7 @@ class DiffFitTool(ToolInstance):
             self.mol.display = True
             self.mol.scene_position = self.transformation
         elif self.fit_input_mode == "disk file":
-            self.mol = look_at_record(self.mol_folder, self.mol_idx, self.transformation, self.session)
+            self.mol = look_at_record(self.mol_paths, self.mol_idx, self.transformation, self.session)
 
         self.session.logger.info(f"Showing cluster ID: {self.cluster_idx + 1}")
         self.session.logger.info(f"Cluster size: {int(self.e_sqd_clusters_ordered[self.cluster_idx, 3])}")
@@ -1358,7 +1344,7 @@ class DiffFitTool(ToolInstance):
             
         return fileName, ext
     
-    def show_results(self, e_sqd_log, mol_centers):
+    def show_results(self, e_sqd_log, mol_centers, mol_paths, target_vol_path=None, target_surface_threshold=None):
         if e_sqd_log is None:
             return
 
@@ -1370,10 +1356,9 @@ class DiffFitTool(ToolInstance):
                 v.delete()
 
             print("opening the volume...")
-            # print(self.settings)
-            print(self.settings.view_target_vol_path)
-            self.vol = run(self.session, "open {0}".format(self.settings.view_target_vol_path))[0]
-            run(self.session,f"volume #{self.vol.id[0]} level {self.settings.target_surface_threshold}")
+            print(target_vol_path)
+            self.vol = run(self.session, "open {0}".format(target_vol_path))[0]
+            run(self.session,f"volume #{self.vol.id[0]} level {target_surface_threshold}")
 
             # TODO: define mol_centers
 
@@ -1394,7 +1379,7 @@ class DiffFitTool(ToolInstance):
             self.proxyModel = None
             return
 
-        self.model = TableModel(self.e_sqd_clusters_ordered, self.e_sqd_log)
+        self.model = TableModel(self.e_sqd_clusters_ordered, self.e_sqd_log, mol_paths)
         self.proxyModel = QSortFilterProxyModel()
         self.proxyModel.setSourceModel(self.model)
         
@@ -1406,9 +1391,8 @@ class DiffFitTool(ToolInstance):
         
         self.stats.setText("stats: {0} entries".format(self.model.rowCount())) 
 
-        self.mol_folder = self.settings.view_structures_directory
+        self.mol_paths = mol_paths
         self.cluster_idx = 0
-        # look_at_cluster(self.e_sqd_clusters_ordered, self.mol_folder, self.cluster_idx, self.session)
 
     def _create_volume_conv_list(self, vol, smooth_by, smooth_loops, session, negative_space_value=-0.5):
         # From here on, there are three strategies for utilizing gaussian smooth
@@ -1546,19 +1530,27 @@ class DiffFitTool(ToolInstance):
             with open(f"{_out_dir}/log.log", "a") as log_file:
                 log_file.write(f"DiffFit optimization starts: {timer_start}\n")
 
-        self.mol_centers, self.fit_result = diff_fit(volume_conv_list,
-                                   self.fit_vol.data.step,
-                                   self.fit_vol.data.origin,
-                                   10,
-                                   [input_coords],
-                                   [(mol_vol.full_matrix(), mol_vol.data.step, mol_vol.data.origin)],
-                                   N_shifts=self._single_fit_n_shifts.value(),
-                                   N_quaternions=self._single_fit_n_quaternions.value(),
-                                   save_results=_save_results,
-                                   out_dir=_out_dir,
-                                   out_dir_exist_ok=_out_dir_exist_ok,
-                                   device=self._device.currentText()
-                                   )
+        (_,
+         _,
+         self.mol_paths,
+         self.mol_centers,
+         self.fit_result) = diff_fit(
+            volume_conv_list,
+            self.fit_vol.path,
+            self.fit_vol.maximum_surface_level,
+            self.fit_vol.data.step,
+            self.fit_vol.data.origin,
+            10,
+            [input_coords],
+            self.mol.filename,
+            [(mol_vol.full_matrix(), mol_vol.data.step, mol_vol.data.origin)],
+            N_shifts=self._single_fit_n_shifts.value(),
+            N_quaternions=self._single_fit_n_quaternions.value(),
+            save_results=_save_results,
+            out_dir=_out_dir,
+            out_dir_exist_ok=_out_dir_exist_ok,
+            device=self._device.currentText()
+        )
         timer_stop = datetime.now()
         print(f"\nDiffFit optimization time elapsed: {timer_stop - timer_start}\n\n")
 
@@ -1572,7 +1564,7 @@ class DiffFitTool(ToolInstance):
         self._view_input_mode.setCurrentText("interactive")
         self._view_input_mode_changed()
         self.interactive_fit_result_ready = True
-        self.show_results(self.fit_result, self.mol_centers)
+        self.show_results(self.fit_result, self.mol_centers, self.mol_paths)
 
         self.tab_widget.setCurrentWidget(self.tab_view_group)
 
@@ -1703,7 +1695,11 @@ class DiffFitTool(ToolInstance):
             log_file.write(f"DiffFit optimization starts: {disk_fit_timer_start}\n")
 
         timer_start = datetime.now()
-        mol_centers, e_sqd_log = diff_atom_comp(
+        (target_vol_path,
+         target_surface_threshold,
+         mol_paths,
+         mol_centers,
+         e_sqd_log) = diff_atom_comp(
             target_vol_path=self.settings.target_vol_path,
             target_surface_threshold=self.settings.target_surface_threshold,
             min_cluster_size=self.settings.min_cluster_size,
@@ -1733,12 +1729,15 @@ class DiffFitTool(ToolInstance):
 
         # copy the directories
         self.target_vol.setText(self.settings.target_vol_path)     
-        self.structures_folder.setText(self.settings.structures_directory)
         self.dataset_folder.setText("{0}".format(self.settings.output_directory))
         #print(self.settings)
         
         # output is tensor, convert to numpy
-        self.show_results(e_sqd_log.detach().cpu().numpy(), mol_centers)
+        self.show_results(e_sqd_log.detach().cpu().numpy(),
+                          mol_centers,
+                          mol_paths,
+                          target_vol_path,
+                          target_surface_threshold)
         self.tab_widget.setCurrentWidget(self.tab_view_group)
         self.select_table_item(0)
 
@@ -1756,7 +1755,11 @@ class DiffFitTool(ToolInstance):
     def load_button_clicked(self):
         if self.fit_input_mode == "interactive":
             if self.interactive_fit_result_ready:
-                self.show_results(self.fit_result, self.mol_centers)
+                self.show_results(self.fit_result,
+                                  self.mol_centers,
+                                  [self.mol.filename],
+                                  self.fit_vol.path,
+                                  self.fit_vol.maximum_surface_level)
                 return
             else:
                 from chimerax.log.cmd import log
@@ -1774,11 +1777,15 @@ class DiffFitTool(ToolInstance):
                 
         print("loading data...")
         fit_res = np.load("{0}\\fit_res.npz".format(datasetoutput))
+        target_vol_path = fit_res['target_vol_path']
+        target_surface_threshold = fit_res['target_surface_threshold']
+        mol_paths = fit_res['mol_paths']
         mol_centers = fit_res['mol_centers']
         opt_res = fit_res['opt_res']
 
-        self.show_results(opt_res, mol_centers)
+        self.show_results(opt_res, mol_centers, mol_paths, target_vol_path, target_surface_threshold)
         self.select_table_item(0)
+        run(self.session, f"view orient")
 
     def save_working_vol_button_clicked(self):
         if not self.vol:
@@ -1809,7 +1816,7 @@ class DiffFitTool(ToolInstance):
     def simulate_volume_clicked(self):
         res = self.simulate_volume_resolution.value()
         if self.fit_input_mode == "disk file":
-            self.mol_vol = simulate_volume(self.session, self.vol, self.mol_folder, self.mol_idx, self.transformation,
+            self.mol_vol = simulate_volume(self.session, self.vol, self.mol_paths, self.mol_idx, self.transformation,
                                            res)
         elif self.fit_input_mode == "interactive":
             from chimerax.map.molmap import molecule_map
