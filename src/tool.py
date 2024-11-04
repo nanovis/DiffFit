@@ -1472,11 +1472,11 @@ class DiffFitTool(ToolInstance):
                                f"Sim-map resolution: {self._single_fit_res.value()}\n"
                                f"# positions: {self._single_fit_n_shifts.value()}\n"
                                f"# rotations: {self._single_fit_n_quaternions.value()}\n"
-                               f"Smooth by: {self._smooth_by.currentText()}\n"
+                               f"Smooth by: \"{self._smooth_by.currentText()}\"\n"
                                f"Smooth loops: {self._single_fit_gaussian_loops.value()}\n"
-                               f"Kernel sizes: {self.smooth_kernel_sizes.text()}\n"
-                               f"Gaussian mode: {self.Gaussian_mode}\n"
-                               f"Fit atom mode: {self.fit_atom_mode}\n"
+                               f"Kernel sizes: \"{self.smooth_kernel_sizes.text()}\"\n"
+                               f"Gaussian mode: \"{self.Gaussian_mode}\"\n"
+                               f"Fit atom mode: \"{self.fit_atom_mode}\"\n"
                                f"-------\n")
 
         self.disable_spheres_clicked()
@@ -1680,11 +1680,11 @@ class DiffFitTool(ToolInstance):
                            f"-------\n"
                            f"# positions: {self.settings.N_shifts}\n"
                            f"# rotations: {self.settings.N_quaternions}\n"
-                           f"Gaussian mode: {self.Gaussian_mode}\n"
-                           f"Fit atom mode: {self.fit_atom_mode}\n"
+                           f"Gaussian mode: \"{self.Gaussian_mode}\"\n"
+                           f"Fit atom mode: \"{self.fit_atom_mode}\"\n"
                            f"Conv. loops: {self.settings.conv_loops}\n"
-                           f"Conv. kernel sizes: {self.settings.conv_kernel_sizes}\n"
-                           f"Conv. weights: {self.settings.conv_weights}\n"
+                           f"Conv. kernel sizes: \"{self.settings.conv_kernel_sizes}\"\n"
+                           f"Conv. weights: \"{self.settings.conv_weights}\"\n"
                            f"-------\n")
 
 
