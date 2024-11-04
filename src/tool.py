@@ -1476,6 +1476,7 @@ class DiffFitTool(ToolInstance):
                                f"Smooth loops: {self._single_fit_gaussian_loops.value()}\n"
                                f"Kernel sizes: {self.smooth_kernel_sizes.text()}\n"
                                f"Gaussian mode: {self.Gaussian_mode}\n"
+                               f"Fit atom mode: {self.fit_atom_mode}\n"
                                f"-------\n")
 
         self.disable_spheres_clicked()
@@ -1680,6 +1681,7 @@ class DiffFitTool(ToolInstance):
                            f"# positions: {self.settings.N_shifts}\n"
                            f"# rotations: {self.settings.N_quaternions}\n"
                            f"Gaussian mode: {self.Gaussian_mode}\n"
+                           f"Fit atom mode: {self.fit_atom_mode}\n"
                            f"Conv. loops: {self.settings.conv_loops}\n"
                            f"Conv. kernel sizes: {self.settings.conv_kernel_sizes}\n"
                            f"Conv. weights: {self.settings.conv_weights}\n"
