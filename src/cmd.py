@@ -73,6 +73,15 @@ def dfit(session, mol, in_map,
                            f"Device: \"{_use_device}\"\n"
                            f"-------\n")
 
+    from chimerax.core import tools
+    from .tool import DiffFitTool
+    df = tools.get_singleton(session, DiffFitTool, 'DiffFit', create=True)
+
+    df.disable_spheres_clicked()
+    df.fit_mol_list = [mol]
+    df.fit_vol = in_map
+    df.mol = mol
+
     single_fit_timer_start = datetime.now()
 
     # Prepare mol and vol
@@ -122,9 +131,9 @@ def dfit(session, mol, in_map,
 
     (_,
      _,
-     mol_paths,
-     mol_centers,
-     fit_result) = diff_fit(
+     df.mol_paths,
+     df.mol_centers,
+     df.fit_result) = diff_fit(
         volume_conv_list,
         in_map.path,
         _use_level,
@@ -150,6 +159,27 @@ def dfit(session, mol, in_map,
                            f"DiffFit optimization time elapsed: {timer_stop - timer_start}\n")
 
     mol_vol.delete()
+
+    df._view_input_mode.setCurrentText("interactive")
+    df._view_input_mode_changed()
+    df.interactive_fit_result_ready = True
+    df.show_results(df.fit_result, df.mol_centers, df.mol_paths)
+
+    df.tab_widget.setCurrentWidget(df.tab_view_group)
+
+    df.select_table_item(0)
+
+    timer_stop = datetime.now()
+    print(f"\nDiffFit total time elapsed: {timer_stop - single_fit_timer_start}\n\n")
+
+    if _save_results:
+        metric_json = df.return_cluster_metric_json(0)
+        with open(f"{_out_dir}/log.log", "a") as log_file:
+            log_file.write(f"DiffFit total time elapsed: {timer_stop - single_fit_timer_start}\n"
+                           f"-------\n"
+                           f"DiffFit top fit metric:\n"
+                           f"{metric_json}\n"
+                           f"=======\n\n")
 
 
 dfit_desc = CmdDesc(required=[("mol", StructureArg)],
