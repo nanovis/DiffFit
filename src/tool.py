@@ -1483,7 +1483,7 @@ class DiffFitTool(ToolInstance):
 
         single_fit_timer_start = datetime.now()
 
-        # Prepare mol anv vol
+        # Prepare mol and vol
         mol = self._object_menu.value
         self.fit_mol_list = [mol]
 
