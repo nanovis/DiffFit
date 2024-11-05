@@ -889,7 +889,7 @@ def diff_fit(volume_list: list,
 
 def diff_atom_comp(target_vol_path: str,
                    target_surface_threshold: float,
-                   min_cluster_size: float,
+                   min_cluster_size: float,  # not in use, use 100 as a placeholder
                    structures_dir: str,
                    structures_sim_map_dir: str,
                    fit_atom_mode:str = "Backbone",
