@@ -228,6 +228,58 @@ def dfit_disk(session, str_dir, sim_dir, in_map, level,
               device=None):
     """Fit a list of structures from disk into a volume map"""
 
+    from chimerax.core import tools
+    from .tool import DiffFitTool
+    df = tools.get_singleton(session, DiffFitTool, 'DiffFit', create=True)
+
+    if df.interactive_fit_result_ready:
+        df.session.logger.error("You have run the fitting in Interactive mode. "
+                                  "Please run the following command: \n\n"
+                                  "close session\n\n"
+                                  "and then launch DiffFit again to run the fitting in Disk mode.")
+        return
+
+    _save_results = True
+    _out_dir_exist_ok = True
+    _out_dir = out_dir
+
+    _use_device = "cpu"
+    if torch.cuda.is_available():
+        _use_device = "cuda:0"
+    if device is not None:
+        _use_device = device
+
+    os.makedirs(_out_dir, exist_ok=_out_dir_exist_ok)
+    with open(f"{_out_dir}/log.log", "a") as log_file:
+        log_file.write(f"=======\n"
+                       f"Wall clock time: {datetime.now()}\n"
+                       f"-------\n"
+                       f"Disk mode\n"
+                       f"Structures Folder: {str_dir}\n"
+                       f"Sim-map Folder: {sim_dir}\n"
+                       f"Target Volume: {in_map}\n"
+                       f"Target Surface Threshold: {level}\n"
+                       f"-------\n"
+                       
+                       f"# positions: {num_positions}\n"
+                       f"# rotations: {num_rotations}\n"
+                       
+                       f"Conv. loops: {smooth_loops}\n"
+                       f"Conv. kernel sizes: \"{kernel_sizes}\"\n"
+                       f"Conv. weights: \"{smooth_weights}\"\n"
+                       
+                       f"Gaussian mode: \"{Gaussian_mode}\"\n"
+                       f"Fit atom mode: \"{fit_atom_mode}\"\n"
+                       f"Negative space: \"{negative_space}\"\n"
+                       
+                       f"Learning rate: \"{learning_rate}\"\n"
+                       f"# iters: \"{n_iters}\"\n"
+                       
+                       f"Out dir: \"{_out_dir}\"\n"
+                       f"Device: \"{_use_device}\"\n"
+                       f"-------\n")
+
+
 
 dfit_disk_desc = CmdDesc(keyword=[("str_dir", OpenFolderNameArg),
                                   ("sim_dir", OpenFolderNameArg),
