@@ -279,6 +279,70 @@ def dfit_disk(session, str_dir, sim_dir, in_map, level,
                        f"Device: \"{_use_device}\"\n"
                        f"-------\n")
 
+    df.disable_spheres_clicked()
+    disk_fit_timer_start = datetime.now()
+
+    print("Running the computation...")
+
+    with open(f"{_out_dir}/log.log", "a") as log_file:
+        log_file.write(f"DiffFit optimization starts: {disk_fit_timer_start}\n")
+
+    timer_start = datetime.now()
+    (target_vol_path,
+     target_surface_threshold,
+     mol_paths,
+     mol_centers,
+     e_sqd_log) = diff_atom_comp(
+        target_vol_path=in_map,
+        target_surface_threshold=level,
+        min_cluster_size=100,
+        structures_dir=str_dir,
+        structures_sim_map_dir=sim_dir,
+        fit_atom_mode=fit_atom_mode,
+        Gaussian_mode=Gaussian_mode,
+        N_shifts=num_positions,
+        N_quaternions=num_rotations,
+        negative_space_value=negative_space,
+        learning_rate=learning_rate,
+        n_iters=n_iters,
+        out_dir=_out_dir,
+        out_dir_exist_ok=_out_dir_exist_ok,
+        conv_loops=smooth_loops,
+        conv_kernel_sizes=ast.literal_eval(kernel_sizes),
+        conv_weights=ast.literal_eval(smooth_weights),
+        device=_use_device
+    )
+
+    timer_stop = datetime.now()
+    print(f"\nDiffFit optimization time elapsed: {timer_stop - timer_start}\n\n")
+
+    with open(f"{_out_dir}/log.log", "a") as log_file:
+        log_file.write(f"-------\n"
+                       f"DiffFit optimization time elapsed: {timer_stop - timer_start}\n")
+
+    # copy the directories
+    df.target_vol.setText(in_map)
+    df.dataset_folder.setText(_out_dir)
+
+    # output is tensor, convert to numpy
+    df.show_results(e_sqd_log.detach().cpu().numpy(),
+                      mol_centers,
+                      mol_paths,
+                      target_vol_path,
+                      target_surface_threshold)
+    df.tab_widget.setCurrentWidget(df.tab_view_group)
+    df.select_table_item(0)
+
+    timer_stop = datetime.now()
+    print(f"\nDiffFit total time elapsed: {timer_stop - disk_fit_timer_start}\n\n")
+
+    metric_json = df.return_cluster_metric_json(0)
+    with open(f"{_out_dir}/log.log", "a") as log_file:
+        log_file.write(f"DiffFit total time elapsed: {timer_stop - disk_fit_timer_start}\n"
+                       f"-------\n"
+                       f"DiffFit top fit metric:\n"
+                       f"{metric_json}\n"
+                       f"=======\n\n")
 
 
 dfit_disk_desc = CmdDesc(keyword=[("str_dir", OpenFolderNameArg),
