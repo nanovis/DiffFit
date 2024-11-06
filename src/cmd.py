@@ -380,6 +380,50 @@ dfit_disk_desc = CmdDesc(keyword=[("str_dir", OpenFolderNameArg),
 #      n_iters
 
 
+def dfit_path(session, mode, res_dir, old_path=None, new_path=None):
+    """Change the volume map's path in DiffFit results"""
+    import numpy as np
+    fit_res = np.load(f"{res_dir}/fit_res.npz")
+    target_vol_path = fit_res['target_vol_path']
+    target_surface_threshold = fit_res['target_surface_threshold']
+    mol_paths = fit_res['mol_paths']
+    mol_centers = fit_res['mol_centers']
+    opt_res = fit_res['opt_res']
+
+    if mode == "show":
+        print(f"Vol path: {target_vol_path}")
+        print(f"Mol paths: {mol_paths}")
+
+    elif mode == "vol":
+        if new_path is None:
+            session.logger.error("You must specify a new path.")
+            return
+
+        target_vol_path = new_path
+        print(f"New Vol path: {new_path}")
+
+    elif mode == "mol":
+        if old_path is None or new_path is None:
+            session.logger.error("You must specify both old and new paths.")
+            return
+
+        # Replace the old path with the new path in mol_paths array
+        mol_paths = np.array([path.replace(old_path, new_path) if old_path in path else path for path in mol_paths])
+        print(f"Replaced \"{old_path}\" with \"{new_path}\" in the molecules' path.")
+
+    np.savez(f"{res_dir}/fit_res.npz",
+             target_vol_path=target_vol_path,
+             target_surface_threshold=target_surface_threshold,
+             mol_paths=mol_paths,
+             mol_centers=mol_centers,
+             opt_res=opt_res)
+
+
+dfit_path_desc = CmdDesc(required=[("mode", StringArg),
+                                   ("res_dir", OpenFolderNameArg)],
+                         keyword=[("old_path", StringArg),
+                                  ("new_path", StringArg)])
+
 # ==========================================================================
 # Functions intended only for internal use by bundle
 # ==========================================================================

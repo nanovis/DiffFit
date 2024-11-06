@@ -58,6 +58,9 @@ class _MyAPI(BundleAPI):
         elif ci.name == "dfit disk":
             func = cmd.dfit_disk
             desc = cmd.dfit_disk_desc
+        elif ci.name == "dfit path":
+            func = cmd.dfit_path
+            desc = cmd.dfit_path_desc
         else:
             raise ValueError("trying to register unknown command: %s" % ci.name)
         if desc.synopsis is None:

@@ -53,6 +53,8 @@ will be displayed without the ChimeraX- prefix.
       Fit a single structure into a volume map</ChimeraXClassifier>
     <ChimeraXClassifier>ChimeraX :: Command :: dfit disk :: General ::
       Fit a list of structures from disk into a volume map</ChimeraXClassifier>
+    <ChimeraXClassifier>ChimeraX :: Command :: dfit path :: General ::
+      Manipulate the paths in DiffFit results</ChimeraXClassifier>
 
   </Classifiers>
 
