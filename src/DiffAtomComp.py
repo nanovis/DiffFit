@@ -658,13 +658,13 @@ def rotate_centers(mol_centers, e_quaternions):
 
 def calculate_metrics(render, elements_sim_density):
     # Mask to filter elements in render that are greater than zero
-    mask = render > 0
+    mask = (render > 0.0).float()
 
     # Apply the mask to the render and elements_sim_density tensors
     render_filtered = render * mask
     elements_sim_density_filtered = elements_sim_density * mask
-    mask_sum = mask.float().sum(dim=-1, keepdim=True)
-    in_contour_percentage = mask.float().mean(dim=-1)
+    mask_sum = mask.sum(dim=-1, keepdim=True)
+    in_contour_percentage = mask.mean(dim=-1)
 
     # Calculation of correlation
     # First, normalize the inputs to have zero mean and unit variance, as Pearson's correlation requires
