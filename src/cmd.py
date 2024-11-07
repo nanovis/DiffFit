@@ -232,12 +232,13 @@ def dfit_disk(session, str_dir, sim_dir, in_map, level,
     from .tool import DiffFitTool
     df = tools.get_singleton(session, DiffFitTool, 'DiffFit', create=True)
 
-    if df.interactive_fit_result_ready:
-        df.session.logger.error("You have run the fitting in Interactive mode. "
-                                  "Please run the following command: \n\n"
-                                  "close session\n\n"
-                                  "and then launch DiffFit again to run the fitting in Disk mode.")
-        return
+    if df is not None:
+        if df.interactive_fit_result_ready:
+            df.session.logger.error("You have run the fitting in Interactive mode. "
+                                      "Please run the following command: \n\n"
+                                      "close session\n\n"
+                                      "and then launch DiffFit again to run the fitting in Disk mode.")
+            return
 
     _save_results = True
     _out_dir_exist_ok = True
@@ -279,7 +280,9 @@ def dfit_disk(session, str_dir, sim_dir, in_map, level,
                        f"Device: \"{_use_device}\"\n"
                        f"-------\n")
 
-    df.disable_spheres_clicked()
+    if df is not None:
+        df.disable_spheres_clicked()
+
     disk_fit_timer_start = datetime.now()
 
     print("Running the computation...")
@@ -320,29 +323,31 @@ def dfit_disk(session, str_dir, sim_dir, in_map, level,
         log_file.write(f"-------\n"
                        f"DiffFit optimization time elapsed: {timer_stop - timer_start}\n")
 
-    # copy the directories
-    df.target_vol.setText(in_map)
-    df.dataset_folder.setText(_out_dir)
+    if df is not None:
+        # copy the directories
+        df.target_vol.setText(in_map)
+        df.dataset_folder.setText(_out_dir)
 
-    # output is tensor, convert to numpy
-    df.show_results(e_sqd_log.detach().cpu().numpy(),
-                      mol_centers,
-                      mol_paths,
-                      target_vol_path,
-                      target_surface_threshold)
-    df.tab_widget.setCurrentWidget(df.tab_view_group)
-    df.select_table_item(0)
+        # output is tensor, convert to numpy
+        df.show_results(e_sqd_log.detach().cpu().numpy(),
+                          mol_centers,
+                          mol_paths,
+                          target_vol_path,
+                          target_surface_threshold)
+        df.tab_widget.setCurrentWidget(df.tab_view_group)
+        df.select_table_item(0)
 
     timer_stop = datetime.now()
     print(f"\nDiffFit total time elapsed: {timer_stop - disk_fit_timer_start}\n\n")
 
-    metric_json = df.return_cluster_metric_json(0)
-    with open(f"{_out_dir}/log.log", "a") as log_file:
-        log_file.write(f"DiffFit total time elapsed: {timer_stop - disk_fit_timer_start}\n"
-                       f"-------\n"
-                       f"DiffFit top fit metric:\n"
-                       f"{metric_json}\n"
-                       f"=======\n\n")
+    if df is not None:
+        metric_json = df.return_cluster_metric_json(0)
+        with open(f"{_out_dir}/log.log", "a") as log_file:
+            log_file.write(f"DiffFit total time elapsed: {timer_stop - disk_fit_timer_start}\n"
+                           f"-------\n"
+                           f"DiffFit top fit metric:\n"
+                           f"{metric_json}\n"
+                           f"=======\n\n")
 
 
 dfit_disk_desc = CmdDesc(keyword=[("str_dir", OpenFolderNameArg),
