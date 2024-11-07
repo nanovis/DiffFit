@@ -14,7 +14,7 @@ target_surface_threshold = 0.02
 os.makedirs(out_base_dir, exist_ok=True)
 
 # Loop through all files in the segmented_maps directory
-for map_file in os.listdir(segmented_maps_dir):
+for map_file in sorted(os.listdir(segmented_maps_dir)):
     if map_file.endswith(".mrc"):
         # Construct the full path to the map file
         target_vol = os.path.join(segmented_maps_dir, map_file)

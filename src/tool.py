@@ -1610,7 +1610,7 @@ class DiffFitTool(ToolInstance):
             os.makedirs(output_dir)
 
         sim_structures_dir = self.sim_dir.text()
-        for file_name in os.listdir(sim_structures_dir):
+        for file_name in sorted(os.listdir(sim_structures_dir)):
             file_path = os.path.join(sim_structures_dir, file_name)
             structure = run(self.session, f'open {file_path}')[0]
             structure_basename = file_name.split('.')[0]

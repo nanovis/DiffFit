@@ -366,7 +366,7 @@ def mrc_to_npy(mrc_filename):
 def mrc_folder_to_npy_list(mrc_folder):
     sim_map_list = []
 
-    for file_name in os.listdir(mrc_folder):
+    for file_name in sorted(os.listdir(mrc_folder)):
         full_path = os.path.join(mrc_folder, file_name)
         # Check if the current path is a file and not a directory
         if os.path.isfile(full_path):
@@ -630,7 +630,7 @@ def center_atom_coords_list(atom_coords_list, mol_centers):
 def read_all_files_to_atom_coords_list(structures_dir, fit_atom_mode="Backbone"):
     atom_coords_list = []
     # List all files in the given directory
-    for file_name in os.listdir(structures_dir):
+    for file_name in sorted(os.listdir(structures_dir)):
         full_path = os.path.join(structures_dir, file_name)
         # Check if the current path is a file and not a directory
         if os.path.isfile(full_path):
@@ -1063,7 +1063,7 @@ def diff_atom_comp(target_vol_path: str,
     e_sqd_log[:, :, :, :, 3:7] /= q_norms
 
     mol_paths = []
-    for file_name in os.listdir(structures_dir):
+    for file_name in sorted(os.listdir(structures_dir)):
         full_path = os.path.join(structures_dir, file_name)
         mol_paths.append(full_path)
 

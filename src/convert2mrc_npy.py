@@ -21,7 +21,7 @@ out_npy_dir = sys.argv[3]  # Directory to save output npy files
 resolution = float(sys.argv[4])  # Resolution for simulated MRC files
 gridSpacing = float(sys.argv[5])  # gridSpacing for simulated MRC files
 
-for file_name in os.listdir(structures_dir):
+for file_name in sorted(os.listdir(structures_dir)):
     print(f"\n======= Processing {file_name} =======")
     full_path = os.path.join(structures_dir, file_name)
     # Check if the current path is a file and not a directory
