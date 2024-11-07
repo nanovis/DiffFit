@@ -95,17 +95,17 @@ def interp_backbone_for_mol(mol):
 class DiffFitSettings:    
     def __init__(self):   
         # viewing
-        self.view_output_directory: str = "D:\\GIT\\DiffFit\\dev_data\\output"
-        self.view_target_vol_path: str = "D:\\GIT\\DiffFit\\dev_data\\input\\domain_fit_demo_3domains\\density2.mrc"
-        self.view_structures_directory: str = "D:\\GIT\\DiffFit\dev_data\input\domain_fit_demo_3domains\subunits_cif"
+        self.view_output_directory: str = "D:/GIT/DiffFit/dev_data/output"
+        self.view_target_vol_path: str = "D:/GIT/DiffFit/dev_data/input/domain_fit_demo_3domains/density2.mrc"
+        self.view_structures_directory: str = "D:/GIT/DiffFit/dev_data/input/domain_fit_demo_3domains/subunits_cif"
         
         # computing
-        self.input_directory: str = "D:\\GIT\\DiffFit\\dev_data\\input\\domain_fit_demo_3domains"
-        self.target_vol_path: str = "D:\\GIT\\DiffFit\\dev_data\\input\\domain_fit_demo_3domains\\density2.mrc"
-        self.structures_directory: str = "D:\\GIT\\DiffFit\dev_data\input\domain_fit_demo_3domains\subunits_cif"
-        self.structures_sim_map_dir: str = "D:\\GIT\\DiffFit\dev_data\input\domain_fit_demo_3domains\subunits_mrc"
+        self.input_directory: str = "D:/GIT/DiffFit/dev_data/input/domain_fit_demo_3domains"
+        self.target_vol_path: str = "D:/GIT/DiffFit/dev_data/input/domain_fit_demo_3domains/density2.mrc"
+        self.structures_directory: str = "D:/GIT/DiffFit/dev_data/input/domain_fit_demo_3domains/subunits_cif"
+        self.structures_sim_map_dir: str = "D:/GIT/DiffFit/dev_data/input/domain_fit_demo_3domains/subunits_mrc"
         
-        self.output_directory: str = "D:\\GIT\\DiffFit\\dev_data\\output"
+        self.output_directory: str = "D:/GIT/DiffFit/dev_data/output"
 
         self.target_surface_threshold: float = 2.0
         self.min_cluster_size: float = 100
@@ -1778,7 +1778,7 @@ class DiffFitTool(ToolInstance):
             return
                 
         print("loading data...")
-        fit_res = np.load("{0}\\fit_res.npz".format(datasetoutput))
+        fit_res = np.load("{0}/fit_res.npz".format(datasetoutput))
         target_vol_path = fit_res['target_vol_path']
         target_surface_threshold = fit_res['target_surface_threshold']
         mol_paths = fit_res['mol_paths']
