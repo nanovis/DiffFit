@@ -1322,18 +1322,14 @@ class DiffFitTool(ToolInstance):
         ext = ""
         
         if save:
-            options = QFileDialog.Options()
-            options |= QFileDialog.DontUseNativeDialog
-            fileName, ext = QFileDialog.getSaveFileName(target, text, "", pattern, options = options)
+            fileName, ext = QFileDialog.getSaveFileName(target, text, "", pattern)
             ext = ext[-4:]
             ext = ext[:3]                
         else:
             if pattern == "dir":
                 fileName = QFileDialog.getExistingDirectory(target, text)
             elif len(pattern) > 0 :
-                options = QFileDialog.Options()
-                options |= QFileDialog.DontUseNativeDialog
-                fileName, ext = QFileDialog.getOpenFileName(target, text, "", pattern, options = options)   
+                fileName, ext = QFileDialog.getOpenFileName(target, text, "", pattern)
                 ext = ext[-4:]
                 ext = ext[:3]                
                 
