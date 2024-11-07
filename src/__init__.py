@@ -51,16 +51,16 @@ class _MyAPI(BundleAPI):
         # description from the ``cmd`` module.
         # If the description does not contain a synopsis, we
         # add the one in ``ci``, which comes from bundle_info.xml.
-        from . import cmd
+        from . import dfit_cmd
         if ci.name == "dfit":
-            func = cmd.dfit
-            desc = cmd.dfit_desc
+            func = dfit_cmd.dfit
+            desc = dfit_cmd.dfit_desc
         elif ci.name == "dfit disk":
-            func = cmd.dfit_disk
-            desc = cmd.dfit_disk_desc
+            func = dfit_cmd.dfit_disk
+            desc = dfit_cmd.dfit_disk_desc
         elif ci.name == "dfit path":
-            func = cmd.dfit_path
-            desc = cmd.dfit_path_desc
+            func = dfit_cmd.dfit_path
+            desc = dfit_cmd.dfit_path_desc
         else:
             raise ValueError("trying to register unknown command: %s" % ci.name)
         if desc.synopsis is None:
