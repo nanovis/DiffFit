@@ -14,7 +14,8 @@ class TableModel(QAbstractTableModel):
 
         self._header = ["Id", "Mol name", "Hits",
                         "Density (normalized)", "Overlap", "Correlation", "Cam", "Inside",
-                        "Avg Density (in)", "Avg Density (all)"]
+                        "Avg Density (in)", "Avg Density (all)",
+                        "DF CID"]
 
         # mapping of columns (from view to data)
         # self._mapping = [-1, -1, 10, 11, 12, 13]
@@ -61,7 +62,7 @@ class TableModel(QAbstractTableModel):
                 return str(f"{mol_idx}-{self._mol_names[mol_idx]}")
             elif column == 2:
                 return int(self._sqd_cluster_data[index.row(), 3])
-            elif 3 <= column <= 9:
+            elif 3 <= column <= 10:
                 record_row = self._sqd_data[mol_idx, record_idx, iter_idx]
                 return float(round(float(record_row[index.column() + 4]) * 10000)) / 10000.0  # for 4 decimals
                 # return float(record_row[index.column() + 4])
