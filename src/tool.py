@@ -125,6 +125,8 @@ class DiffFitSettings:
         self.clustering_in_contour_threshold: float = 0.2
         self.clustering_correlation_threshold: float = 0.5
 
+        self.df_cid_threshold = 0.15
+
 
 class DiffFitTool(ToolInstance):
 
@@ -280,6 +282,7 @@ class DiffFitTool(ToolInstance):
         self.dataset_folder.setText(self.settings.view_output_directory)        
 
         # clustering
+        self.df_cid_threshold.setValue(self.settings.df_cid_threshold)
         self.clustering_in_contour_threshold.setValue(self.settings.clustering_in_contour_threshold)
         self.clustering_correlation_threshold.setValue(self.settings.clustering_correlation_threshold)
         self.clustering_angle_tolerance.setValue(self.settings.clustering_angle_tolerance)
@@ -318,6 +321,7 @@ class DiffFitTool(ToolInstance):
         self.settings.view_target_vol_path = self.target_vol.text()
         
         # clustering
+        self.settings.df_cid_threshold = self.df_cid_threshold.value()
         self.settings.clustering_in_contour_threshold = self.clustering_in_contour_threshold.value()
         self.settings.clustering_correlation_threshold = self.clustering_correlation_threshold.value()
         self.settings.clustering_angle_tolerance = self.clustering_angle_tolerance.value()
@@ -949,6 +953,17 @@ class DiffFitTool(ToolInstance):
         layout.addWidget(self.dataset_folder_select, row, 2)
         row = row + 1
 
+        df_cid_threshold_label = QLabel()
+        df_cid_threshold_label.setText("DF CID threshold:")
+        self.df_cid_threshold = QDoubleSpinBox()
+        self.df_cid_threshold.setMinimum(-1.0)
+        self.df_cid_threshold.setMaximum(1.0)
+        self.df_cid_threshold.setSingleStep(0.01)
+        self.df_cid_threshold.valueChanged.connect(lambda: self.store_settings())
+        layout.addWidget(df_cid_threshold_label, row, 0)
+        layout.addWidget(self.df_cid_threshold, row, 1, 1, 2)
+        row = row + 1
+
         clustering_in_contour_threshold_label = QLabel()
         clustering_in_contour_threshold_label.setText("In contour threshold:")
         self.clustering_in_contour_threshold = QDoubleSpinBox()
@@ -1368,7 +1383,8 @@ class DiffFitTool(ToolInstance):
                                                                 self.settings.clustering_shift_tolerance,
                                                                 self.settings.clustering_angle_tolerance,
                                                                 in_contour_threshold=self.settings.clustering_in_contour_threshold,
-                                                                correlation_threshold=self.settings.clustering_correlation_threshold)
+                                                                correlation_threshold=self.settings.clustering_correlation_threshold,
+                                                                df_cid_threshold=self.settings.df_cid_threshold)
 
         if self.e_sqd_clusters_ordered is None:
             self.session.logger.error("No result under these thresholds. Please decrease \"In contour threshold\" or \"Correlation threshold\" or rerun the fitting!")

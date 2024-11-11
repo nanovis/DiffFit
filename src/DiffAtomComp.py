@@ -96,7 +96,10 @@ def q2_unit_coord(Q):
 
 
 def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3.0, angle_tolerance: float = 6.0,
-                              sort_column_idx: int = 7, in_contour_threshold = 0.5, correlation_threshold = 0.5):
+                              sort_column_idx: int = 7,
+                              in_contour_threshold: float = 0.5,
+                              correlation_threshold: float = 0.5,
+                              df_cid_threshold: float = 0.15):
     """
     Cluster the fitting results in sqd table by thresholding on shift and quaternion
     Return the sorted cluster representatives
@@ -141,19 +144,22 @@ def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3
     fit_res_filtered_indices = []
     in_contour_col_idx = 11
     correlation_col_idx = 9
+    df_cid_col_idx = 14
     for mol_idx in range(N_mol):
         sqd_highest_corr_np_mol = sqd_highest_corr_np[mol_idx]
 
         # Fetch the columns of interest
         in_contour_percentage_column = sqd_highest_corr_np_mol[:, in_contour_col_idx]
         correlation_column = sqd_highest_corr_np_mol[:, correlation_col_idx]
+        df_cid_column = sqd_highest_corr_np_mol[:, df_cid_col_idx]
 
         # Create masks for the filtering conditions
         in_contour_mask = in_contour_percentage_column >= in_contour_threshold
         correlation_mask = correlation_column >= correlation_threshold
+        df_cid_mask = df_cid_column >= df_cid_threshold
 
         # Combine the masks to get a final filter
-        combined_mask = in_contour_mask & correlation_mask
+        combined_mask = in_contour_mask & correlation_mask & df_cid_mask
 
         # Apply the mask to filter the original array and also retrieve the indices
         filtered_indices = np.where(combined_mask)  # Get the indices of the filtered rows
