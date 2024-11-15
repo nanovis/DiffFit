@@ -1820,7 +1820,7 @@ class DiffFitTool(ToolInstance):
     def save_structure(self, targetpath, ext):
         
         if len(targetpath) > 0 and self.mol:
-            run(self.session, "save '{0}.{1}' models #{2}".format(targetpath, ext, self.mol.id[0]))
+            run(self.session, "save '{0}' models #{1}".format(targetpath, self.mol.id[0]))
 
     def save_working_volume(self, targetpath, ext):
 
