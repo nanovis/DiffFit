@@ -1825,7 +1825,7 @@ class DiffFitTool(ToolInstance):
     def save_working_volume(self, targetpath, ext):
 
         if len(targetpath) > 0 and self.vol:
-            run(self.session, "save '{0}.{1}' models #{2}".format(targetpath, ext, self.vol.id[0]))
+            run(self.session, "save '{0}' models #{1}".format(targetpath, self.vol.id[0]))
 
     def simulate_volume_clicked(self):
         res = self.simulate_volume_resolution.value()
