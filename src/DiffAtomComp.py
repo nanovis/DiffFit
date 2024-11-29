@@ -722,6 +722,24 @@ def calculate_metrics(render, elements_sim_density):
         df_cid), dim=-1))
 
 
+def generate_shells(center, num_shells=20, points_per_shell=8, radius_step=0.1):
+    shells = []
+    for shell in range(num_shells):
+        current_radius = (shell + 1) * radius_step
+        for i in range(points_per_shell):
+            # Uniformly distribute points on the shell
+            theta = 2.0 * np.pi * i / points_per_shell  # Azimuthal angle
+            phi = np.arccos(2.0 * np.random.random() - 1.0)  # Polar angle
+
+            # Spherical to Cartesian coordinates
+            x = center[0] + current_radius * np.sin(phi) * np.cos(theta)
+            y = center[1] + current_radius * np.sin(phi) * np.sin(theta)
+            z = center[2] + current_radius * np.cos(phi)
+
+            shells.append([x, y, z])
+    return np.array(shells)
+
+
 def diff_fit(volume_list: list,
              vol_path: str,
              target_surface_threshold: float,
@@ -783,6 +801,18 @@ def diff_fit(volume_list: list,
     atom_coords_list = mol_coords  # atom coords as [x, y, z]
     mol_centers = [np.mean(coords, axis=0) for coords in atom_coords_list]
     num_molecules = len(atom_coords_list)
+
+    # ======= add q shells
+    new_coords = [generate_shells(coord) for coord in atom_coords_list[0]]
+
+    # Convert to a single numpy array
+    new_coords = np.vstack(new_coords)
+
+    # Combine the original coordinates with the shells
+    combined_coords = np.vstack((atom_coords_list[0], new_coords))
+
+    atom_coords_list = [combined_coords]
+
 
     # read simulated map
     sim_map_list = mol_sim_maps
