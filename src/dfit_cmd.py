@@ -124,6 +124,10 @@ def dfit(session, mol, in_map,
     elif fit_atom_mode == "All":
         input_coords = mol.atoms.scene_coords
 
+
+    # ======= Generate q_shells
+
+
     # Fit
     timer_start = datetime.now()
 
