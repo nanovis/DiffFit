@@ -296,4 +296,6 @@ def q_scores_for_clusters(centered_mol, volume, fit_res_clusters, fit_res_all,
 
     # Display the results
     print("Top 10 values:", top_10_values)
-    print("Indices of top 10 values:", top_10_indices)
+    print("Indices of top 10 values + 1:", top_10_indices + 1)
+
+    return top_10_values, top_10_indices
