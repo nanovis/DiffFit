@@ -1,3 +1,7 @@
+import torch
+import numpy as np
+from .DiffAtomComp import quaternion_to_matrix_batch, normalize_coordinates_to_map_origin_torch
+
 def unit_sphere_vertices(num_vertices):
     from chimerax.surface.shapes import sphere_geometry2
     sphere_vertices = sphere_geometry2(2*num_vertices-4)[0] # 128 points evenly distributed around a unit sphere centred on (0,0,0)
@@ -190,3 +194,106 @@ def generate_q_shells(mol,
 
     return q_shell_coords, radii
 
+
+def min_max_d(v):
+    m = v.data.full_matrix()
+    mean, sd, _ = v.mean_sd_rms()
+    max_d = min(mean + sd * 10, m.max())
+    min_d = max(mean - sd, m.min())
+    return min_d, max_d
+
+
+def q_scores_for_clusters(centered_mol, volume, fit_res_clusters, fit_res_all,
+                     ref_sigma=0.6, points_per_shell=8, device="cuda"):
+
+    shifts = []
+    quaternions = []
+
+    for cluster_idx in range(len(fit_res_clusters)):
+        mol_idx = int(fit_res_clusters[cluster_idx, 0])
+        record_idx = int(fit_res_clusters[cluster_idx, 1])
+        iter_idx = int(fit_res_clusters[cluster_idx, 2])
+
+        shift = fit_res_all[mol_idx, record_idx, iter_idx, :3]
+        quat = np.concatenate(
+            ([fit_res_all[mol_idx, record_idx, iter_idx, 6]], -fit_res_all[mol_idx, record_idx, iter_idx, 3:6]),
+            axis=0)
+
+        shifts.append(shift)
+        quaternions.append(quat)
+
+    shifts = np.stack(shifts)
+    quaternions = np.stack(quaternions)
+    shifts = torch.tensor(shifts, device=device).float()
+    quaternions = torch.tensor(quaternions, device=device).float()
+    quaternions_matrices = quaternion_to_matrix_batch(quaternions.unsqueeze(0))
+
+
+    q_shell_coords, radii = generate_q_shells(centered_mol)
+    q_shell_coords = torch.tensor(q_shell_coords, device=device).float()
+    q_shell_coords = q_shell_coords.reshape([-1, 3])
+
+    vol_matrix = volume.full_matrix()
+    vol_origin_and_step = volume.data_origin_and_step()
+    target_origin = vol_origin_and_step[0]
+    target_steps = vol_origin_and_step[1]
+    target_no_negative = vol_matrix
+
+    target = torch.tensor(target_no_negative, device=device).float()
+    target_dim = target.shape
+
+    import operator
+    target_size = np.array(list(map(operator.mul, target_dim, target_steps)))
+
+    target_size_x_y_z = [target_size[2], target_size[1], target_size[0]]
+    target_size_x_y_z_tensor = torch.tensor(target_size_x_y_z, device=device).float()
+    target_origin_tensor = torch.tensor(target_origin, device=device).float()
+
+    target = target.unsqueeze(0).unsqueeze(0)
+
+
+    min_d, max_d = min_max_d(volume)
+    a = max_d - min_d
+    b = min_d
+
+    num_shells = len(radii)
+
+    q_reference_gaussian = a * np.exp(-0.5 * (radii / ref_sigma) ** 2) + b
+    q_ref = np.concatenate([[q_reference_gaussian[0]] * points_per_shell,
+                            *[[q_reference_gaussian[j]] * points_per_shell for j in range(num_shells - 1)]])
+    q_ref = torch.tensor(q_ref, device=device, dtype=torch.float32)
+    q_ref -= q_ref.mean()
+
+
+    q_scores = []
+    for row in range(len(fit_res_clusters)):
+        transformed_coords = torch.matmul(q_shell_coords, quaternions_matrices[:, row:row + 1, :, :])
+
+        transformed_coords += shifts[row, :]
+
+        q_shell_coords_normalized_to_target = normalize_coordinates_to_map_origin_torch(transformed_coords,
+                                                                                        target_size_x_y_z_tensor,
+                                                                                        target_origin_tensor)
+
+        q_shell_coords_normalized_to_target = q_shell_coords_normalized_to_target.reshape([1, 1, -1, 168, 3])
+
+        q_measure = torch.nn.functional.grid_sample(target, q_shell_coords_normalized_to_target, 'bilinear', 'border',
+                                                    align_corners=True)
+
+        q_measure.squeeze_()
+
+        q_measure -= q_measure.mean(dim=-1, keepdim=True)
+
+        inner_product = torch.matmul(q_measure, q_ref)
+        q_measure_l2 = torch.norm(q_measure, p=2, dim=-1)
+        q_ref_l2 = torch.norm(q_ref, p=2, dim=-1)
+        q_score_torch = inner_product / (q_measure_l2 * q_ref_l2)
+
+        q_scores.append(q_score_torch.mean())
+
+    q_scores_tensor = torch.stack(q_scores)
+    top_10_values, top_10_indices = torch.topk(q_scores_tensor, k=10)
+
+    # Display the results
+    print("Top 10 values:", top_10_values)
+    print("Indices of top 10 values:", top_10_indices)
