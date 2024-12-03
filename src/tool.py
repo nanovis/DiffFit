@@ -133,19 +133,19 @@ class DiffFitTableView(QTableView):
         super().__init__(parent)
         self.parent = parent
 
-        self.callback = None  # Callback function to call on key press
+        self.up_down_key_callback = None  # Callback function to call on key press
 
     def keyPressEvent(self, event):
         super().keyPressEvent(event)
         if event.key() == Qt.Key.Key_Up or event.key() == Qt.Key.Key_Down:
             # Trigger the callback function if registered
-            if self.callback:
+            if self.up_down_key_callback:
                 current_index = self.currentIndex()
-                self.callback(current_index)
+                self.up_down_key_callback(current_index)
 
-    def up_down_key_callback(self, callback):
+    def setUpDownKeyCallback(self, callback):
         """Register a callback function to be called on key press."""
-        self.callback = callback
+        self.up_down_key_callback = callback
         
 
 class DiffFitTool(ToolInstance):
@@ -1051,7 +1051,7 @@ class DiffFitTool(ToolInstance):
         view.setAlternatingRowColors(True)
         view.setSelectionBehavior(QTableView.SelectRows)
         view.clicked.connect(self.table_row_clicked)
-        view.up_down_key_callback(self.table_row_clicked)
+        view.setUpDownKeyCallback(self.table_row_clicked)
         layout.addWidget(view)        
         self.view = view
         layout.addWidget(view, row, 0, 1, 3)
