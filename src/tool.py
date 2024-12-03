@@ -128,6 +128,26 @@ class DiffFitSettings:
         self.df_cid_threshold = 0.15
 
 
+class DiffFitTableView(QTableView):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.parent = parent
+
+        self.callback = None  # Callback function to call on key press
+
+    def keyPressEvent(self, event):
+        super().keyPressEvent(event)
+        if event.key() == Qt.Key.Key_Up or event.key() == Qt.Key.Key_Down:
+            # Trigger the callback function if registered
+            if self.callback:
+                current_index = self.currentIndex()
+                self.callback(current_index)
+
+    def up_down_key_callback(self, callback):
+        """Register a callback function to be called on key press."""
+        self.callback = callback
+        
+
 class DiffFitTool(ToolInstance):
 
     # Inheriting from ToolInstance makes us known to the ChimeraX tool mangager,
@@ -1025,12 +1045,13 @@ class DiffFitTool(ToolInstance):
         #layout.addWidget(self.line_edit)
 
         # table view of all the results
-        view = QTableView()
+        view = DiffFitTableView()
         view.resize(800, 500)
         view.horizontalHeader().setStretchLastSection(True)
         view.setAlternatingRowColors(True)
         view.setSelectionBehavior(QTableView.SelectRows)
-        view.clicked.connect(self.table_row_clicked)        
+        view.clicked.connect(self.table_row_clicked)
+        view.up_down_key_callback(self.table_row_clicked)
         layout.addWidget(view)        
         self.view = view
         layout.addWidget(view, row, 0, 1, 3)
