@@ -448,3 +448,57 @@ def generate_q_shells_parallel(mol,
     print(f"Generate q shells timer: {datetime.now() - global_timer_start}")
 
     return q_shell_coords, np.arange(0, max_rad + step / 2, step)
+
+
+def generate_q_shells_simple(mol,
+                      points_per_shell=8, max_rad=2.0, step=0.1, num_test_points=128,
+                      clustering_iterations=5, include_h=False, randomize_shell_points=True, random_seed=RANDOM_SEED):
+    '''
+    Returns:
+
+    - a numpy array with q shells coordinates
+    - radii
+    '''
+    from datetime import datetime
+    global_timer_start = datetime.now()
+
+    from chimerax.geometry import find_close_points, find_closest_points, Places
+    import numpy as np
+
+
+    pps_vertices = unit_sphere_vertices(points_per_shell)
+
+    query_atoms = mol.atoms
+
+    if not include_h:
+        query_atoms = query_atoms[query_atoms.element_names != 'H']
+
+    query_coords = query_atoms.scene_coords
+
+    query_atoms_center = []
+    query_atoms_points = []
+
+    for i, a in enumerate(query_atoms):
+
+        a_coord = a.scene_coord
+        shell_rad = step
+        shell_points = []
+
+        j = 1
+        while shell_rad < max_rad + step / 2:
+            local_pps = (pps_vertices * shell_rad) + a_coord
+            shell_points.append(local_pps)
+            shell_rad += step
+
+        query_atoms_center.append(a_coord)
+        query_atoms_points.append(shell_points)
+
+    query_atoms_points_array = np.stack(
+        [np.concatenate(atom_shell_points, axis=0) for atom_shell_points in query_atoms_points])
+    query_atoms_center_np = np.stack(query_atoms_center)
+    query_atoms_center_repeated = np.repeat(query_atoms_center_np[:, np.newaxis, :], points_per_shell, axis=1)
+    q_shell_coords = np.concatenate([query_atoms_center_repeated, query_atoms_points_array], axis=1)
+
+    print(f"Generate q shells timer: {datetime.now() - global_timer_start}")
+
+    return q_shell_coords, np.arange(0, max_rad + step / 2, step)
