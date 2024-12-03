@@ -59,7 +59,7 @@ def generate_q_shells(mol,
     from chimerax.geometry import find_close_points, find_closest_points, Places
     from chimerax.atomic import Residues
     import numpy as np
-    from math import floor
+
     from chimerax.qscore import _kmeans
 
     pps_vertices = unit_sphere_vertices(points_per_shell)
@@ -77,7 +77,6 @@ def generate_q_shells(mol,
 
     query_coords = query_atoms.scene_coords
 
-    num_shells = int(floor(max_rad / step))
 
     query_atoms_center = []
     query_atoms_points = []
