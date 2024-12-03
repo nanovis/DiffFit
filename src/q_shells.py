@@ -300,3 +300,151 @@ def q_scores_for_clusters(centered_mol, volume, fit_res_clusters, fit_res_all,
     # return top_10_values, top_10_indices
 
     return q_scores_tensor.cpu().numpy()
+
+
+from concurrent.futures import ThreadPoolExecutor
+def process_atom(atom_idx, query_atoms, query_coords,
+                 pps_vertices,
+                 ref_sphere_vertices, ref_sphere_vertices_large, ref_sphere_vertices_huge,
+                 step, max_rad, points_per_shell,
+                 clustering_iterations,
+                 randomize_shell_points, random_seed):
+    from chimerax.geometry import find_close_points, find_closest_points
+    from chimerax.qscore import _kmeans
+
+    not_full_flag = False
+
+    a = query_atoms[atom_idx]
+    a_coord = query_coords[atom_idx]
+    _, nearby_i = find_close_points([a_coord], query_coords, max_rad * 3)
+    nearby_a = query_atoms[nearby_i]
+    ai = nearby_a.index(a)
+    nearby_coords = nearby_a.scene_coords
+    shell_rad = step
+    local_d_vals = {}
+
+    shell_points = []
+
+    j = 1
+    while shell_rad < max_rad + step / 2:
+        local_pps = (pps_vertices * shell_rad) + a_coord
+        if shell_rad < 0.7:  # about half a C-C bond length
+            # Try the quick way first (should succeed for almost all cases unless geometry is seriously wonky)
+            i1, i2, near1 = find_closest_points(local_pps, nearby_coords, shell_rad * 1.5)
+            closest = near1
+            candidates = i1[closest == ai]
+            if len(candidates) == points_per_shell:
+                shell_rad += step
+                j += 1
+
+                shell_points.append(local_pps)
+
+                continue
+
+        local_sphere = (ref_sphere_vertices * shell_rad) + a_coord
+        i1, i2, near1 = find_closest_points(local_sphere, nearby_coords, shell_rad * 1.5)
+        closest = near1
+        candidates = i1[closest == ai]
+
+        if len(candidates) < points_per_shell:
+
+            local_sphere = (ref_sphere_vertices_large * shell_rad) + a_coord
+            i1, i2, near1 = find_closest_points(local_sphere, nearby_coords, shell_rad * 1.5)
+            closest = near1
+            candidates = i1[closest == ai]
+
+            if len(candidates) < points_per_shell:
+                local_sphere = (ref_sphere_vertices_huge * shell_rad) + a_coord
+                i1, i2, near1 = find_closest_points(local_sphere, nearby_coords, shell_rad * 1.5)
+                closest = near1
+                candidates = i1[closest == ai]
+
+                if len(candidates) < points_per_shell:
+                    not_full_flag = True
+
+                else:
+                    points = local_sphere[candidates]
+                    if not randomize_shell_points:
+                        labels, closest = _kmeans.spherical_k_means_defined(points, a_coord, points_per_shell,
+                                                                            local_pps, clustering_iterations)
+                    else:
+                        labels, closest = _kmeans.spherical_k_means_random(points, a_coord, points_per_shell,
+                                                                           clustering_iterations, random_seed + j)
+
+                    points = points[closest]
+
+            else:
+                points = local_sphere[candidates]
+                if not randomize_shell_points:
+                    labels, closest = _kmeans.spherical_k_means_defined(points, a_coord, points_per_shell,
+                                                                        local_pps, clustering_iterations)
+                else:
+                    labels, closest = _kmeans.spherical_k_means_random(points, a_coord, points_per_shell,
+                                                                       clustering_iterations, random_seed + j)
+
+                points = points[closest]
+
+        else:
+            points = local_sphere[candidates]
+            if not randomize_shell_points:
+                labels, closest = _kmeans.spherical_k_means_defined(points, a_coord, points_per_shell,
+                                                                    local_pps, clustering_iterations)
+            else:
+                labels, closest = _kmeans.spherical_k_means_random(points, a_coord, points_per_shell,
+                                                                   clustering_iterations, random_seed + j)
+
+            points = points[closest]
+
+        shell_rad += step
+        j += 1
+
+        shell_points.append(points)
+
+    return None if not_full_flag else (a_coord, shell_points)
+
+
+def generate_q_shells_parallel(mol,
+                               points_per_shell=8, max_rad=2.0, step=0.1,
+                               num_test_points=128, clustering_iterations=5,
+                               include_h=False, randomize_shell_points=True, random_seed=RANDOM_SEED):
+    from datetime import datetime
+
+    from datetime import datetime
+    global_timer_start = datetime.now()
+
+    query_atoms = mol.atoms
+    if not include_h:
+        query_atoms = query_atoms[query_atoms.element_names != 'H']
+    query_coords = query_atoms.scene_coords
+
+    pps_vertices = unit_sphere_vertices(points_per_shell)
+    ref_sphere_vertices = unit_sphere_vertices(num_test_points)
+    ref_sphere_vertices_large = unit_sphere_vertices(num_test_points * 4)
+    ref_sphere_vertices_huge = unit_sphere_vertices(num_test_points * 20)
+
+    # Multithreading
+    results = []
+    with ThreadPoolExecutor() as executor:
+        futures = [
+            executor.submit(
+                process_atom, atom_idx, query_atoms, query_coords, pps_vertices, ref_sphere_vertices,
+                ref_sphere_vertices_large, ref_sphere_vertices_huge, step, max_rad, points_per_shell,
+                clustering_iterations, randomize_shell_points, random_seed
+            )
+            for atom_idx in range(len(query_atoms))
+        ]
+        for future in futures:
+            result = future.result()
+            if result is not None:
+                results.append(result)
+
+    query_atoms_center, query_atoms_points = zip(*results)
+    query_atoms_points_array = np.stack(
+        [np.concatenate(atom_shell_points, axis=0) for atom_shell_points in query_atoms_points])
+    query_atoms_center_np = np.stack(query_atoms_center)
+    query_atoms_center_repeated = np.repeat(query_atoms_center_np[:, np.newaxis, :], points_per_shell, axis=1)
+    q_shell_coords = np.concatenate([query_atoms_center_repeated, query_atoms_points_array], axis=1)
+
+    print(f"Generate q shells timer: {datetime.now() - global_timer_start}")
+
+    return q_shell_coords, np.arange(0, max_rad + step / 2, step)
