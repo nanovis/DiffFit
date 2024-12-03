@@ -3,16 +3,17 @@ from Qt.QtCore import QAbstractTableModel, Qt, QModelIndex
 class TableModel(QAbstractTableModel):
     """A model to interface a Qt view with pandas dataframe """
 
-    def __init__(self, sqd_cluster_data, sqd_data, mol_paths, parent=None):
+    def __init__(self, sqd_cluster_data, sqd_data, mol_paths, q_scores_np, parent=None):
         QAbstractTableModel.__init__(self, parent)
         self._sqd_data = sqd_data
         self._sqd_cluster_data = sqd_cluster_data
 
         import os
         self._mol_names = [os.path.splitext(os.path.basename(path))[0] for path in mol_paths]
+        self._q_scores_np = q_scores_np
 
 
-        self._header = ["Id", "Mol name", "Hits",
+        self._header = ["Id", "Mol name", "Q-score", "Hits",
                         "Density (normalized)", "Overlap", "Correlation", "Cam", "Inside",
                         "Avg Density (in)", "Avg Density (all)",
                         "DF CID"]
@@ -61,10 +62,12 @@ class TableModel(QAbstractTableModel):
             elif column == 1:
                 return str(f"{mol_idx}-{self._mol_names[mol_idx]}")
             elif column == 2:
+                return float(round(float(self._q_scores_np[index.row()]) * 10000)) / 10000.0  # for 4 decimals
+            elif column == 3:
                 return int(self._sqd_cluster_data[index.row(), 3])
-            elif 3 <= column <= 10:
+            elif 4 <= column <= 11:
                 record_row = self._sqd_data[mol_idx, record_idx, iter_idx]
-                return float(round(float(record_row[index.column() + 4]) * 10000)) / 10000.0  # for 4 decimals
+                return float(round(float(record_row[column + 3]) * 10000)) / 10000.0  # for 4 decimals
                 # return float(record_row[index.column() + 4])
 
         return None

@@ -1391,13 +1391,18 @@ class DiffFitTool(ToolInstance):
             self.proxyModel = None
             return
 
-        self.model = TableModel(self.e_sqd_clusters_ordered, self.e_sqd_log, mol_paths)
+        # Calculate Q-scores
+        from .q_shells import q_scores_for_clusters
+        q_scores_np = q_scores_for_clusters(self.mol, self.vol, self.e_sqd_clusters_ordered, self.e_sqd_log)
+
+
+        self.model = TableModel(self.e_sqd_clusters_ordered, self.e_sqd_log, mol_paths, q_scores_np)
         self.proxyModel = QSortFilterProxyModel()
         self.proxyModel.setSourceModel(self.model)
         
         self.view.setModel(self.proxyModel)
         self.view.setSortingEnabled(True)
-        self.view.sortByColumn(0, Qt.AscendingOrder)
+        self.view.sortByColumn(2, Qt.DescendingOrder)
         self.view.reset()
         self.view.show()  
         
