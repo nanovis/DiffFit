@@ -289,7 +289,7 @@ def q_scores_for_clusters(centered_mol, volume, fit_res_clusters, fit_res_all,
         q_ref_l2 = torch.norm(q_ref, p=2, dim=-1)
         q_score_torch = inner_product / (q_measure_l2 * q_ref_l2)
 
-        q_scores.append(q_score_torch.mean())
+        q_scores.append(q_score_torch[~torch.isnan(q_score_torch)].mean())
 
     q_scores_tensor = torch.stack(q_scores)
     top_10_values, top_10_indices = torch.topk(q_scores_tensor, k=10)
