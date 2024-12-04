@@ -384,8 +384,10 @@ def mrc_folder_to_npy_list(mrc_folder):
         full_path = os.path.join(mrc_folder, file_name)
         # Check if the current path is a file and not a directory
         if os.path.isfile(full_path):
-            data, steps, origin = mrc_to_npy(full_path)
-            sim_map_list.append((data, steps, origin))
+            file_extension = os.path.splitext(full_path)[1].lower()
+            if file_extension in ['.mrc', '.map']:
+                data, steps, origin = mrc_to_npy(full_path)
+                sim_map_list.append((data, steps, origin))
 
     return sim_map_list
 
