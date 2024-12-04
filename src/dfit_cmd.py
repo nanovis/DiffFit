@@ -212,7 +212,7 @@ dfit_desc = CmdDesc(required=[("mol", StructureArg)],
 #      fit_atom_mode out_dir device
 
 
-def dfit_disk(session, str_dir, sim_dir, in_map, level,
+def dfit_disk(session, str_dir, in_map, level,
 
               num_positions=10,
               num_rotations=100,
@@ -261,7 +261,6 @@ def dfit_disk(session, str_dir, sim_dir, in_map, level,
                        f"-------\n"
                        f"Disk mode\n"
                        f"Structures Folder: {str_dir}\n"
-                       f"Sim-map Folder: {sim_dir}\n"
                        f"Target Volume: {in_map}\n"
                        f"Target Surface Threshold: {level}\n"
                        f"-------\n"
@@ -304,7 +303,6 @@ def dfit_disk(session, str_dir, sim_dir, in_map, level,
         target_surface_threshold=level,
         min_cluster_size=100,
         structures_dir=str_dir,
-        structures_sim_map_dir=sim_dir,
         fit_atom_mode=fit_atom_mode,
         Gaussian_mode=Gaussian_mode,
         N_shifts=num_positions,
@@ -355,7 +353,6 @@ def dfit_disk(session, str_dir, sim_dir, in_map, level,
 
 
 dfit_disk_desc = CmdDesc(keyword=[("str_dir", OpenFolderNameArg),
-                                  ("sim_dir", OpenFolderNameArg),
                                   ("in_map", OpenFileNameArg),
                                   ("level", FloatArg),
 
@@ -376,7 +373,6 @@ dfit_disk_desc = CmdDesc(keyword=[("str_dir", OpenFolderNameArg),
                                   ("out_dir", SaveFolderNameArg),
                                   ("device", StringArg)],
                          required_arguments=["str_dir",
-                                             "sim_dir",
                                              "in_map",
                                              "level"])
 

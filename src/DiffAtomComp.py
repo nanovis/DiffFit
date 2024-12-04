@@ -928,7 +928,6 @@ def diff_atom_comp(target_vol_path: str,
                    target_surface_threshold: float,
                    min_cluster_size: float,  # not in use, use 100 as a placeholder
                    structures_dir: str,
-                   structures_sim_map_dir: str,
                    fit_atom_mode:str = "Backbone",
                    Gaussian_mode:str = "Gaussian with negative (shrink)",
                    N_shifts: int = 10,
@@ -987,7 +986,7 @@ def diff_atom_comp(target_vol_path: str,
     num_molecules = len(atom_coords_list)
 
     # read simulated map
-    sim_map_list = mrc_folder_to_npy_list(structures_sim_map_dir)
+    sim_map_list = mrc_folder_to_npy_list(structures_dir)
     elements_sim_density_list = sample_sim_map(atom_coords_list, sim_map_list, num_molecules, device)
 
     # center the mol
@@ -1153,8 +1152,6 @@ if __name__ == '__main__':
 
     parser.add_argument('--structures_dir', type=str,
                         help="directory containing the structures to be fit")
-    parser.add_argument('--structures_sim_map_dir', type=str,
-                        help="directory containing the simulated map from the structures to be fit")
 
     parser.add_argument('--out_dir', type=str, default="out",
                         help="Output directory")
@@ -1181,7 +1178,6 @@ if __name__ == '__main__':
                    args.target_surface_threshold,
                    args.min_cluster_size,
                    args.structures_dir,
-                   args.structures_sim_map_dir,
                    out_dir=args.out_dir,
                    out_dir_exist_ok=args.out_dir_exist_ok,
                    N_shifts=args.N_shifts,

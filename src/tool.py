@@ -103,7 +103,6 @@ class DiffFitSettings:
         self.input_directory: str = "D:/GIT/DiffFit/dev_data/input/domain_fit_demo_3domains"
         self.target_vol_path: str = "D:/GIT/DiffFit/dev_data/input/domain_fit_demo_3domains/density2.mrc"
         self.structures_directory: str = "D:/GIT/DiffFit/dev_data/input/domain_fit_demo_3domains/subunits_cif"
-        self.structures_sim_map_dir: str = "D:/GIT/DiffFit/dev_data/input/domain_fit_demo_3domains/subunits_mrc"
         
         self.output_directory: str = "D:/GIT/DiffFit/dev_data/output"
 
@@ -285,7 +284,6 @@ class DiffFitTool(ToolInstance):
         #compute
         self.target_vol_path.setText(self.settings.target_vol_path)
         self.structures_dir.setText(self.settings.structures_directory)
-        self.structures_sim_map_dir.setText(self.settings.structures_sim_map_dir)
         self.out_dir.setText(self.settings.output_directory)
         self.target_surface_threshold.setValue(self.settings.target_surface_threshold)
         self.min_cluster_size.setValue(self.settings.min_cluster_size)
@@ -320,7 +318,6 @@ class DiffFitTool(ToolInstance):
         #compute
         self.settings.target_vol_path = self.target_vol_path.text()
         self.settings.structures_directory = self.structures_dir.text()
-        self.settings.structures_sim_map_dir = self.structures_sim_map_dir.text()
         self.settings.output_directory = self.out_dir.text()        
         self.settings.target_surface_threshold = self.target_surface_threshold.value()
         self.settings.min_cluster_size = self.min_cluster_size.value()
@@ -562,18 +559,7 @@ class DiffFitTool(ToolInstance):
         layout.addWidget(self.structures_dir, row, 1)
         layout.addWidget(structures_dir_select, row, 2)
         row = row + 1
-        
-        structures_sim_map_dir_label = QLabel()
-        structures_sim_map_dir_label.setText("Structures Sim-map Folder:")
-        self.structures_sim_map_dir = QLineEdit()
-        self.structures_sim_map_dir.textChanged.connect(lambda: self.store_settings())   
-        structures_sim_map_dir_select = QPushButton("Select")        
-        structures_sim_map_dir_select.clicked.connect(lambda: self.select_clicked("Structures Sim-map Folder", self.structures_sim_map_dir))
-        layout.addWidget(structures_sim_map_dir_label, row, 0)
-        layout.addWidget(self.structures_sim_map_dir, row, 1)
-        layout.addWidget(structures_sim_map_dir_select, row, 2)
-        row = row + 1
-        
+
         out_dir_label = QLabel()
         out_dir_label.setText("Output Folder:")
         self.out_dir = QLineEdit()
@@ -1716,7 +1702,6 @@ class DiffFitTool(ToolInstance):
                            f"Disk mode\n"
                            f"Target Volume: {self.settings.target_vol_path}\n"
                            f"Structures Folder: {self.settings.structures_directory}\n"
-                           f"Sim-map Folder: {self.settings.structures_sim_map_dir}\n"
                            f"Target Surface Threshold: {self.settings.target_surface_threshold}\n"
                            f"-------\n"
                            f"# positions: {self.settings.N_shifts}\n"
@@ -1747,7 +1732,6 @@ class DiffFitTool(ToolInstance):
             target_surface_threshold=self.settings.target_surface_threshold,
             min_cluster_size=self.settings.min_cluster_size,
             structures_dir=self.settings.structures_directory,
-            structures_sim_map_dir=self.settings.structures_sim_map_dir,
             fit_atom_mode=self.fit_atom_mode,
             Gaussian_mode=self.Gaussian_mode,
             N_shifts=self.settings.N_shifts,
