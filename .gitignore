@@ -13,3 +13,4 @@ dev_data/output_old/*
 !dev_data/output/dev_comp_domain_fit_3_domains_10s20q_new_q
 case_study_data
 run
+/dev_data/input/domain_fit_demo_3domains/subunits_cif_test

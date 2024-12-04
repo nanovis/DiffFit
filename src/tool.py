@@ -815,21 +815,9 @@ class DiffFitTool(ToolInstance):
         row = row + 1
 
 
-        doc_label = QLabel("<b>Simulate a map for each structure in the folder</b>")
+        doc_label = QLabel("<b>Simulate a map for each structure in a folder</b>")
         doc_label.setWordWrap(True)
         layout.addWidget(doc_label, row, 0, 1, 3)
-        row = row + 1
-
-        sim_out_dir_label = QLabel()
-        sim_out_dir_label.setText("Output Folder:")
-        self.sim_out_dir = QLineEdit()
-        self.sim_out_dir.setText("sim_out")
-        sim_out_dir_select = QPushButton("Select")
-        sim_out_dir_select.clicked.connect(
-            lambda: self.select_clicked("Output folder for the simulated maps", self.sim_out_dir))
-        layout.addWidget(sim_out_dir_label, row, 0)
-        layout.addWidget(self.sim_out_dir, row, 1)
-        layout.addWidget(sim_out_dir_select, row, 2)
         row = row + 1
 
         sim_dir_label = QLabel()
@@ -858,6 +846,37 @@ class DiffFitTool(ToolInstance):
         button = QPushButton()
         button.setText("Simulate")
         button.clicked.connect(lambda: self.sim_button_clicked())
+        layout.addWidget(button, row, 2)
+        row = row + 1
+
+        doc_label = QLabel("<b>Generate q shells for each structure in a folder</b>")
+        doc_label.setWordWrap(True)
+        layout.addWidget(doc_label, row, 0, 1, 3)
+        row = row + 1
+
+        q_shells_label = QLabel()
+        q_shells_label.setText("Structures Folder:")
+        self.q_shells_dir = QLineEdit()
+        self.q_shells_dir.setText("split_out")
+        q_shells_dir_select = QPushButton("Select")
+        q_shells_dir_select.clicked.connect(
+            lambda: self.select_clicked("Folder containing the structures", self.q_shells_dir))
+        layout.addWidget(q_shells_label, row, 0)
+        layout.addWidget(self.q_shells_dir, row, 1)
+        layout.addWidget(q_shells_dir_select, row, 2)
+        row = row + 1
+
+        q_shells_mode_label = QLabel()
+        q_shells_mode_label.setText("Mode:")
+        button = QPushButton()
+        button.setText("Full (non-overlapping)")
+        button.clicked.connect(lambda: self.q_shell_button_clicked("Full"))
+        layout.addWidget(q_shells_mode_label, row, 0)
+        layout.addWidget(button, row, 1)
+
+        button = QPushButton()
+        button.setText("Simple")
+        button.clicked.connect(lambda: self.q_shell_button_clicked("Simple"))
         layout.addWidget(button, row, 2)
         row = row + 1
 
@@ -1635,23 +1654,64 @@ class DiffFitTool(ToolInstance):
         run_logged_pip(cmd_list, self.session.logger)
 
 
+    def q_shell_button_clicked(self, mode: str):
+        q_shell_generator = None
+        ext = ""
+        if mode == "Full":
+            from .q_shells import generate_q_shells
+            q_shell_generator = generate_q_shells
+            ext = "centered_q_shells.full.npz"
+        elif mode == "Simple":
+            from .q_shells import generate_q_shells_simple
+            q_shell_generator = generate_q_shells_simple
+            ext = "centered_q_shells.simple.npz"
+
+        str_dir = self.q_shells_dir.text()
+
+        for file_name in sorted(os.listdir(str_dir)):
+            file_path = os.path.join(str_dir, file_name)
+            file_extension = os.path.splitext(file_path)[1].lower()
+            if file_extension in ['.pdb', '.cif']:
+                print(f"Q shell generator: {q_shell_generator}: {file_path}")
+
+                mol = run(self.session, f'open {file_path}')[0]
+                mol_basename = file_name.split('.')[0]
+
+                # center mol
+                from chimerax.geometry import Place
+                mol_center = mol.atoms.coords.mean(axis=0)
+                transform = Place(origin=-mol_center)
+                mol.atoms.transform(transform)
+                mol.position = Place()
+
+                q_shell_coords, radii = q_shell_generator(mol)
+
+                q_shells_filepath = os.path.join(str_dir, f"{mol_basename}.{ext}")
+                np.savez_compressed(q_shells_filepath,
+                                    q_shell_coords=q_shell_coords,
+                                    radii=radii)
+
+                run(self.session, f"close #{mol.id[0]}")
+
+
+
     def sim_button_clicked(self):
-        output_dir = self.sim_out_dir.text()
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
+        str_dir = self.sim_dir.text()
 
-        sim_structures_dir = self.sim_dir.text()
-        for file_name in sorted(os.listdir(sim_structures_dir)):
-            file_path = os.path.join(sim_structures_dir, file_name)
-            structure = run(self.session, f'open {file_path}')[0]
-            structure_basename = file_name.split('.')[0]
+        for file_name in sorted(os.listdir(str_dir)):
+            file_path = os.path.join(str_dir, file_name)
+            file_extension = os.path.splitext(file_path)[1].lower()
+            if file_extension in ['.pdb', '.cif']:
+                structure = run(self.session, f'open {file_path}')[0]
+                structure_basename = file_name.split('.')[0]
 
-            mrc_filename = f"{structure_basename}.mrc"
-            mrc_filepath = os.path.join(output_dir, mrc_filename)
+                mrc_filename = f"{structure_basename}.mrc"
+                mrc_filepath = os.path.join(str_dir, mrc_filename)
 
-            vol = run(self.session, f'molmap #{structure.id[0]} {self.sim_resolution.value()} gridSpacing 1.0')
-            run(self.session, f"save {mrc_filepath} #{vol.id[0]}")
-            run(self.session, f"close #{vol.id[0]}")
+                vol = run(self.session, f'molmap #{structure.id[0]} {self.sim_resolution.value()} gridSpacing 1.0')
+                run(self.session, f"save {mrc_filepath} #{vol.id[0]}")
+                run(self.session, f"close #{vol.id[0]}")
+                run(self.session, f"close #{structure.id[0]}")
 
 
     def split_button_clicked(self):
