@@ -211,6 +211,7 @@ class DiffFitTool(ToolInstance):
         self.spheres = None
 
         self.proxyModel = None
+        self.mol = None
 
 
     def _build_ui(self):
@@ -1413,8 +1414,10 @@ class DiffFitTool(ToolInstance):
             return
 
         # Calculate Q-scores
-        from .q_shells import q_scores_for_clusters
-        q_scores_np = q_scores_for_clusters(self.mol, self.vol, self.e_sqd_clusters_ordered, self.e_sqd_log)
+        q_scores_np = None
+        if self.mol:
+            from .q_shells import q_scores_for_clusters
+            q_scores_np = q_scores_for_clusters(self.mol, self.vol, self.e_sqd_clusters_ordered, self.e_sqd_log)
 
 
         self.model = TableModel(self.e_sqd_clusters_ordered, self.e_sqd_log, mol_paths, q_scores_np)
