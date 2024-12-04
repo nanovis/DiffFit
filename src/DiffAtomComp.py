@@ -174,6 +174,9 @@ def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3
         mol_shift = fit_res_filtered[mol_idx][:, :3]
         mol_q = fit_res_filtered[mol_idx][:, 3:7]
 
+        print(f"Clustering {len(mol_shift)} fits")
+        timer_start = datetime.now()
+
         T = []
         for i in range(len(mol_shift)):
             shift = mol_shift[i]
@@ -186,6 +189,9 @@ def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3
 
             transformation = Place(matrix=T_matrix)
             T.append(transformation)
+
+        print(f"Convert to matrix time: {datetime.now() - timer_start}")
+        timer_start = datetime.now()
 
         b = bins.Binned_Transforms(angle_tolerance * pi / 180, shift_tolerance, mol_centers[mol_idx])
         mol_transform_label = []
@@ -202,6 +208,8 @@ def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3
             else:
                 mol_transform_label.append(T_ID_dict[id(close[0])])
                 T_ID_dict[id(ptf)] = T_ID_dict[id(close[0])]
+
+        print(f"ChimeraX bin clustering: {datetime.now() - timer_start}")
 
         unique_labels, indices, counts = np.unique(mol_transform_label, axis=0, return_inverse=True, return_counts=True)
 
