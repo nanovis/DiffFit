@@ -458,8 +458,6 @@ def read_file_and_get_coordinates(file_path, fit_atom_mode="Backbone"):
         parser = MMCIFParser()
     elif file_extension == '.pdb':
         parser = PDBParser()
-    else:
-        raise ValueError("Unsupported file format. Please provide a .mmcif or .pdb file.")
 
     # Parse the structure
     structure_id = os.path.basename(file_path).split('.')[0]  # Use file name as structure ID
@@ -648,8 +646,9 @@ def read_all_files_to_atom_coords_list(structures_dir, fit_atom_mode="Backbone")
     # List all files in the given directory
     for file_name in sorted(os.listdir(structures_dir)):
         full_path = os.path.join(structures_dir, file_name)
-        # Check if the current path is a file and not a directory
-        if os.path.isfile(full_path):
+
+        file_extension = os.path.splitext(full_path)[1].lower()
+        if file_extension in ['.pdb', '.cif']:
             # Read the atom coordinates from the file
             atom_coords = read_file_and_get_coordinates(full_path, fit_atom_mode)
             # Append the coordinates to the list
@@ -1103,7 +1102,9 @@ def diff_atom_comp(target_vol_path: str,
     mol_paths = []
     for file_name in sorted(os.listdir(structures_dir)):
         full_path = os.path.join(structures_dir, file_name)
-        mol_paths.append(full_path)
+        file_extension = os.path.splitext(full_path)[1].lower()
+        if file_extension in ['.pdb', '.cif']:
+            mol_paths.append(full_path)
 
     np.savez_compressed(f"{out_dir}/fit_res.npz",
                         target_vol_path=target_vol_path,
