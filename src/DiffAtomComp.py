@@ -99,7 +99,9 @@ def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3
                               sort_column_idx: int = 7,
                               in_contour_threshold: float = 0.5,
                               correlation_threshold: float = 0.5,
-                              df_cid_threshold: float = 0.15):
+                              df_cid_threshold: float = 0.15,
+                              save_log=False,
+                              log_path=""):
     """
     Cluster the fitting results in sqd table by thresholding on shift and quaternion
     Return the sorted cluster representatives
@@ -140,6 +142,11 @@ def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3
     # Use the generated meshgrid and max_sort_column_metric_idx to index into e_sqd_log
     sqd_highest_corr_np = e_sqd_log[dims_0, dims_1, max_sort_column_metric_idx]
 
+    timer_start = datetime.now()
+    if save_log:
+        with open(log_path, "a") as log_file:
+            log_file.write(f"DiffFit fit_res filtering starts: {timer_start}\n")
+
     fit_res_filtered = []
     fit_res_filtered_indices = []
     in_contour_col_idx = 11
@@ -168,13 +175,19 @@ def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3
         fit_res_filtered.append(filtered_array)
         fit_res_filtered_indices.append(filtered_indices[0])
 
+    if save_log:
+        with open(log_path, "a") as log_file:
+            log_file.write(f"DiffFit fit_res filtering time elapsed: {datetime.now() - timer_start}\n"
+                           f"-------\n")
 
     sqd_clusters = []
     for mol_idx in range(N_mol):
         mol_shift = fit_res_filtered[mol_idx][:, :3]
         mol_q = fit_res_filtered[mol_idx][:, 3:7]
 
-        print(f"Clustering {len(mol_shift)} fits")
+        if save_log:
+            with open(log_path, "a") as log_file:
+                log_file.write(f"Clustering {len(mol_shift)} fits for mol_idx: {mol_idx}\n")
         timer_start = datetime.now()
 
         T = []
@@ -190,7 +203,9 @@ def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3
             transformation = Place(matrix=T_matrix)
             T.append(transformation)
 
-        print(f"Convert to matrix time: {datetime.now() - timer_start}")
+        if save_log:
+            with open(log_path, "a") as log_file:
+                log_file.write(f"Convert to matrix time: {datetime.now() - timer_start}\n")
         timer_start = datetime.now()
 
         b = bins.Binned_Transforms(angle_tolerance * pi / 180, shift_tolerance, mol_centers[mol_idx])
@@ -209,7 +224,13 @@ def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3
                 mol_transform_label.append(T_ID_dict[id(close[0])])
                 T_ID_dict[id(ptf)] = T_ID_dict[id(close[0])]
 
-        print(f"ChimeraX bin clustering: {datetime.now() - timer_start}")
+            if save_log and (i + 1) % 10000 == 0:
+                with open(log_path, "a") as log_file:
+                    log_file.write(f"Clustered {i+1} fits: {datetime.now()}\n")
+
+        if save_log:
+            with open(log_path, "a") as log_file:
+                log_file.write(f"ChimeraX bin clustering: {datetime.now() - timer_start}\n")
 
         unique_labels, indices, counts = np.unique(mol_transform_label, axis=0, return_inverse=True, return_counts=True)
 

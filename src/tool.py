@@ -1410,7 +1410,11 @@ class DiffFitTool(ToolInstance):
             
         return fileName, ext
     
-    def show_results(self, e_sqd_log, mol_centers, mol_paths, target_vol_path=None, target_surface_threshold=None):
+    def show_results(self, e_sqd_log, mol_centers, mol_paths,
+                     target_vol_path=None,
+                     target_surface_threshold=None,
+                     save_log=False,
+                     log_path=""):
         if e_sqd_log is None:
             return
 
@@ -1426,11 +1430,15 @@ class DiffFitTool(ToolInstance):
             self.vol = run(self.session, "open {0}".format(target_vol_path))[0]
             run(self.session,f"volume #{self.vol.id[0]} level {target_surface_threshold}")
 
-            # TODO: define mol_centers
-
         elif self.fit_input_mode == "interactive":
             self.vol = self.fit_vol
             self.vol.display = True
+
+        timer_start = datetime.now()
+        if save_log:
+            with open(log_path, "a") as log_file:
+                log_file.write(f"-------\n"
+                               f"DiffFit clustering starts: {timer_start}\n")
 
         N_mol, N_quat, N_shift, N_iter, N_metric = e_sqd_log.shape
         self.e_sqd_log = e_sqd_log.reshape([N_mol, N_quat * N_shift, N_iter, N_metric])
@@ -1439,7 +1447,13 @@ class DiffFitTool(ToolInstance):
                                                                 self.settings.clustering_angle_tolerance,
                                                                 in_contour_threshold=self.settings.clustering_in_contour_threshold,
                                                                 correlation_threshold=self.settings.clustering_correlation_threshold,
-                                                                df_cid_threshold=self.settings.df_cid_threshold)
+                                                                df_cid_threshold=self.settings.df_cid_threshold,
+                                                                save_log=save_log,
+                                                                log_path=log_path)
+        if save_log:
+            with open(log_path, "a") as log_file:
+                log_file.write(f"-------\n"
+                               f"DiffFit clustering time elapsed: {datetime.now() - timer_start}\n")
 
         if self.e_sqd_clusters_ordered is None:
             self.session.logger.error("No result under these thresholds. Please decrease \"In contour threshold\" or \"Correlation threshold\" or rerun the fitting!")
@@ -1447,6 +1461,13 @@ class DiffFitTool(ToolInstance):
             return
 
         # ======= Calculate Q-scores
+
+        timer_start = datetime.now()
+        if save_log:
+            with open(log_path, "a") as log_file:
+                log_file.write(f"-------\n"
+                               f"DiffFit Q-scores calculation starts: {timer_start}\n")
+
         q_scores_np = None
         q_shells_mode = "Full"
 
@@ -1490,13 +1511,24 @@ class DiffFitTool(ToolInstance):
             q_shell_coords_torch_list.append(q_shell_coords)
             q_shell_radii_np_list.append(q_shell_radii)
 
+        if save_log:
+            with open(log_path, "a") as log_file:
+                log_file.write(f"Q-scores prep time elapsed: {datetime.now() - timer_start}\n"
+                               f"-------\n")
+
         q_scores_np = q_scores_for_clusters(q_shell_coords_torch_list,
                                             q_shell_radii_np_list,
                                             self.vol,
                                             self.e_sqd_clusters_ordered,
                                             self.e_sqd_log,
-                                            device=self._device.currentText())
-
+                                            device=self._device.currentText(),
+                                            save_log=save_log,
+                                            log_path=log_path)
+        if save_log:
+            with open(log_path, "a") as log_file:
+                log_file.write(f"-------\n"
+                               f"DiffFit Q-scores calculation time elapsed: {datetime.now() - timer_start}\n"
+                               f"-------\n\n")
 
         # ======= Create fit results table
         self.model = TableModel(self.e_sqd_clusters_ordered, self.e_sqd_log, mol_paths, q_scores_np)
@@ -1685,7 +1717,9 @@ class DiffFitTool(ToolInstance):
         self._view_input_mode.setCurrentText("interactive")
         self._view_input_mode_changed()
         self.interactive_fit_result_ready = True
-        self.show_results(self.fit_result, self.mol_centers, self.mol_paths)
+        self.show_results(self.fit_result, self.mol_centers, self.mol_paths,
+                          save_log=_save_results,
+                          log_path=f"{_out_dir}/log.log")
 
         self.tab_widget.setCurrentWidget(self.tab_view_group)
 
@@ -1898,7 +1932,9 @@ class DiffFitTool(ToolInstance):
                           mol_centers,
                           mol_paths,
                           target_vol_path,
-                          target_surface_threshold)
+                          target_surface_threshold,
+                          save_log=True,
+                          log_path=f"{_out_dir}/log.log")
         self.tab_widget.setCurrentWidget(self.tab_view_group)
         self.select_table_item(0)
 
@@ -1944,7 +1980,9 @@ class DiffFitTool(ToolInstance):
         mol_centers = fit_res['mol_centers']
         opt_res = fit_res['opt_res']
 
-        self.show_results(opt_res, mol_centers, mol_paths, target_vol_path, target_surface_threshold)
+        self.show_results(opt_res, mol_centers, mol_paths, target_vol_path, target_surface_threshold,
+                          save_log=True,
+                          log_path=f"{datasetoutput}/log.log")
         self.select_table_item(0)
         run(self.session, f"view orient")
 

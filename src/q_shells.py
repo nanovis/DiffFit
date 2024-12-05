@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+from datetime import datetime
 from .DiffAtomComp import quaternion_to_matrix_batch, normalize_coordinates_to_map_origin_torch
 
 def unit_sphere_vertices(num_vertices):
@@ -53,7 +54,6 @@ def generate_q_shells(mol,
     - a numpy array with q shells coordinates
     - radii
     '''
-    from datetime import datetime
     global_timer_start = datetime.now()
 
     from chimerax.geometry import find_close_points, find_closest_points, Places
@@ -203,7 +203,9 @@ def min_max_d(v):
 
 
 def q_scores_for_clusters(q_shell_coords_torch_list, q_shell_radii_np_list, volume, fit_res_clusters, fit_res_all,
-                     ref_sigma=0.6, points_per_shell=8, device="cuda"):
+                          ref_sigma=0.6, points_per_shell=8, device="cuda",
+                          save_log=False,
+                          log_path=""):
 
     shifts = []
     quaternions = []
@@ -252,8 +254,6 @@ def q_scores_for_clusters(q_shell_coords_torch_list, q_shell_radii_np_list, volu
     b = min_d
 
 
-
-
     q_scores = []
     for cluster_idx in range(len(fit_res_clusters)):
         mol_idx = int(fit_res_clusters[cluster_idx, 0])
@@ -291,6 +291,10 @@ def q_scores_for_clusters(q_shell_coords_torch_list, q_shell_radii_np_list, volu
         q_score_torch = inner_product / (q_measure_l2 * q_ref_l2)
 
         q_scores.append(q_score_torch[~torch.isnan(q_score_torch)].mean())
+
+        if save_log and (cluster_idx + 1) % 1000 == 0:
+            with open(log_path, "a") as log_file:
+                log_file.write(f"Clustered {cluster_idx + 1} fits: {datetime.now()}\n")
 
     q_scores_tensor = torch.stack(q_scores)
     # top_10_values, top_10_indices = torch.topk(q_scores_tensor, k=10)
@@ -409,9 +413,6 @@ def generate_q_shells_parallel(mol,
                                points_per_shell=8, max_rad=2.0, step=0.1,
                                num_test_points=128, clustering_iterations=5,
                                include_h=False, randomize_shell_points=True, random_seed=RANDOM_SEED):
-    from datetime import datetime
-
-    from datetime import datetime
     global_timer_start = datetime.now()
 
     query_atoms = mol.atoms
