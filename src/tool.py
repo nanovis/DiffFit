@@ -1705,17 +1705,17 @@ class DiffFitTool(ToolInstance):
 
 
     def dependency_install_button_clicked(self):
-        if self.dependency_name.text() is "":
+        if self.dependency_name.text() == "":
             self.session.logger.error("You have to specify a package name.")
             return
 
         package_name = self.dependency_name.text()
-        if self.dependency_version.text() is not "":
+        if self.dependency_version.text() != "":
             package_name += f"=={self.dependency_version.text()}"
 
         cmd_list = ["install", package_name]
 
-        if self.dependency_index_url.text() is not "":
+        if self.dependency_index_url.text() != "":
             cmd_list.extend(["--index-url", self.dependency_index_url.text()])
 
         cmd_list.extend([
