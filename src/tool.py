@@ -45,7 +45,35 @@ import psutil
 import platform
 import ast
 from scipy.interpolate import interp1d
-        
+
+
+def generate_q_shells_wrapper(q_shell_generator, mol_path, q_shells_ext, session):
+    print(f"Q shell generator: {q_shell_generator}: {mol_path}")
+
+    mol_basename = mol_path.split('.')[0]
+    mol_folder = os.path.dirname(mol_path)
+
+    mol = run(session, f'open {mol_path}')[0]
+
+    # center mol
+    from chimerax.geometry import Place
+    mol_center = mol.atoms.coords.mean(axis=0)
+    transform = Place(origin=-mol_center)
+    mol.atoms.transform(transform)
+    mol.position = Place()
+
+    q_shell_coords, radii = q_shell_generator(mol)
+
+    q_shells_filepath = os.path.join(mol_folder, f"{mol_basename}.{q_shells_ext}")
+    np.savez_compressed(q_shells_filepath,
+                        q_shell_coords=q_shell_coords,
+                        radii=radii)  # Not atomic warning: q_scores_points_per_shell not saved!!!
+
+    run(session, f"close #{mol.id[0]}")
+
+    return q_shell_coords, radii
+
+
 
 def create_row(parent_layout, left=0, top=0, right=0, bottom=0, spacing=5):
     row_frame = QFrame()
@@ -1418,13 +1446,54 @@ class DiffFitTool(ToolInstance):
             self.proxyModel = None
             return
 
-        # Calculate Q-scores
+        # ======= Calculate Q-scores
         q_scores_np = None
-        if self.mol:
-            from .q_shells import q_scores_for_clusters
-            q_scores_np = q_scores_for_clusters(self.mol, self.vol, self.e_sqd_clusters_ordered, self.e_sqd_log)
+        q_shells_mode = "Full"
+
+        q_scores_points_per_shell = 8
+        q_scores_max_rad = 2.0
+        q_scores_step = 0.1
+        q_shell_radii = np.arange(0, q_scores_max_rad + q_scores_step / 2, q_scores_step)
+
+        q_shell_coords_torch_list = []
+        q_shell_radii_np_list = []
+
+        from .q_shells import generate_q_shells, generate_q_shells_simple, q_scores_for_clusters
+
+        q_shell_generator = None
+        q_shells_ext = ""
+        if q_shells_mode == "Full":
+            q_shell_generator = generate_q_shells
+            q_shells_ext = "centered_q_shells.full.npz"
+        elif q_shells_mode == "Simple":
+            q_shell_generator = generate_q_shells_simple
+            q_shells_ext = "centered_q_shells.simple.npz"
+
+        for mol_path in mol_paths:
+            mol_basename = mol_path.split('.')[0]
+            mol_folder = os.path.dirname(mol_path)
+            q_shells_filepath = os.path.join(mol_folder, f"{mol_basename}.{q_shells_ext}")
+
+            if os.path.exists(q_shells_filepath):
+                q_shells_np = np.load(q_shells_filepath)
+                q_shell_coords = q_shells_np['q_shell_coords']
+                q_shell_radii = q_shells_np['radii']  # Not atomic warning: q_scores_points_per_shell not saved!!!
+            else:
+                q_shell_coords, q_shell_radii = generate_q_shells_wrapper(q_shell_generator,
+                                                                          mol_path,
+                                                                          q_shells_ext,
+                                                                          self.session)
+
+            q_shell_coords = torch.tensor(q_shell_coords, device=self._device.currentText()).float()
+            q_shell_coords = q_shell_coords.reshape([-1, 3])
+
+            q_shell_coords_torch_list.append(q_shell_coords)
+            q_shell_radii_np_list.append(q_shell_radii)
+
+        q_scores_np = q_scores_for_clusters(q_shell_coords_torch_list, q_shell_radii_np_list, self.vol, self.e_sqd_clusters_ordered, self.e_sqd_log)
 
 
+        # ======= Create fit results table
         self.model = TableModel(self.e_sqd_clusters_ordered, self.e_sqd_log, mol_paths, q_scores_np)
         self.proxyModel = QSortFilterProxyModel()
         self.proxyModel.setSourceModel(self.model)
@@ -1689,7 +1758,7 @@ class DiffFitTool(ToolInstance):
                 q_shells_filepath = os.path.join(str_dir, f"{mol_basename}.{ext}")
                 np.savez_compressed(q_shells_filepath,
                                     q_shell_coords=q_shell_coords,
-                                    radii=radii)
+                                    radii=radii)  # Not atomic warning: q_scores_points_per_shell not saved!!!
 
                 run(self.session, f"close #{mol.id[0]}")
 

@@ -202,7 +202,7 @@ def min_max_d(v):
     return min_d, max_d
 
 
-def q_scores_for_clusters(centered_mol, volume, fit_res_clusters, fit_res_all,
+def q_scores_for_clusters(q_shell_coords_torch_list, q_shell_radii_np_list, volume, fit_res_clusters, fit_res_all,
                      ref_sigma=0.6, points_per_shell=8, device="cuda"):
 
     shifts = []
@@ -228,10 +228,6 @@ def q_scores_for_clusters(centered_mol, volume, fit_res_clusters, fit_res_all,
     quaternions_matrices = quaternion_to_matrix_batch(quaternions.unsqueeze(0))
 
 
-    q_shell_coords, radii = generate_q_shells(centered_mol)
-    q_shell_coords = torch.tensor(q_shell_coords, device=device).float()
-    q_shell_coords = q_shell_coords.reshape([-1, 3])
-
     vol_matrix = volume.full_matrix()
     vol_origin_and_step = volume.data_origin_and_step()
     target_origin = vol_origin_and_step[0]
@@ -255,20 +251,26 @@ def q_scores_for_clusters(centered_mol, volume, fit_res_clusters, fit_res_all,
     a = max_d - min_d
     b = min_d
 
-    num_shells = len(radii)
 
-    q_reference_gaussian = a * np.exp(-0.5 * (radii / ref_sigma) ** 2) + b
-    q_ref = np.concatenate([[q_reference_gaussian[0]] * points_per_shell,
-                            *[[q_reference_gaussian[j]] * points_per_shell for j in range(num_shells - 1)]])
-    q_ref = torch.tensor(q_ref, device=device, dtype=torch.float32)
-    q_ref -= q_ref.mean()
 
 
     q_scores = []
-    for row in range(len(fit_res_clusters)):
-        transformed_coords = torch.matmul(q_shell_coords, quaternions_matrices[:, row:row + 1, :, :])
+    for cluster_idx in range(len(fit_res_clusters)):
+        mol_idx = int(fit_res_clusters[cluster_idx, 0])
 
-        transformed_coords += shifts[row, :]
+        # q ref
+        num_shells = len(q_shell_radii_np_list[mol_idx])
+        q_reference_gaussian = a * np.exp(-0.5 * (q_shell_radii_np_list[mol_idx] / ref_sigma) ** 2) + b
+        q_ref = np.concatenate([[q_reference_gaussian[0]] * points_per_shell,
+                                *[[q_reference_gaussian[j]] * points_per_shell for j in range(num_shells - 1)]])
+        q_ref = torch.tensor(q_ref, device=device, dtype=torch.float32)
+        q_ref -= q_ref.mean()
+
+        # q shells q scores
+        q_shell_coords = q_shell_coords_torch_list[mol_idx]
+        transformed_coords = torch.matmul(q_shell_coords, quaternions_matrices[:, cluster_idx:cluster_idx + 1, :, :])
+
+        transformed_coords += shifts[cluster_idx, :]
 
         q_shell_coords_normalized_to_target = normalize_coordinates_to_map_origin_torch(transformed_coords,
                                                                                         target_size_x_y_z_tensor,
