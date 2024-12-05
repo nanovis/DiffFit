@@ -253,6 +253,10 @@ def q_scores_for_clusters(q_shell_coords_torch_list, q_shell_radii_np_list, volu
     a = max_d - min_d
     b = min_d
 
+    if save_log:
+        with open(log_path, "a") as log_file:
+            log_file.write(f"Starting to cluster {len(fit_res_clusters)} fits: {datetime.now()}\n"
+                           f"-------\n")
 
     q_scores = []
     for cluster_idx in range(len(fit_res_clusters)):
