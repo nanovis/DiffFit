@@ -1490,7 +1490,12 @@ class DiffFitTool(ToolInstance):
             q_shell_coords_torch_list.append(q_shell_coords)
             q_shell_radii_np_list.append(q_shell_radii)
 
-        q_scores_np = q_scores_for_clusters(q_shell_coords_torch_list, q_shell_radii_np_list, self.vol, self.e_sqd_clusters_ordered, self.e_sqd_log)
+        q_scores_np = q_scores_for_clusters(q_shell_coords_torch_list,
+                                            q_shell_radii_np_list,
+                                            self.vol,
+                                            self.e_sqd_clusters_ordered,
+                                            self.e_sqd_log,
+                                            device=self._device.currentText())
 
 
         # ======= Create fit results table
