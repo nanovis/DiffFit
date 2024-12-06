@@ -62,9 +62,10 @@ class TableModel(QAbstractTableModel):
             elif column == 1:
                 return str(f"{mol_idx}-{self._mol_names[mol_idx]}")
             elif column == 2:
-                if self._q_scores_np is not None:
+                try:
                     return float(round(float(self._q_scores_np[index.row()]) * 10000)) / 10000.0  # for 4 decimals
-                return None
+                except:
+                    return None
             elif column == 3:
                 return int(self._sqd_cluster_data[index.row(), 3])
             elif 4 <= column <= 11:
