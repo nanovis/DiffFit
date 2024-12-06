@@ -255,7 +255,7 @@ def q_scores_for_clusters(q_shell_coords_torch_list, q_shell_radii_np_list, volu
 
     if save_log:
         with open(log_path, "a") as log_file:
-            log_file.write(f"Starting to cluster {len(fit_res_clusters)} fits: {datetime.now()}\n"
+            log_file.write(f"Starting to calculate Q-scores for {len(fit_res_clusters)} fits: {datetime.now()}\n"
                            f"-------\n")
 
     q_scores = []
@@ -298,7 +298,7 @@ def q_scores_for_clusters(q_shell_coords_torch_list, q_shell_radii_np_list, volu
 
         if save_log and (cluster_idx + 1) % 1000 == 0:
             with open(log_path, "a") as log_file:
-                log_file.write(f"Clustered {cluster_idx + 1} fits: {datetime.now()}\n")
+                log_file.write(f"Q-scoring {cluster_idx + 1} fits: {datetime.now()}\n")
 
     q_scores_tensor = torch.stack(q_scores)
     # top_10_values, top_10_indices = torch.topk(q_scores_tensor, k=10)
