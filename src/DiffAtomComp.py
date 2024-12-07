@@ -124,6 +124,8 @@ def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3
     @param sort_column_idx: the column to sort, 9-th column is the correlation
     @return: cluster representative table sorted in descending order
     """
+    mol_center = np.array([0.0, 0.0, 0.0])
+
     from chimerax.geometry import bins
     from chimerax.geometry import Place
 
@@ -208,7 +210,7 @@ def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3
                 log_file.write(f"Convert to matrix time: {datetime.now() - timer_start}\n")
         timer_start = datetime.now()
 
-        b = bins.Binned_Transforms(angle_tolerance * pi / 180, shift_tolerance, mol_centers[mol_idx], bfactor=2)
+        b = bins.Binned_Transforms(angle_tolerance * pi / 180, shift_tolerance, mol_center, bfactor=2)
         mol_transform_label = []
         unique_id = 0
         T_ID_dict = {}
