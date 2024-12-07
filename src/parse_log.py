@@ -180,7 +180,7 @@ def simulate_volume(session, vol, mol_paths, mol_idx, transformation, res=4.0):
     mol.atoms.transform(transformation)
 
     from chimerax.map.molmap import molecule_map
-    mol_vol = molecule_map(session, mol.atoms, res, grid_spacing=vol.data_origin_and_step()[1][0])
+    mol_vol = molecule_map(session, mol.atoms, res, grid_spacing=vol.data.step)
     mol.delete()
 
     return mol_vol

@@ -2019,7 +2019,7 @@ class DiffFitTool(ToolInstance):
                                            res)
         elif self.fit_input_mode == "interactive":
             from chimerax.map.molmap import molecule_map
-            self.mol_vol = molecule_map(self.session, self.mol.atoms, res, grid_spacing=self.vol.data_origin_and_step()[1][0] / 3)
+            self.mol_vol = molecule_map(self.session, self.mol.atoms, res, grid_spacing=self.vol.data.step / 3)
 
         return
         

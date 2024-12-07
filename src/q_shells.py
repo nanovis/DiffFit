@@ -231,9 +231,8 @@ def q_scores_for_clusters(q_shell_coords_torch_list, q_shell_radii_np_list, volu
 
 
     vol_matrix = volume.full_matrix()
-    vol_origin_and_step = volume.data_origin_and_step()
-    target_origin = vol_origin_and_step[0]
-    target_steps = vol_origin_and_step[1]
+    target_origin = np.array(volume.data.origin)
+    target_steps = np.array(volume.data.step)
     target_no_negative = vol_matrix
 
     target = torch.tensor(target_no_negative, device=device).float()
