@@ -1096,7 +1096,20 @@ class DiffFitTool(ToolInstance):
         stats.setText("Stats: ")
         self.stats = stats
         layout.addWidget(stats, row, 0, 1, 3)
-        row = row + 1        
+        row = row + 1
+
+        # Adding "Candidates" field and Save button
+        candidates_label = QLabel("Candidates: ")
+        self.candidates_field = QLineEdit()
+        self.candidates_field.setText("")
+        # self.candidates_field.setText(", ".join(map(str, self.get_selected_indices())))
+        save_button = QPushButton("Save structures")
+        # save_button.clicked.connect(self.save_candidates)
+
+        layout.addWidget(candidates_label, row, 0)
+        layout.addWidget(self.candidates_field, row, 1)
+        layout.addWidget(save_button, row, 2)
+        row += 1
         
         # button panel                
         simulate_volume_label = QLabel("Resolution:")        
