@@ -47,6 +47,32 @@ import ast
 from scipy.interpolate import interp1d
 
 
+def calculate_candidate_indices(q_scores, num_test_fits=20):
+    """Calculates the candidate indices based on Q-scores."""
+    try:
+        # Get the indices of the top 20 values (num_test_fits) in descending order
+        top_fits_indices = np.argpartition(q_scores, -num_test_fits)[-num_test_fits:]
+        top_fits_values = q_scores[top_fits_indices]
+
+        # Sort the top values and their indices in descending order
+        sorted_indices_desc = np.argsort(-top_fits_values)
+        top_fits_indices_desc = top_fits_indices[sorted_indices_desc]
+
+        # Calculate consecutive differences and negate them
+        consecutive_differences = -np.diff(top_fits_values[sorted_indices_desc])
+        std = np.std(consecutive_differences)
+        largest_gap_index = np.argmax(consecutive_differences)
+        largest_gap_ratio = consecutive_differences[largest_gap_index] / std
+
+        if largest_gap_ratio > 1:
+            return top_fits_indices_desc[:largest_gap_index + 1]
+        else:
+            return []
+    except Exception as e:
+        print(f"Error calculating selected indices: {e}")
+        return []
+
+
 def generate_q_shells_wrapper(q_shell_generator, mol_path, q_shells_ext, session):
     print(f"Q shell generator: {q_shell_generator}: {mol_path}")
 
@@ -1102,9 +1128,8 @@ class DiffFitTool(ToolInstance):
         candidates_label = QLabel("Candidates: ")
         self.candidates_field = QLineEdit()
         self.candidates_field.setText("")
-        # self.candidates_field.setText(", ".join(map(str, self.get_selected_indices())))
         save_button = QPushButton("Save structures")
-        # save_button.clicked.connect(self.save_candidates)
+        save_button.clicked.connect(self.save_candidates)
 
         layout.addWidget(candidates_label, row, 0)
         layout.addWidget(self.candidates_field, row, 1)
@@ -1537,6 +1562,9 @@ class DiffFitTool(ToolInstance):
                                             device=self._device.currentText(),
                                             save_log=save_log,
                                             log_path=log_path)
+
+        self.candidates_field.setText(", ".join(map(str, calculate_candidate_indices(q_scores_np) + 1)))
+
         if save_log:
             with open(log_path, "a") as log_file:
                 log_file.write(f"-------\n"
@@ -1554,7 +1582,7 @@ class DiffFitTool(ToolInstance):
         self.view.reset()
         self.view.show()  
         
-        self.stats.setText("stats: {0} entries".format(self.model.rowCount())) 
+        self.stats.setText("stats: {0} entries".format(self.model.rowCount()))
 
         self.mol_paths = mol_paths
         self.cluster_idx = 0
@@ -2037,6 +2065,11 @@ class DiffFitTool(ToolInstance):
             self.mol_vol = molecule_map(self.session, self.mol.atoms, res, grid_spacing=self.vol.data.step / 3)
 
         return
+
+    def save_candidates(self):
+        """Save candidates action triggered by the Save button."""
+        candidates = self.candidates_field.text()
+        self.session.logger.info(f"Saving candidates: {candidates}")
         
     def zero_density_button_clicked(self):      
         if self.vol is None:
