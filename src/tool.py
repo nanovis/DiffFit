@@ -56,7 +56,6 @@ def calculate_candidate_indices(q_scores, num_test_fits=20):
 
         # Sort the top values and their indices in descending order
         sorted_indices_desc = np.argsort(-top_fits_values)
-        top_fits_indices_desc = top_fits_indices[sorted_indices_desc]
 
         # Calculate consecutive differences and negate them
         consecutive_differences = -np.diff(top_fits_values[sorted_indices_desc])
@@ -65,7 +64,7 @@ def calculate_candidate_indices(q_scores, num_test_fits=20):
         largest_gap_ratio = consecutive_differences[largest_gap_index] / std
 
         if largest_gap_ratio > 1:
-            return top_fits_indices_desc[:largest_gap_index + 1]
+            return np.array(range(largest_gap_index + 1))
         else:
             return []
     except Exception as e:
@@ -1571,8 +1570,12 @@ class DiffFitTool(ToolInstance):
                                f"DiffFit Q-scores calculation time elapsed: {datetime.now() - timer_start}\n"
                                f"-------\n\n")
 
+        q_score_column = 3
+        self.e_sqd_clusters_ordered = np.insert(self.e_sqd_clusters_ordered, q_score_column, q_scores_np, axis=1)
+        self.e_sqd_clusters_ordered = self.e_sqd_clusters_ordered[self.e_sqd_clusters_ordered[:, q_score_column].argsort()[::-1]]
+
         # ======= Create fit results table
-        self.model = TableModel(self.e_sqd_clusters_ordered, self.e_sqd_log, mol_paths, q_scores_np)
+        self.model = TableModel(self.e_sqd_clusters_ordered, self.e_sqd_log, mol_paths)
         self.proxyModel = QSortFilterProxyModel()
         self.proxyModel.setSourceModel(self.model)
         
