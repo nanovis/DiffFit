@@ -2071,8 +2071,18 @@ class DiffFitTool(ToolInstance):
 
     def save_candidates(self):
         """Save candidates action triggered by the Save button."""
-        candidates = self.candidates_field.text()
-        self.session.logger.info(f"Saving candidates: {candidates}")
+        try:
+            candidates = self.candidates_field.text()
+            candidate_ids = candidates.split(",")
+
+            for candidate_id in candidate_ids:
+                # Strip any leading/trailing spaces (if any)
+                candidate_id = candidate_id.strip()
+                self.select_table_item(int(candidate_id) - 1)
+                run(self.session, f"save {self.settings.view_output_directory}/{self.mol.name}.cif models #{self.mol.id[0]}")
+                self.session.logger.info(f"Saved candidate_id: {candidates}")
+        except:
+            self.session.logger.error("Failed to parse the candidates field.")
         
     def zero_density_button_clicked(self):      
         if self.vol is None:
