@@ -29,11 +29,12 @@ warnings.filterwarnings("ignore", message="Ignoring unrecognized record 'END'", 
 
 from chimerax.geometry.bins import Binned_Transforms
 
+
 class DiffFit_Binned_Transforms(Binned_Transforms):
     def __init__(self, angle, translation, center=(0, 0, 0), bfactor=2):
         super().__init__(angle, translation, center, bfactor)
 
-    def one_close_transform(self, tf):
+    def one_in_cluster_transform(self, tf):
 
         a, x, y, z = c = self.bin_point(tf)
         clist = self.bins.close_objects(c, self.spacing)
@@ -235,27 +236,21 @@ def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3
                 log_file.write(f"Convert to matrix time: {datetime.now() - timer_start}\n")
         timer_start = datetime.now()
 
-        b = DiffFit_Binned_Transforms(angle_tolerance * pi / 180, shift_tolerance, mol_center, bfactor=1)
+        b = DiffFit_Binned_Transforms(angle_tolerance * pi / 180, shift_tolerance, mol_center)
         mol_transform_label = []
         unique_id = 0
         T_ID_dict = {}
         for i in range(len(mol_shift)):
             ptf = T[i]
-            coord = [c / s for c, s in zip(b.bin_point(ptf), b.bins.bin_size)]
-            cbin = b.bins.close_bins(coord, (0, 0, 0, 0))[0]
-            close = None
-            if cbin in b.bins.bins:
-                close = b.bins.bins[cbin][0][1]
-            else:
-                close = b.one_close_transform(ptf)
-            if close is None:
+            in_cluster = b.one_in_cluster_transform(ptf)
+            if in_cluster is None:
                 b.add_transform(ptf)
                 mol_transform_label.append(unique_id)
                 T_ID_dict[id(ptf)] = unique_id
                 unique_id = unique_id + 1
             else:
-                mol_transform_label.append(T_ID_dict[id(close)])
-                T_ID_dict[id(ptf)] = T_ID_dict[id(close)]
+                mol_transform_label.append(T_ID_dict[id(in_cluster)])
+                T_ID_dict[id(ptf)] = T_ID_dict[id(in_cluster)]
 
             if save_log and (i + 1) % 10000 == 0:
                 with open(log_path, "a") as log_file:
