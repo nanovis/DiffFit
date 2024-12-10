@@ -1124,14 +1124,23 @@ class DiffFitTool(ToolInstance):
         row = row + 1
 
         # Adding "Candidates" field and Save button
-        candidates_label = QLabel("Candidates: ")
-        self.candidates_field = QLineEdit()
-        self.candidates_field.setText("")
+        candidates_folder_label = QLabel("Candidates Folder:")
+        self.candidates_folder = QLineEdit()
+        candidates_folder_select = QPushButton("Select")
+        candidates_folder_select.clicked.connect(lambda: self.select_clicked("Save candidates to", self.candidates_folder))
+        layout.addWidget(candidates_folder_label, row, 0)
+        layout.addWidget(self.candidates_folder, row, 1)
+        layout.addWidget(candidates_folder_select, row, 2)
+        row = row + 1
+        
+        candidates_label = QLabel("Candidates id: ")
+        self.candidates_id = QLineEdit()
+        self.candidates_id.setText("")
         save_button = QPushButton("Save structures")
         save_button.clicked.connect(self.save_candidates)
 
         layout.addWidget(candidates_label, row, 0)
-        layout.addWidget(self.candidates_field, row, 1)
+        layout.addWidget(self.candidates_id, row, 1)
         layout.addWidget(save_button, row, 2)
         row += 1
         
@@ -1562,7 +1571,7 @@ class DiffFitTool(ToolInstance):
                                             save_log=save_log,
                                             log_path=log_path)
 
-        self.candidates_field.setText(", ".join(map(str, calculate_candidate_indices(q_scores_np) + 1)))
+        self.candidates_id.setText(", ".join(map(str, calculate_candidate_indices(q_scores_np) + 1)))
 
         if save_log:
             with open(log_path, "a") as log_file:
@@ -2072,17 +2081,26 @@ class DiffFitTool(ToolInstance):
     def save_candidates(self):
         """Save candidates action triggered by the Save button."""
         try:
-            candidates = self.candidates_field.text()
+            candidates = self.candidates_id.text()
             candidate_ids = candidates.split(",")
 
             for candidate_id in candidate_ids:
                 # Strip any leading/trailing spaces (if any)
                 candidate_id = candidate_id.strip()
                 self.select_table_item(int(candidate_id) - 1)
-                run(self.session, f"save {self.settings.view_output_directory}/{self.mol.name}.cif models #{self.mol.id[0]}")
+
+                base_name, ext = os.path.splitext(self.mol.name)
+                base_file_path = f"{self.candidates_folder.text()}/{base_name}"
+                counter = 1
+                file_path = f"{base_file_path}_{counter}{ext}"
+                while os.path.exists(file_path):
+                    file_path = f"{base_file_path}_{counter}{ext}"
+                    counter += 1
+
+                run(self.session, f"save {file_path} models #{self.mol.id[0]}")
                 self.session.logger.info(f"Saved candidate_id: {candidates}")
         except:
-            self.session.logger.error("Failed to parse the candidates field.")
+            self.session.logger.error("Failed to parse the candidates id field.")
         
     def zero_density_button_clicked(self):      
         if self.vol is None:
