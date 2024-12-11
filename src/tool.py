@@ -66,10 +66,10 @@ def calculate_candidate_indices(q_scores, num_test_fits=20):
         if largest_gap_ratio > 1:
             return np.array(range(largest_gap_index + 1))
         else:
-            return []
+            return np.array([])
     except Exception as e:
         print(f"Error calculating selected indices: {e}")
-        return []
+        return np.array([])
 
 
 def generate_q_shells_wrapper(q_shell_generator, mol_path, q_shells_ext, session):
