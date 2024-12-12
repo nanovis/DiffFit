@@ -1832,30 +1832,10 @@ class DiffFitTool(ToolInstance):
         str_dir = self.q_shells_dir.text()
 
         for file_name in sorted(os.listdir(str_dir)):
-            file_path = os.path.join(str_dir, file_name)
-            file_extension = os.path.splitext(file_path)[1].lower()
+            mol_path = os.path.join(str_dir, file_name)
+            file_extension = os.path.splitext(mol_path)[1].lower()
             if file_extension in ['.pdb', '.cif']:
-                print(f"Q shell generator: {q_shell_generator}: {file_path}")
-
-                mol = run(self.session, f'open {file_path}')[0]
-                mol_basename = file_name.split('.')[0]
-
-                # center mol
-                from chimerax.geometry import Place
-                mol_center = mol.atoms.coords.mean(axis=0)
-                transform = Place(origin=-mol_center)
-                mol.atoms.transform(transform)
-                mol.position = Place()
-
-                q_shell_coords, radii = q_shell_generator(mol)
-
-                q_shells_filepath = os.path.join(str_dir, f"{mol_basename}.{ext}")
-                np.savez_compressed(q_shells_filepath,
-                                    q_shell_coords=q_shell_coords,
-                                    radii=radii)  # Not atomic warning: q_scores_points_per_shell not saved!!!
-
-                run(self.session, f"close #{mol.id[0]}")
-
+                _, _ = generate_q_shells_wrapper(q_shell_generator, mol_path, ext, self.session)
 
 
     def sim_button_clicked(self):
