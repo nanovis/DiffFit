@@ -1711,7 +1711,6 @@ class DiffFitTool(ToolInstance):
 
         # Apply the user's transformation and center mol
         from chimerax.geometry import Place
-        mol.atoms.transform(mol.position)
         mol_center = mol.atoms.coords.mean(axis=0)
         transform = Place(origin=-mol_center)
         mol.atoms.transform(transform)
