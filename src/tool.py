@@ -1580,7 +1580,7 @@ class DiffFitTool(ToolInstance):
         self.mol_paths = mol_paths
         self.cluster_idx = 0
 
-        run(self.session, "view")
+        run(self.session, "view orient")
 
     def _create_volume_conv_list(self, vol, smooth_by, smooth_loops, session, negative_space_value=-0.5):
         # From here on, there are three strategies for utilizing gaussian smooth
