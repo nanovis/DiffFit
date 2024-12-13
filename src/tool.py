@@ -251,7 +251,7 @@ class DiffFitTool(ToolInstance):
 
         self.interactive_fit_result_ready = False
         self.fit_result = None
-        self.mol_centers = None
+        self.mol_num_atoms = None
 
         self.cluster_color_map = {}
 
@@ -1437,7 +1437,7 @@ class DiffFitTool(ToolInstance):
             
         return fileName, ext
     
-    def show_results(self, e_sqd_log, mol_centers, mol_paths,
+    def show_results(self, e_sqd_log, mol_num_atoms, mol_paths,
                      target_vol_path=None,
                      target_surface_threshold=None,
                      save_log=False,
@@ -1469,7 +1469,7 @@ class DiffFitTool(ToolInstance):
 
         N_mol, N_quat, N_shift, N_iter, N_metric = e_sqd_log.shape
         self.e_sqd_log = e_sqd_log.reshape([N_mol, N_quat * N_shift, N_iter, N_metric])
-        self.e_sqd_clusters_ordered = cluster_and_sort_sqd_fast(self.e_sqd_log, mol_centers,
+        self.e_sqd_clusters_ordered = cluster_and_sort_sqd_fast(self.e_sqd_log,
                                                                 self.settings.clustering_shift_tolerance,
                                                                 self.settings.clustering_angle_tolerance,
                                                                 in_contour_threshold=self.settings.clustering_in_contour_threshold,
@@ -1565,7 +1565,7 @@ class DiffFitTool(ToolInstance):
         self.e_sqd_clusters_ordered = self.e_sqd_clusters_ordered[self.e_sqd_clusters_ordered[:, q_score_column].argsort()[::-1]]
 
         # ======= Create fit results table
-        self.model = TableModel(self.e_sqd_clusters_ordered, self.e_sqd_log, mol_paths)
+        self.model = TableModel(self.e_sqd_clusters_ordered, self.e_sqd_log, mol_paths, mol_num_atoms)
         self.proxyModel = QSortFilterProxyModel()
         self.proxyModel.setSourceModel(self.model)
         
@@ -1721,7 +1721,7 @@ class DiffFitTool(ToolInstance):
         (_,
          _,
          self.mol_paths,
-         self.mol_centers,
+         self.mol_num_atoms,
          self.fit_result) = diff_fit(
             volume_conv_list,
             self.fit_vol.path,
@@ -1752,7 +1752,7 @@ class DiffFitTool(ToolInstance):
         self._view_input_mode.setCurrentText("interactive")
         self._view_input_mode_changed()
         self.interactive_fit_result_ready = True
-        self.show_results(self.fit_result, self.mol_centers, self.mol_paths,
+        self.show_results(self.fit_result, self.mol_num_atoms, self.mol_paths,
                           save_log=_save_results,
                           log_path=f"{_out_dir}/log.log")
 
@@ -1909,7 +1909,7 @@ class DiffFitTool(ToolInstance):
         (target_vol_path,
          target_surface_threshold,
          mol_paths,
-         mol_centers,
+         mol_num_atoms,
          e_sqd_log) = diff_atom_comp(
             target_vol_path=self.settings.target_vol_path,
             target_surface_threshold=self.settings.target_surface_threshold,
@@ -1943,7 +1943,7 @@ class DiffFitTool(ToolInstance):
         
         # output is tensor, convert to numpy
         self.show_results(e_sqd_log.detach().cpu().numpy(),
-                          mol_centers,
+                          mol_num_atoms,
                           mol_paths,
                           target_vol_path,
                           target_surface_threshold,
@@ -1967,7 +1967,7 @@ class DiffFitTool(ToolInstance):
         if self.fit_input_mode == "interactive":
             if self.interactive_fit_result_ready:
                 self.show_results(self.fit_result,
-                                  self.mol_centers,
+                                  self.mol_num_atoms,
                                   [self.mol.filename],
                                   self.fit_vol.path,
                                   self.fit_vol.maximum_surface_level)
@@ -1991,10 +1991,10 @@ class DiffFitTool(ToolInstance):
         target_vol_path = fit_res['target_vol_path']
         target_surface_threshold = fit_res['target_surface_threshold']
         mol_paths = fit_res['mol_paths']
-        mol_centers = fit_res['mol_centers']
+        mol_num_atoms = fit_res['mol_num_atoms']
         opt_res = fit_res['opt_res']
 
-        self.show_results(opt_res, mol_centers, mol_paths, target_vol_path, target_surface_threshold,
+        self.show_results(opt_res, mol_num_atoms, mol_paths, target_vol_path, target_surface_threshold,
                           save_log=True,
                           log_path=f"{datasetoutput}/log.log")
         self.select_table_item(0)

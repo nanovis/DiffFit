@@ -122,7 +122,7 @@ def q2_unit_coord(Q):
     return np.concatenate((rotated_up, rotated_right), axis=-1)
 
 
-def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3.0, angle_tolerance: float = 6.0,
+def cluster_and_sort_sqd_fast(e_sqd_log, shift_tolerance: float = 3.0, angle_tolerance: float = 6.0,
                               sort_column_idx: int = 7,
                               in_contour_threshold: float = 0.5,
                               correlation_threshold: float = 0.5,
@@ -145,7 +145,6 @@ def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3
     3. sort the cluster table in descending order by correlation, or the metric at the sort_column_idx
 
     @param e_sqd_log: fitting results in sqd table
-    @param mol_centers: molecule atom coords centers
     @param shift_tolerance: shift tolerance in Angstrom
     @param angle_tolerance: angle tolerance in degrees
     @param sort_column_idx: the column to sort, 9-th column is the correlation
@@ -839,7 +838,7 @@ def diff_fit(volume_list: list,
 
     # ======= get atom coords
     atom_coords_list = mol_coords  # atom coords as [x, y, z]
-    mol_centers = [np.mean(coords, axis=0) for coords in atom_coords_list]
+    mol_num_atoms = [len(coords) for coords in atom_coords_list]
     num_molecules = len(atom_coords_list)
 
     # read simulated map
@@ -955,7 +954,7 @@ def diff_fit(volume_list: list,
                             target_vol_path=vol_path,
                             target_surface_threshold=target_surface_threshold,
                             mol_paths=[mol_path],
-                            mol_centers=mol_centers,
+                            mol_num_atoms=mol_num_atoms,
                             opt_res=e_sqd_log_np)
         # np.save(f"{out_dir}/sampled_coords.npy", sampled_coords)
 
@@ -969,7 +968,7 @@ def diff_fit(volume_list: list,
     return (vol_path,
             target_surface_threshold,
             [mol_path],
-            mol_centers,
+            mol_num_atoms,
             e_sqd_log_np)
 
 
@@ -1041,8 +1040,8 @@ def diff_atom_comp(target_vol_path: str,
     # center the mol
     mol_centers = [np.mean(coords, axis=0) for coords in atom_coords_list]
     atom_coords_list = center_atom_coords_list(atom_coords_list, mol_centers)
-    # re-calculate the centers, should be all near zero
-    mol_centers = [np.mean(coords, axis=0) for coords in atom_coords_list]
+
+    mol_num_atoms = [len(coords) for coords in atom_coords_list]
 
 
     # ======= optimization
@@ -1158,7 +1157,7 @@ def diff_atom_comp(target_vol_path: str,
                         target_vol_path=target_vol_path,
                         target_surface_threshold=target_surface_threshold,
                         mol_paths=mol_paths,
-                        mol_centers=mol_centers,
+                        mol_num_atoms=mol_num_atoms,
                         opt_res=e_sqd_log.detach().cpu().numpy())
     # np.save(f"{out_dir}/sampled_coords.npy", sampled_coords)
 
@@ -1172,7 +1171,7 @@ def diff_atom_comp(target_vol_path: str,
     return (target_vol_path,
             target_surface_threshold,
             mol_paths,
-            mol_centers,
+            mol_num_atoms,
             e_sqd_log)
 
 
