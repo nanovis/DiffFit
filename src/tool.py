@@ -40,6 +40,7 @@ from .DiffAtomComp import diff_atom_comp, cluster_and_sort_sqd_fast, diff_fit, c
 import sys
 import numpy as np        
 import os
+from pathlib import Path
 import torch
 import psutil
 import platform
@@ -75,7 +76,7 @@ def calculate_candidate_indices(q_scores, num_test_fits=20):
 def generate_q_shells_wrapper(q_shell_generator, mol_path, q_shells_ext, session):
     print(f"Q shell generator: {q_shell_generator}: {mol_path}")
 
-    mol_basename = os.path.basename(mol_path)
+    mol_basename = Path(mol_path).stem
     mol_folder = os.path.dirname(mol_path)
 
     mol = run(session, f'open {mol_path}')[0]
@@ -1518,7 +1519,7 @@ class DiffFitTool(ToolInstance):
             q_shells_ext = "centered_q_shells.simple.npz"
 
         for mol_path in mol_paths:
-            mol_basename = os.path.basename(mol_path)
+            mol_basename = Path(mol_path).stem
             mol_folder = os.path.dirname(mol_path)
             q_shells_filepath = os.path.join(mol_folder, f"{mol_basename}.{q_shells_ext}")
 
