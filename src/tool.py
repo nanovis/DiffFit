@@ -1581,7 +1581,6 @@ class DiffFitTool(ToolInstance):
         self.mol_paths = mol_paths
         self.cluster_idx = 0
 
-        run(self.session, "view orient")
 
     def _create_volume_conv_list(self, vol, smooth_by, smooth_loops, session, negative_space_value=-0.5):
         # From here on, there are three strategies for utilizing gaussian smooth
@@ -1760,6 +1759,7 @@ class DiffFitTool(ToolInstance):
         self.tab_widget.setCurrentWidget(self.tab_view_group)
 
         self.select_table_item(0)
+        run(self.session, "view orient")
 
         timer_stop = datetime.now()
         print(f"\nDiffFit total time elapsed: {timer_stop - single_fit_timer_start}\n\n")
@@ -1952,6 +1952,7 @@ class DiffFitTool(ToolInstance):
                           log_path=f"{_out_dir}/log.log")
         self.tab_widget.setCurrentWidget(self.tab_view_group)
         self.select_table_item(0)
+        run(self.session, "view orient")
 
         timer_stop = datetime.now()
         print(f"\nDiffFit total time elapsed: {timer_stop - disk_fit_timer_start}\n\n")

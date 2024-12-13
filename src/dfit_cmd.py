@@ -173,6 +173,7 @@ def dfit(session, mol, in_map,
     df.tab_widget.setCurrentWidget(df.tab_view_group)
 
     df.select_table_item(0)
+    run(session, "view orient")
 
     timer_stop = datetime.now()
     print(f"\nDiffFit total time elapsed: {timer_stop - single_fit_timer_start}\n\n")
@@ -336,6 +337,7 @@ def dfit_disk(session, str_dir, in_map, level,
                           target_surface_threshold)
         df.tab_widget.setCurrentWidget(df.tab_view_group)
         df.select_table_item(0)
+        run(session, "view orient")
 
     timer_stop = datetime.now()
     print(f"\nDiffFit total time elapsed: {timer_stop - disk_fit_timer_start}\n\n")
