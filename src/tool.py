@@ -75,7 +75,7 @@ def calculate_candidate_indices(q_scores, num_test_fits=20):
 def generate_q_shells_wrapper(q_shell_generator, mol_path, q_shells_ext, session):
     print(f"Q shell generator: {q_shell_generator}: {mol_path}")
 
-    mol_basename = mol_path.split('.')[0]
+    mol_basename = os.path.basename(mol_path)
     mol_folder = os.path.dirname(mol_path)
 
     mol = run(session, f'open {mol_path}')[0]
@@ -1518,7 +1518,7 @@ class DiffFitTool(ToolInstance):
             q_shells_ext = "centered_q_shells.simple.npz"
 
         for mol_path in mol_paths:
-            mol_basename = mol_path.split('.')[0]
+            mol_basename = os.path.basename(mol_path)
             mol_folder = os.path.dirname(mol_path)
             q_shells_filepath = os.path.join(mol_folder, f"{mol_basename}.{q_shells_ext}")
 
