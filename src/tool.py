@@ -69,7 +69,7 @@ def calculate_candidate_indices(q_scores, num_test_fits=20):
         else:
             return np.array([])
     except Exception as e:
-        print(f"Error calculating selected indices: {e}")
+        print(f"Warn: no candidates id: {e}")
         return np.array([])
 
 
