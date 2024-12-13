@@ -11,6 +11,7 @@ import os, sys
 from chimerax.core.commands import run
 from datetime import datetime
 import numpy as np
+from pathlib import Path
 
 timer_start = datetime.now()
 
@@ -30,7 +31,7 @@ for file_name in sorted(os.listdir(structures_dir)):
         structure = run(session, f'open {full_path}')[0]
 
         # Get the base name of the input structure for naming output files
-        structure_basename = os.path.basename(full_path).split('.')[0]
+        structure_basename = Path(full_path).stem
 
         # Save the structure's coordinates as a npy file
         npy_filename = f"{structure_basename}.npy"

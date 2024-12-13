@@ -1827,7 +1827,7 @@ class DiffFitTool(ToolInstance):
             file_extension = os.path.splitext(file_path)[1].lower()
             if file_extension in ['.pdb', '.cif']:
                 structure = run(self.session, f'open {file_path}')[0]
-                structure_basename = file_name.split('.')[0]
+                structure_basename = Path(file_name).stem
 
                 mrc_filename = f"{structure_basename}.mrc"
                 mrc_filepath = os.path.join(str_dir, mrc_filename)
@@ -1844,7 +1844,7 @@ class DiffFitTool(ToolInstance):
             os.makedirs(output_dir)
 
         structure = self._split_model.value
-        structure_basename = os.path.basename(structure.filename).split('.')[0]
+        structure_basename = Path(structure.filename).stem
 
         chain_id_name_list = []
         for chain in structure.chains:

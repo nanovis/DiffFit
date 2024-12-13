@@ -1,5 +1,6 @@
 import argparse
 import os, sys
+from pathlib import Path
 from datetime import datetime
 
 import numpy as np
@@ -508,7 +509,7 @@ def read_file_and_get_coordinates(file_path, fit_atom_mode="Backbone"):
         parser = PDBParser()
 
     # Parse the structure
-    structure_id = os.path.basename(file_path).split('.')[0]  # Use file name as structure ID
+    structure_id = Path(file_path).stem  # Use file name as structure ID
     structure = parser.get_structure(structure_id, file_path)
 
     # Initialize a list to hold all atom coordinates
