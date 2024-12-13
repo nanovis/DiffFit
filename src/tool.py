@@ -1814,7 +1814,7 @@ class DiffFitTool(ToolInstance):
 
         for file_name in sorted(os.listdir(str_dir)):
             mol_path = os.path.join(str_dir, file_name)
-            file_extension = os.path.splitext(mol_path)[1].lower()
+            file_extension = Path(file_name).suffix.lower()
             if file_extension in ['.pdb', '.cif']:
                 _, _ = generate_q_shells_wrapper(q_shell_generator, mol_path, ext, self.session)
 
@@ -1824,7 +1824,7 @@ class DiffFitTool(ToolInstance):
 
         for file_name in sorted(os.listdir(str_dir)):
             file_path = os.path.join(str_dir, file_name)
-            file_extension = os.path.splitext(file_path)[1].lower()
+            file_extension = Path(file_name).suffix.lower()
             if file_extension in ['.pdb', '.cif']:
                 structure = run(self.session, f'open {file_path}')[0]
                 structure_basename = Path(file_name).stem

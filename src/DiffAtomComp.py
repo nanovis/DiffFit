@@ -433,7 +433,7 @@ def mrc_folder_to_npy_list(mrc_folder):
         full_path = os.path.join(mrc_folder, file_name)
         # Check if the current path is a file and not a directory
         if os.path.isfile(full_path):
-            file_extension = os.path.splitext(full_path)[1].lower()
+            file_extension = Path(file_name).suffix.lower()
             if file_extension in ['.mrc', '.map']:
                 data, steps, origin = mrc_to_npy(full_path)
                 sim_map_list.append((data, steps, origin))
@@ -500,7 +500,7 @@ def transform_to_angstrom_space(ndc_shift, box_size, box_origin, atom_center_in_
 
 def read_file_and_get_coordinates(file_path, fit_atom_mode="Backbone"):
     # Determine file extension
-    file_extension = os.path.splitext(file_path)[1].lower()
+    file_extension = Path(file_path).suffix.lower()
 
     # Initialize parser based on file extension
     if file_extension == '.cif':
@@ -696,7 +696,7 @@ def read_all_files_to_atom_coords_list(structures_dir, fit_atom_mode="Backbone")
     for file_name in sorted(os.listdir(structures_dir)):
         full_path = os.path.join(structures_dir, file_name)
 
-        file_extension = os.path.splitext(full_path)[1].lower()
+        file_extension = Path(file_name).suffix.lower()
         if file_extension in ['.pdb', '.cif']:
             # Read the atom coordinates from the file
             atom_coords = read_file_and_get_coordinates(full_path, fit_atom_mode)
@@ -1150,7 +1150,7 @@ def diff_atom_comp(target_vol_path: str,
     mol_paths = []
     for file_name in sorted(os.listdir(structures_dir)):
         full_path = os.path.join(structures_dir, file_name)
-        file_extension = os.path.splitext(full_path)[1].lower()
+        file_extension = Path(file_name).suffix.lower()
         if file_extension in ['.pdb', '.cif']:
             mol_paths.append(full_path)
 
