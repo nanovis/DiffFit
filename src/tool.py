@@ -149,7 +149,6 @@ class DiffFitSettings:
     def __init__(self):   
         # viewing
         self.view_output_directory: str = "D:/GIT/DiffFit/dev_data/output"
-        self.view_target_vol_path: str = "D:/GIT/DiffFit/dev_data/input/domain_fit_demo_3domains/density2.mrc"
         self.view_structures_directory: str = "D:/GIT/DiffFit/dev_data/input/domain_fit_demo_3domains/subunits_cif"
         
         # computing
@@ -350,8 +349,7 @@ class DiffFitTool(ToolInstance):
         self.conv_weights.setText("[{0}]".format(','.join(map(str, self.settings.conv_weights))))
         
         # view
-        self.target_vol.setText(self.settings.view_target_vol_path)     
-        self.dataset_folder.setText(self.settings.view_output_directory)        
+        self.dataset_folder.setText(self.settings.view_output_directory)
 
         # clustering
         self.df_cid_threshold.setValue(self.settings.df_cid_threshold)
@@ -389,8 +387,7 @@ class DiffFitTool(ToolInstance):
         
         #view
         self.settings.view_output_directory = self.dataset_folder.text()
-        self.settings.view_target_vol_path = self.target_vol.text()
-        
+
         # clustering
         self.settings.df_cid_threshold = self.df_cid_threshold.value()
         self.settings.clustering_in_contour_threshold = self.clustering_in_contour_threshold.value()
@@ -398,8 +395,6 @@ class DiffFitTool(ToolInstance):
         self.settings.clustering_angle_tolerance = self.clustering_angle_tolerance.value()
         self.settings.clustering_shift_tolerance = self.clustering_shift_tolerance.value()
         
-        #print(self.settings)
-        #print(self.settings.view_target_vol_path)
 
     def build_single_fit_ui(self, layout):
         row = QHBoxLayout()
@@ -1010,18 +1005,7 @@ class DiffFitTool(ToolInstance):
         layout.addWidget(self._view_input_mode, row, 1, 1, 2)
         row = row + 1
 
-        target_vol_label = QLabel("Target Volume:")
-        self.target_vol = QLineEdit()        
-        self.target_vol.textChanged.connect(lambda: self.store_settings())
-        self.target_vol.setEnabled(False)
-        self.target_vol_select = QPushButton("Select")
-        self.target_vol_select.setEnabled(False)
-        self.target_vol_select.clicked.connect(lambda: self.select_clicked("Target Volume", self.target_vol, False, "MRC Files(*.mrc);;MAP Files(*.map)"))
-        layout.addWidget(target_vol_label, row, 0)
-        layout.addWidget(self.target_vol, row, 1)
-        layout.addWidget(self.target_vol_select, row, 2)
-        row = row + 1
-        
+
         # data folder - where the data is stored
         dataset_folder_label = QLabel("Result Folder:")
         self.dataset_folder = QLineEdit()    
