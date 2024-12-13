@@ -326,7 +326,6 @@ def dfit_disk(session, str_dir, in_map, level,
 
     if df is not None:
         # copy the directories
-        df.target_vol.setText(in_map)
         df.dataset_folder.setText(_out_dir)
 
         # output is tensor, convert to numpy
