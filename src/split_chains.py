@@ -8,6 +8,7 @@ save them as separate PDB files, and generate MRC files for each chain.
 
 # Import necessary modules
 import os, sys
+from pathlib import Path
 from chimerax.core.commands import run
 from datetime import datetime
 import numpy as np
@@ -25,7 +26,7 @@ gridSpacing = float(sys.argv[4])  # gridSpacing for simulated MRC files
 structure = run(session, f'open {input_model}')[0]
 
 # Get the base name of the input structure for naming output files
-structure_basename = os.path.basename(input_model).split('.')[0]
+structure_basename = Path(input_model).stem
 
 # Iterate over each chain in the structure
 chain_id_name_list = []

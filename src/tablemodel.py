@@ -3,17 +3,19 @@ from Qt.QtCore import QAbstractTableModel, Qt, QModelIndex
 class TableModel(QAbstractTableModel):
     """A model to interface a Qt view with pandas dataframe """
 
-    def __init__(self, sqd_cluster_data, sqd_data, mol_paths, parent=None):
+    def __init__(self, sqd_cluster_data, sqd_data, mol_paths, mol_num_atoms, parent=None):
         QAbstractTableModel.__init__(self, parent)
         self._sqd_data = sqd_data
         self._sqd_cluster_data = sqd_cluster_data
 
         import os
         self._mol_names = [os.path.splitext(os.path.basename(path))[0] for path in mol_paths]
+        self._mol_num_atoms = mol_num_atoms
 
-
-        self._header = ["Id", "Mol name", "Hits",
-                        "Density", "Overlap", "Correlation", "Cam", "Inside"]
+        self._header = ["Id", "Mol name", "Q-score", "Hits", "# Atoms",
+                        "Density (normalized)", "Overlap", "Correlation", "Cam", "Inside",
+                        "Avg Density (in)", "Avg Density (all)",
+                        "DF CID"]
 
         # mapping of columns (from view to data)
         # self._mapping = [-1, -1, 10, 11, 12, 13]
@@ -59,11 +61,18 @@ class TableModel(QAbstractTableModel):
             elif column == 1:
                 return str(f"{mol_idx}-{self._mol_names[mol_idx]}")
             elif column == 2:
-                return int(self._sqd_cluster_data[index.row(), 3])
-            elif 3 <= column <= 7:
+                try:
+                    return float(round(float(self._sqd_cluster_data[index.row(), 3]) * 10000)) / 10000.0  # for 4 decimals
+                except:
+                    return None
+            elif column == 3:
+                return int(self._sqd_cluster_data[index.row(), 4])
+            elif column == 4:
+                return int(self._mol_num_atoms[mol_idx])
+            elif 5 <= column <= 12:
                 record_row = self._sqd_data[mol_idx, record_idx, iter_idx]
-                return float(round(float(record_row[index.column() + 4]) * 10000)) / 10000.0  # for 4 decimals
-                # return float(record_row[index.column() + 4])
+                return float(round(float(record_row[column + 2]) * 10000)) / 10000.0  # for 4 decimals
+                # return float(record_row[index.column() + 2])
 
         return None
 

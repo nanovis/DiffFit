@@ -1,5 +1,6 @@
 import argparse
 import os, sys
+from pathlib import Path
 from datetime import datetime
 
 import numpy as np
@@ -27,6 +28,33 @@ from scipy.interpolate import interp1d
 # Ignore PDBConstructionWarning for unrecognized 'END' record
 warnings.filterwarnings("ignore", message="Ignoring unrecognized record 'END'", category=PDBConstructionWarning)
 
+from chimerax.geometry.bins import Binned_Transforms
+
+
+class DiffFit_Binned_Transforms(Binned_Transforms):
+    def __init__(self, angle, translation, center=(0, 0, 0), bfactor=2):
+        super().__init__(angle, translation, center, bfactor)
+
+    def one_in_cluster_transform(self, tf):
+
+        a, x, y, z = c = self.bin_point(tf)
+        clist = self.bins.close_objects(c, self.spacing)
+        if len(clist) == 0:
+            return None
+
+        itf = tf.inverse()
+        d2max = self.translation * self.translation
+        for ctf in clist:
+            cx, cy, cz = ctf * self.center
+            dx, dy, dz = x - cx, y - cy, z - cz
+            d2 = dx * dx + dy * dy + dz * dz
+            if d2 <= d2max:
+                dtf = ctf * itf
+                a = dtf.rotation_angle()
+                if a < self.angle:
+                    return ctf
+
+        return None
 
 def interpolate_coords(coords, inter_folds, inter_kind='quadratic'):
     """Interpolate backbone coordinates."""
@@ -95,8 +123,13 @@ def q2_unit_coord(Q):
     return np.concatenate((rotated_up, rotated_right), axis=-1)
 
 
-def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3.0, angle_tolerance: float = 6.0,
-                              sort_column_idx: int = 7, in_contour_threshold = 0.5, correlation_threshold = 0.5):
+def cluster_and_sort_sqd_fast(e_sqd_log, shift_tolerance: float = 3.0, angle_tolerance: float = 6.0,
+                              sort_column_idx: int = 7,
+                              in_contour_threshold: float = 0.5,
+                              correlation_threshold: float = 0.5,
+                              df_cid_threshold: float = 0.15,
+                              save_log=False,
+                              log_path=""):
     """
     Cluster the fitting results in sqd table by thresholding on shift and quaternion
     Return the sorted cluster representatives
@@ -113,13 +146,13 @@ def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3
     3. sort the cluster table in descending order by correlation, or the metric at the sort_column_idx
 
     @param e_sqd_log: fitting results in sqd table
-    @param mol_centers: molecule atom coords centers
     @param shift_tolerance: shift tolerance in Angstrom
     @param angle_tolerance: angle tolerance in degrees
     @param sort_column_idx: the column to sort, 9-th column is the correlation
     @return: cluster representative table sorted in descending order
     """
-    from chimerax.geometry import bins
+    mol_center = np.array([0.0, 0.0, 0.0])
+
     from chimerax.geometry import Place
 
     N_mol, N_record, N_iter, N_metric = e_sqd_log.shape
@@ -137,23 +170,31 @@ def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3
     # Use the generated meshgrid and max_sort_column_metric_idx to index into e_sqd_log
     sqd_highest_corr_np = e_sqd_log[dims_0, dims_1, max_sort_column_metric_idx]
 
+    timer_start = datetime.now()
+    if save_log:
+        with open(log_path, "a") as log_file:
+            log_file.write(f"DiffFit fit_res filtering starts: {timer_start}\n")
+
     fit_res_filtered = []
     fit_res_filtered_indices = []
     in_contour_col_idx = 11
     correlation_col_idx = 9
+    df_cid_col_idx = 14
     for mol_idx in range(N_mol):
         sqd_highest_corr_np_mol = sqd_highest_corr_np[mol_idx]
 
         # Fetch the columns of interest
         in_contour_percentage_column = sqd_highest_corr_np_mol[:, in_contour_col_idx]
         correlation_column = sqd_highest_corr_np_mol[:, correlation_col_idx]
+        df_cid_column = sqd_highest_corr_np_mol[:, df_cid_col_idx]
 
         # Create masks for the filtering conditions
         in_contour_mask = in_contour_percentage_column >= in_contour_threshold
         correlation_mask = correlation_column >= correlation_threshold
+        df_cid_mask = df_cid_column >= df_cid_threshold
 
         # Combine the masks to get a final filter
-        combined_mask = in_contour_mask & correlation_mask
+        combined_mask = in_contour_mask & correlation_mask & df_cid_mask
 
         # Apply the mask to filter the original array and also retrieve the indices
         filtered_indices = np.where(combined_mask)  # Get the indices of the filtered rows
@@ -162,11 +203,20 @@ def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3
         fit_res_filtered.append(filtered_array)
         fit_res_filtered_indices.append(filtered_indices[0])
 
+    if save_log:
+        with open(log_path, "a") as log_file:
+            log_file.write(f"DiffFit fit_res filtering time elapsed: {datetime.now() - timer_start}\n"
+                           f"-------\n")
 
     sqd_clusters = []
     for mol_idx in range(N_mol):
         mol_shift = fit_res_filtered[mol_idx][:, :3]
         mol_q = fit_res_filtered[mol_idx][:, 3:7]
+
+        if save_log:
+            with open(log_path, "a") as log_file:
+                log_file.write(f"Clustering {len(mol_shift)} fits for mol_idx: {mol_idx}\n")
+        timer_start = datetime.now()
 
         T = []
         for i in range(len(mol_shift)):
@@ -181,21 +231,34 @@ def cluster_and_sort_sqd_fast(e_sqd_log, mol_centers, shift_tolerance: float = 3
             transformation = Place(matrix=T_matrix)
             T.append(transformation)
 
-        b = bins.Binned_Transforms(angle_tolerance * pi / 180, shift_tolerance, mol_centers[mol_idx])
+        if save_log:
+            with open(log_path, "a") as log_file:
+                log_file.write(f"Convert to matrix time: {datetime.now() - timer_start}\n")
+        timer_start = datetime.now()
+
+        b = DiffFit_Binned_Transforms(angle_tolerance * pi / 180, shift_tolerance, mol_center)
         mol_transform_label = []
         unique_id = 0
         T_ID_dict = {}
         for i in range(len(mol_shift)):
             ptf = T[i]
-            close = b.close_transforms(ptf)
-            if len(close) == 0:
+            in_cluster = b.one_in_cluster_transform(ptf)
+            if in_cluster is None:
                 b.add_transform(ptf)
                 mol_transform_label.append(unique_id)
                 T_ID_dict[id(ptf)] = unique_id
                 unique_id = unique_id + 1
             else:
-                mol_transform_label.append(T_ID_dict[id(close[0])])
-                T_ID_dict[id(ptf)] = T_ID_dict[id(close[0])]
+                mol_transform_label.append(T_ID_dict[id(in_cluster)])
+                T_ID_dict[id(ptf)] = T_ID_dict[id(in_cluster)]
+
+            if save_log and (i + 1) % 10000 == 0:
+                with open(log_path, "a") as log_file:
+                    log_file.write(f"Clustered {i+1} fits: {datetime.now()}\n")
+
+        if save_log:
+            with open(log_path, "a") as log_file:
+                log_file.write(f"ChimeraX bin clustering: {datetime.now() - timer_start}\n")
 
         unique_labels, indices, counts = np.unique(mol_transform_label, axis=0, return_inverse=True, return_counts=True)
 
@@ -366,12 +429,14 @@ def mrc_to_npy(mrc_filename):
 def mrc_folder_to_npy_list(mrc_folder):
     sim_map_list = []
 
-    for file_name in os.listdir(mrc_folder):
+    for file_name in sorted(os.listdir(mrc_folder)):
         full_path = os.path.join(mrc_folder, file_name)
         # Check if the current path is a file and not a directory
         if os.path.isfile(full_path):
-            data, steps, origin = mrc_to_npy(full_path)
-            sim_map_list.append((data, steps, origin))
+            file_extension = Path(file_name).suffix.lower()
+            if file_extension in ['.mrc', '.map']:
+                data, steps, origin = mrc_to_npy(full_path)
+                sim_map_list.append((data, steps, origin))
 
     return sim_map_list
 
@@ -435,18 +500,16 @@ def transform_to_angstrom_space(ndc_shift, box_size, box_origin, atom_center_in_
 
 def read_file_and_get_coordinates(file_path, fit_atom_mode="Backbone"):
     # Determine file extension
-    file_extension = os.path.splitext(file_path)[1].lower()
+    file_extension = Path(file_path).suffix.lower()
 
     # Initialize parser based on file extension
     if file_extension == '.cif':
         parser = MMCIFParser()
     elif file_extension == '.pdb':
         parser = PDBParser()
-    else:
-        raise ValueError("Unsupported file format. Please provide a .mmcif or .pdb file.")
 
     # Parse the structure
-    structure_id = os.path.basename(file_path).split('.')[0]  # Use file name as structure ID
+    structure_id = Path(file_path).stem  # Use file name as structure ID
     structure = parser.get_structure(structure_id, file_path)
 
     # Initialize a list to hold all atom coordinates
@@ -630,10 +693,11 @@ def center_atom_coords_list(atom_coords_list, mol_centers):
 def read_all_files_to_atom_coords_list(structures_dir, fit_atom_mode="Backbone"):
     atom_coords_list = []
     # List all files in the given directory
-    for file_name in os.listdir(structures_dir):
+    for file_name in sorted(os.listdir(structures_dir)):
         full_path = os.path.join(structures_dir, file_name)
-        # Check if the current path is a file and not a directory
-        if os.path.isfile(full_path):
+
+        file_extension = Path(file_name).suffix.lower()
+        if file_extension in ['.pdb', '.cif']:
             # Read the atom coordinates from the file
             atom_coords = read_file_and_get_coordinates(full_path, fit_atom_mode)
             # Append the coordinates to the list
@@ -658,13 +722,13 @@ def rotate_centers(mol_centers, e_quaternions):
 
 def calculate_metrics(render, elements_sim_density):
     # Mask to filter elements in render that are greater than zero
-    mask = render > 0
+    mask = (render > 0.0).float()
 
     # Apply the mask to the render and elements_sim_density tensors
     render_filtered = render * mask
     elements_sim_density_filtered = elements_sim_density * mask
-    mask_sum = mask.float().sum(dim=-1, keepdim=True)
-    in_contour_percentage = mask.float().mean(dim=-1)
+    mask_sum = mask.sum(dim=-1, keepdim=True)
+    in_contour_percentage = mask.mean(dim=-1)
 
     # Calculation of correlation
     # First, normalize the inputs to have zero mean and unit variance, as Pearson's correlation requires
@@ -691,7 +755,29 @@ def calculate_metrics(render, elements_sim_density):
 
     correlation = overlap / (render_norm * elements_sim_density_norm)
 
-    return torch.nan_to_num(torch.stack((overlap_mean, correlation, cam, in_contour_percentage), dim=-1))
+    average_density_inside = render_filtered.sum(dim=-1) / mask.sum(dim=-1)
+    average_density_all = render.mean(dim=-1)
+
+    weight_c = 1.0/3.0
+    weight_i = 1.0/3.0
+    weight_d = 1.0/3.0
+
+    good_correlation = 0.85
+    good_in = 0.3
+    good_average_density_all = -0.1
+
+    df_cid = (weight_c * (correlation - good_correlation) / (1.0 - good_correlation) +
+              weight_i * (in_contour_percentage - good_in) / (1.0 - good_in) +
+              weight_d * (average_density_all - good_average_density_all) / (0.5 - good_average_density_all))
+
+    return torch.nan_to_num(torch.stack((
+        overlap_mean,
+        correlation,
+        cam,
+        in_contour_percentage,
+        average_density_inside,
+        average_density_all,
+        df_cid), dim=-1))
 
 
 def diff_fit(volume_list: list,
@@ -753,7 +839,7 @@ def diff_fit(volume_list: list,
 
     # ======= get atom coords
     atom_coords_list = mol_coords  # atom coords as [x, y, z]
-    mol_centers = [np.mean(coords, axis=0) for coords in atom_coords_list]
+    mol_num_atoms = [len(coords) for coords in atom_coords_list]
     num_molecules = len(atom_coords_list)
 
     # read simulated map
@@ -786,7 +872,7 @@ def diff_fit(volume_list: list,
     # Training loop
     log_every = 10
 
-    e_sqd_log = torch.zeros([num_molecules, N_quaternions, N_shifts, int(n_iters / 10) + 2, 12], device=device)
+    e_sqd_log = torch.zeros([num_molecules, N_quaternions, N_shifts, int(n_iters / 10) + 2, 15], device=device)
     # [x, y, z, w, -x, -y, -z, occupied_density_sum]
 
     with torch.no_grad():
@@ -807,7 +893,7 @@ def diff_fit(volume_list: list,
 
         first_layer_positive_density_sum = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device)
         occupied_density_sum = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device)
-        metrics_table = torch.zeros([num_molecules, N_quaternions, N_shifts, 4], device=device)
+        metrics_table = torch.zeros([num_molecules, N_quaternions, N_shifts, 7], device=device)
 
         for mol_idx in range(num_molecules):
             grid = transform_coords(atom_coords_list[mol_idx],
@@ -841,7 +927,7 @@ def diff_fit(volume_list: list,
                 e_sqd_log[:, :, :, log_idx, 0:3] = e_shifts
                 e_sqd_log[:, :, :, log_idx, 3:7] = e_quaternions
                 e_sqd_log[:, :, :, log_idx, 7] = first_layer_positive_density_sum
-                e_sqd_log[:, :, :, log_idx, 8:12] = metrics_table
+                e_sqd_log[:, :, :, log_idx, 8:15] = metrics_table
 
                 if save_results:
                     with open(f"{out_dir}/log.log", "a") as log_file:
@@ -869,7 +955,7 @@ def diff_fit(volume_list: list,
                             target_vol_path=vol_path,
                             target_surface_threshold=target_surface_threshold,
                             mol_paths=[mol_path],
-                            mol_centers=mol_centers,
+                            mol_num_atoms=mol_num_atoms,
                             opt_res=e_sqd_log_np)
         # np.save(f"{out_dir}/sampled_coords.npy", sampled_coords)
 
@@ -883,15 +969,14 @@ def diff_fit(volume_list: list,
     return (vol_path,
             target_surface_threshold,
             [mol_path],
-            mol_centers,
+            mol_num_atoms,
             e_sqd_log_np)
 
 
 def diff_atom_comp(target_vol_path: str,
                    target_surface_threshold: float,
-                   min_cluster_size: float,
+                   min_cluster_size: float,  # not in use, use 100 as a placeholder
                    structures_dir: str,
-                   structures_sim_map_dir: str,
                    fit_atom_mode:str = "Backbone",
                    Gaussian_mode:str = "Gaussian with negative (shrink)",
                    N_shifts: int = 10,
@@ -950,14 +1035,14 @@ def diff_atom_comp(target_vol_path: str,
     num_molecules = len(atom_coords_list)
 
     # read simulated map
-    sim_map_list = mrc_folder_to_npy_list(structures_sim_map_dir)
+    sim_map_list = mrc_folder_to_npy_list(structures_dir)
     elements_sim_density_list = sample_sim_map(atom_coords_list, sim_map_list, num_molecules, device)
 
     # center the mol
     mol_centers = [np.mean(coords, axis=0) for coords in atom_coords_list]
     atom_coords_list = center_atom_coords_list(atom_coords_list, mol_centers)
-    # re-calculate the centers, should be all near zero
-    mol_centers = [np.mean(coords, axis=0) for coords in atom_coords_list]
+
+    mol_num_atoms = [len(coords) for coords in atom_coords_list]
 
 
     # ======= optimization
@@ -987,7 +1072,7 @@ def diff_atom_comp(target_vol_path: str,
     # Training loop
     log_every = 10
 
-    e_sqd_log = torch.zeros([num_molecules, N_quaternions, N_shifts, int(n_iters / 10) + 2, 12], device=device)
+    e_sqd_log = torch.zeros([num_molecules, N_quaternions, N_shifts, int(n_iters / 10) + 2, 15], device=device)
     # [x, y, z, w, -x, -y, -z, occupied_density_sum]
 
     with torch.no_grad():
@@ -1008,7 +1093,7 @@ def diff_atom_comp(target_vol_path: str,
 
         first_layer_positive_density_sum = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device)
         occupied_density_sum = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device)
-        metrics_table = torch.zeros([num_molecules, N_quaternions, N_shifts, 4], device=device)
+        metrics_table = torch.zeros([num_molecules, N_quaternions, N_shifts, 7], device=device)
 
         for mol_idx in range(num_molecules):
             grid = transform_coords(atom_coords_list[mol_idx],
@@ -1042,7 +1127,7 @@ def diff_atom_comp(target_vol_path: str,
                 e_sqd_log[:, :, :, log_idx, 0:3] = e_shifts
                 e_sqd_log[:, :, :, log_idx, 3:7] = e_quaternions
                 e_sqd_log[:, :, :, log_idx, 7] = first_layer_positive_density_sum
-                e_sqd_log[:, :, :, log_idx, 8:12] = metrics_table
+                e_sqd_log[:, :, :, log_idx, 8:15] = metrics_table
 
                 with open(f"{out_dir}/log.log", "a") as log_file:
                     log_file.write(f"Epoch: {epoch + 1:05d}, "
@@ -1063,15 +1148,17 @@ def diff_atom_comp(target_vol_path: str,
     e_sqd_log[:, :, :, :, 3:7] /= q_norms
 
     mol_paths = []
-    for file_name in os.listdir(structures_dir):
+    for file_name in sorted(os.listdir(structures_dir)):
         full_path = os.path.join(structures_dir, file_name)
-        mol_paths.append(full_path)
+        file_extension = Path(file_name).suffix.lower()
+        if file_extension in ['.pdb', '.cif']:
+            mol_paths.append(full_path)
 
     np.savez_compressed(f"{out_dir}/fit_res.npz",
                         target_vol_path=target_vol_path,
                         target_surface_threshold=target_surface_threshold,
                         mol_paths=mol_paths,
-                        mol_centers=mol_centers,
+                        mol_num_atoms=mol_num_atoms,
                         opt_res=e_sqd_log.detach().cpu().numpy())
     # np.save(f"{out_dir}/sampled_coords.npy", sampled_coords)
 
@@ -1085,7 +1172,7 @@ def diff_atom_comp(target_vol_path: str,
     return (target_vol_path,
             target_surface_threshold,
             mol_paths,
-            mol_centers,
+            mol_num_atoms,
             e_sqd_log)
 
 
@@ -1114,8 +1201,6 @@ if __name__ == '__main__':
 
     parser.add_argument('--structures_dir', type=str,
                         help="directory containing the structures to be fit")
-    parser.add_argument('--structures_sim_map_dir', type=str,
-                        help="directory containing the simulated map from the structures to be fit")
 
     parser.add_argument('--out_dir', type=str, default="out",
                         help="Output directory")
@@ -1142,7 +1227,6 @@ if __name__ == '__main__':
                    args.target_surface_threshold,
                    args.min_cluster_size,
                    args.structures_dir,
-                   args.structures_sim_map_dir,
                    out_dir=args.out_dir,
                    out_dir_exist_ok=args.out_dir_exist_ok,
                    N_shifts=args.N_shifts,

@@ -13,7 +13,9 @@ This guide is to reproduce Fig. 4 of our paper.
 
 1. Download [DiffFit-0.6.2-py3-none-any.whl](https://github.com/nanovis/DiffFit/releases/download/v0.6.2/DiffFit-0.6.2-py3-none-any.whl)
 2. Follow the [installation guide](https://github.com/nanovis/DiffFit?tab=readme-ov-file#install) 
-3. Download the [repository](https://github.com/nanovis/DiffFit/archive/refs/heads/main.zip) and unzip it to Desktop
+3. Download the [repository](https://github.com/nanovis/DiffFit/archive/refs/heads/main.zip) 
+   and unzip it to your working directory 
+   (which is your Desktop if you are on Windows or your home folder if you are on Linux).
 4. Open ChimeraX, launch DiffFit, go to the `Settings` tab, change `Fit atoms:` to `All atoms`. 
 5. Go to the `Disk` tab, set the parameters as below:
    1. Target Volume: `DiffFit-main\dev_data\input\domain_fit_demo_3domains\density2.mrc`

@@ -49,7 +49,7 @@ def animate_MQS(e_sqd_log, mol_folder, MQS, session, clean_scene=True):
         for structure in structures:
             structure.delete()
 
-    mol_files = os.listdir(mol_folder)
+    mol_files = sorted(os.listdir(mol_folder))
     mol_path = os.path.join(mol_folder, mol_files[MQS[0]])
     mol = run(session, f"open {mol_path}")[0]
 
@@ -69,7 +69,7 @@ def animate_MQS_2(e_sqd_log, mol_folder, MQS, session, clean_scene=True):
         for structure in structures:
             structure.delete()
 
-    mol_files = os.listdir(mol_folder)
+    mol_files = sorted(os.listdir(mol_folder))
     mol_path = os.path.join(mol_folder, mol_files[MQS[0]])
     mol = run(session, f"open {mol_path}")[0]
 
@@ -110,7 +110,7 @@ def look_at_MQS_idx(e_sqd_log, mol_folder, MQS, session, clean_scene=True):
         for structure in structures:
             structure.delete()
 
-    mol_files = os.listdir(mol_folder)
+    mol_files = sorted(os.listdir(mol_folder))
 
     look_at_mol_idx, transformation = get_transformation_at_MQS(e_sqd_log, MQS)
 
@@ -131,7 +131,7 @@ def look_at_cluster(e_sqd_clusters_ordered, mol_folder, cluster_idx, session, cl
         for structure in structures:
             structure.delete()
 
-    mol_files = os.listdir(mol_folder)
+    mol_files = sorted(os.listdir(mol_folder))
     # mol_files[idx] pairs with e_sqd_log[idx]
 
     look_at_mol_idx, transformation = get_transformation_at_idx(e_sqd_clusters_ordered, cluster_idx)
@@ -180,7 +180,7 @@ def simulate_volume(session, vol, mol_paths, mol_idx, transformation, res=4.0):
     mol.atoms.transform(transformation)
 
     from chimerax.map.molmap import molecule_map
-    mol_vol = molecule_map(session, mol.atoms, res, grid_spacing=vol.data_origin_and_step()[1][0])
+    mol_vol = molecule_map(session, mol.atoms, res, grid_spacing=vol.data.step)
     mol.delete()
 
     return mol_vol
