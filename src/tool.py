@@ -1299,14 +1299,10 @@ class DiffFitTool(ToolInstance):
     def _view_input_mode_changed(self):
         if self._view_input_mode.currentText() == "interactive":
             self.fit_input_mode = "interactive"
-            self.target_vol.setEnabled(False)
-            self.target_vol_select.setEnabled(False)
             self.dataset_folder.setEnabled(False)
             self.dataset_folder_select.setEnabled(False)
         elif self._view_input_mode.currentText() == "disk file":
             self.fit_input_mode = "disk file"
-            self.target_vol.setEnabled(False)
-            self.target_vol_select.setEnabled(False)
             self.dataset_folder.setEnabled(True)
             self.dataset_folder_select.setEnabled(True)
 
@@ -1942,7 +1938,6 @@ class DiffFitTool(ToolInstance):
                            f"DiffFit optimization time elapsed: {timer_stop - timer_start}\n")
 
         # copy the directories
-        self.target_vol.setText(self.settings.target_vol_path)     
         self.dataset_folder.setText("{0}".format(self.settings.output_directory))
         #print(self.settings)
         
