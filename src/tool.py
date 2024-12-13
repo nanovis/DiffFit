@@ -991,7 +991,8 @@ class DiffFitTool(ToolInstance):
         layout.addLayout(row)
 
         doc_label = QLabel("If the map's resolution < 5.0, we suggest using \"Gaussian with negative (shrink)\".\n"
-                           "Otherwise, we suggest using \"Gaussian then negative (expand)\".\n")
+                           "Otherwise, we suggest give \"Gaussian then negative (expand)\" a try and see. "
+                           "But the influence of this parameter is mild in most cases. \n")
         doc_label.setWordWrap(True)
         row.addWidget(doc_label)
 
