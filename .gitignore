@@ -14,3 +14,4 @@ dev_data/output_old/*
 case_study_data
 run
 /dev_data/input/domain_fit_demo_3domains/subunits_cif_test
+*.npz
