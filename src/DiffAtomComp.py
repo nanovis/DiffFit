@@ -1229,6 +1229,14 @@ if __name__ == '__main__':
 
     parser.add_argument('--negative_space_value', type=float, default=-0.5,
                         help="The value to set the negative space voxels to")
+    parser.add_argument('--conv_loops', type=int, default=3,
+                        help="Number of convolution loops")
+    parser.add_argument('--conv_kernel_sizes', type=lambda s: [int(item) for item in s.split(',')] if s else [],
+                        default="5,5,5",
+                        help="Comma-separated kernel sizes for the convolution, or empty for none")
+    parser.add_argument('--conv_weights', type=lambda s: [float(item) for item in s.split(',')] if s else [],
+                        default="1.0,1.0,1.0",
+                        help="Comma-separated weights for the convolution, or empty for none")
     parser.add_argument('--device', type=str, default="cuda",
                         help="cpu or cuda")
 
@@ -1246,6 +1254,9 @@ if __name__ == '__main__':
                    N_shifts=args.N_shifts,
                    N_quaternions=args.N_quaternions,
                    negative_space_value=args.negative_space_value,
+                   conv_loops=args.conv_loops,
+                   conv_kernel_sizes=args.conv_kernel_sizes,
+                   conv_weights=args.conv_weights,
                    device=args.device)
 
     timer_stop = datetime.now()
