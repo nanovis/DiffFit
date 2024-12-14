@@ -1098,8 +1098,8 @@ def diff_atom_comp(target_vol_path: str,
         metrics_table = torch.zeros([num_molecules, N_quaternions, N_shifts, 7], device=device)
 
         for mol_idx in range(num_molecules):
-            # sampled_coords = atom_coords_list[mol_idx][np.random.choice(atom_coords_list[mol_idx].shape[0], 1000, replace=True)]
-            grid = transform_coords(atom_coords_torch_list[mol_idx],
+            sampled_coords = atom_coords_list[mol_idx][torch.randint(0, atom_coords_torch_list[mol_idx].shape[0], (200,), device=device)]
+            grid = transform_coords(sampled_coords,
                                     e_quaternions[mol_idx],
                                     e_shifts[mol_idx],
                                     target_size_x_y_z_tensor, target_origin_tensor, device)
