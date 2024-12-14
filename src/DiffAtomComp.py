@@ -612,7 +612,7 @@ def random_sample_indices(binary_volume, sample_size):
 
 
 def transform_coords(atom_coords, e_quaternions, e_shifts, target_size_x_y_z_tensor, target_origin_tensor, device):
-    atom_coords = torch.tensor(atom_coords, device=device).float()
+    # atom_coords = torch.tensor(atom_coords, device=device).float()
 
     e_rotation_matrices = quaternion_to_matrix_batch(e_quaternions)
 
@@ -1088,6 +1088,8 @@ def diff_atom_comp(target_vol_path: str,
         {'params': [e_quaternions], 'lr': learning_rate}
     ])
 
+    atom_coords_torch_list = [torch.tensor(atom_coords, device=device).float() for atom_coords in atom_coords_list]
+
     for epoch in range(n_iters):
         # Forward pass
 
@@ -1096,7 +1098,8 @@ def diff_atom_comp(target_vol_path: str,
         metrics_table = torch.zeros([num_molecules, N_quaternions, N_shifts, 7], device=device)
 
         for mol_idx in range(num_molecules):
-            grid = transform_coords(atom_coords_list[mol_idx],
+            # sampled_coords = atom_coords_list[mol_idx][np.random.choice(atom_coords_list[mol_idx].shape[0], 1000, replace=True)]
+            grid = transform_coords(atom_coords_torch_list[mol_idx],
                                     e_quaternions[mol_idx],
                                     e_shifts[mol_idx],
                                     target_size_x_y_z_tensor, target_origin_tensor, device)
