@@ -568,20 +568,32 @@ def quaternion_to_matrix_batch(quaternions):
     q = quaternions / q_norm
     q0, q1, q2, q3 = q[..., 0], q[..., 1], q[..., 2], q[..., 3]
 
+    # Precompute squares and products
+    q0q0 = q0 * q0
+    q1q1 = q1 * q1
+    q2q2 = q2 * q2
+    q3q3 = q3 * q3
+    q0q1 = q0 * q1
+    q0q2 = q0 * q2
+    q0q3 = q0 * q3
+    q1q2 = q1 * q2
+    q1q3 = q1 * q3
+    q2q3 = q2 * q3
+
     # Calculate the components of the rotation matrices
-    m00 = 1 - 2 * (q2 ** 2 + q3 ** 2)
-    m01 = 2 * (q1 * q2 - q3 * q0)
-    m02 = 2 * (q1 * q3 + q2 * q0)
-    m10 = 2 * (q1 * q2 + q3 * q0)
-    m11 = 1 - 2 * (q1 ** 2 + q3 ** 2)
-    m12 = 2 * (q2 * q3 - q1 * q0)
-    m20 = 2 * (q1 * q3 - q2 * q0)
-    m21 = 2 * (q2 * q3 + q1 * q0)
-    m22 = 1 - 2 * (q1 ** 2 + q2 ** 2)
+    m00 = 1 - 2 * (q2q2 + q3q3)
+    m01 = 2 * (q1q2 - q0q3)
+    m02 = 2 * (q1q3 + q0q2)
+    m10 = 2 * (q1q2 + q0q3)
+    m11 = 1 - 2 * (q1q1 + q3q3)
+    m12 = 2 * (q2q3 - q0q1)
+    m20 = 2 * (q1q3 - q0q2)
+    m21 = 2 * (q2q3 + q0q1)
+    m22 = 1 - 2 * (q1q1 + q2q2)
 
     # Stack the components into rotation matrices
     rotation_matrices = torch.stack([m00, m01, m02, m10, m11, m12, m20, m21, m22], dim=-1)
-    rotation_matrices = rotation_matrices.view(-1, quaternions.size(1), 3, 3)
+    rotation_matrices = rotation_matrices.view(*quaternions.shape[:-1], 3, 3)
     return rotation_matrices
 
 
