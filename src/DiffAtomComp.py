@@ -799,7 +799,7 @@ def diff_fit(volume_list: list,
              N_quaternions: int = 100,
              negative_space_value: float = -0.5,
              learning_rate: float = 0.01,
-             n_iters: int = 201,
+             n_iters: int = 101,
              save_results: bool = False,
              out_dir: str = "DiffFit_out",
              out_dir_exist_ok: bool = False,
@@ -990,7 +990,7 @@ def diff_atom_comp(target_vol_path: str,
                    N_quaternions: int = 100,
                    negative_space_value: float = -0.5,
                    learning_rate: float = 0.01,
-                   n_iters: int = 201,
+                   n_iters: int = 101,
                    out_dir: str = "out",
                    out_dir_exist_ok: bool = True,
                    conv_loops: int = 3,
@@ -1219,7 +1219,7 @@ if __name__ == '__main__':
                         help="The number of random rotation initializations")
     parser.add_argument('--negative_space_value', type=float, default=-0.5,
                         help="The value to set the negative space voxels to")
-    parser.add_argument('--n_iters', type=int, default=201,
+    parser.add_argument('--n_iters', type=int, default=101,
                         help="Number of iterations for optimization")
     parser.add_argument('--learning_rate', type=float, default=0.01,
                         help="Learning rate for the optimization process")

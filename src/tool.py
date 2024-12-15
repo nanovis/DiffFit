@@ -165,7 +165,7 @@ class DiffFitSettings:
         self.N_quaternions: int = 100
         self.negative_space_value: float = -0.5
         self.learning_rate: float = 0.01
-        self.N_iters: int = 201        
+        self.N_iters: int = 101
         self.out_dir_exist_ok: bool = True
         self.conv_loops: int = 3
         self.conv_kernel_sizes: list = [5, 5, 5]
