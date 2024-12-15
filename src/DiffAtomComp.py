@@ -630,7 +630,7 @@ def transform_coords(atom_coords, e_quaternions, e_shifts, target_size_x_y_z_ten
     # transformed_coords = transformed_coords.view(1, *transformed_coords.shape)
     # transformed_coords += e_shifts.view(1, 100, 10, 1, 3)
 
-    transformed_coords += e_shifts.unsqueeze(2).unsqueeze(0)
+    transformed_coords += e_shifts.unsqueeze(3)
 
     atom_coords_normalized_to_target = normalize_coordinates_to_map_origin_torch(transformed_coords,
                                                                                  target_size_x_y_z_tensor,
@@ -908,8 +908,8 @@ def diff_fit(volume_list: list,
 
         for mol_idx in range(num_molecules):
             grid = transform_coords(atom_coords_torch_list[mol_idx],
-                                    e_quaternions[mol_idx],
-                                    e_shifts[mol_idx],
+                                    e_quaternions[mol_idx:mol_idx + 1],
+                                    e_shifts[mol_idx:mol_idx + 1],
                                     target_size_x_y_z_tensor, target_origin_tensor, device)
             render = torch.nn.functional.grid_sample(target, grid, 'bilinear', 'border', align_corners=True)
 
@@ -1112,7 +1112,7 @@ def diff_atom_comp(target_vol_path: str,
             # sampled_coords = atom_coords_torch_list[mol_idx][torch.randint(0, atom_coords_torch_list[mol_idx].shape[0], (500,), device=device)]
             grid = transform_coords(atom_coords_torch_list[mol_idx],
                                     e_quaternions[mol_idx:mol_idx+1],
-                                    e_shifts[mol_idx],
+                                    e_shifts[mol_idx:mol_idx+1],
                                     target_size_x_y_z_tensor, target_origin_tensor, device)
             render = torch.nn.functional.grid_sample(target, grid, 'bilinear', 'border', align_corners=True)
 
