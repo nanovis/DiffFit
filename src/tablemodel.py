@@ -13,9 +13,7 @@ class TableModel(QAbstractTableModel):
         self._mol_num_atoms = mol_num_atoms
 
         self._header = ["Id", "Mol name", "Q-score", "Hits", "# Atoms",
-                        "Density (normalized)", "Overlap", "Correlation", "Cam", "Inside",
-                        "Avg Density (in)", "Avg Density (all)",
-                        "DF CID"]
+                        "Density (normalized)", "Inside"]
 
         # mapping of columns (from view to data)
         # self._mapping = [-1, -1, 10, 11, 12, 13]
@@ -69,7 +67,7 @@ class TableModel(QAbstractTableModel):
                 return int(self._sqd_cluster_data[index.row(), 4])
             elif column == 4:
                 return int(self._mol_num_atoms[mol_idx])
-            elif 5 <= column <= 12:
+            elif 5 <= column <= 6:
                 record_row = self._sqd_data[mol_idx, record_idx, iter_idx]
                 return float(round(float(record_row[column + 2]) * 10000)) / 10000.0  # for 4 decimals
                 # return float(record_row[index.column() + 2])

@@ -1371,10 +1371,7 @@ class DiffFitTool(ToolInstance):
             "Mol_path": self.mol.filename,
             "Cluster_size": int(self.e_sqd_clusters_ordered[self.cluster_idx, 3]),
             "Density": record_row[7],
-            "Overlap": record_row[8],
-            "Correlation": record_row[9],
-            "Cam": record_row[10],
-            "Inside": record_row[11]
+            "Inside": record_row[8]
         }
 
         import json
@@ -1474,8 +1471,6 @@ class DiffFitTool(ToolInstance):
                                                                 self.settings.clustering_shift_tolerance,
                                                                 self.settings.clustering_angle_tolerance,
                                                                 in_contour_threshold=self.settings.clustering_in_contour_threshold,
-                                                                correlation_threshold=self.settings.clustering_correlation_threshold,
-                                                                df_cid_threshold=self.settings.df_cid_threshold,
                                                                 save_log=save_log,
                                                                 log_path=log_path)
         if save_log:
