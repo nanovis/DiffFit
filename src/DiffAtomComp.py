@@ -908,15 +908,13 @@ def diff_fit(volume_list: list,
                                     e_shifts[mol_idx:mol_idx + 1],
                                     target_size_x_y_z_tensor, target_origin_tensor, device)
             render = torch.nn.functional.grid_sample(target, grid, 'bilinear', 'border', align_corners=True)
-
-            metrics_table[mol_idx] = calculate_metrics(render, elements_sim_density_list[mol_idx])
-
             occupied_density_sum[mol_idx] = torch.sum(render, dim=-1).squeeze()
-            first_layer_positive_density_sum[mol_idx] = torch.sum(render * (render > 0), dim=-1).squeeze()
-
             add_conv_density(conv_loops, target_gaussian_conv_list, conv_weights, grid, occupied_density_sum[mol_idx])
-
             occupied_density_sum[mol_idx] /= len(atom_coords_list[mol_idx])
+
+            with torch.no_grad():
+                metrics_table[mol_idx] = calculate_metrics(render, elements_sim_density_list[mol_idx])
+                first_layer_positive_density_sum[mol_idx] = torch.sum(render * (render > 0), dim=-1).squeeze()
 
         # loss
         loss = -torch.sum(occupied_density_sum)
