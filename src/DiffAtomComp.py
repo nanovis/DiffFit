@@ -625,12 +625,8 @@ def random_sample_indices(binary_volume, sample_size):
 
 def transform_coords(atom_coords, e_quaternions, e_shifts, target_size_x_y_z_tensor, target_origin_tensor, device):
     e_rotation_matrices = quaternion_to_matrix_batch(e_quaternions)
-
     transformed_coords = torch.matmul(atom_coords, e_rotation_matrices)
-    # transformed_coords = transformed_coords.view(1, *transformed_coords.shape)
-    # transformed_coords += e_shifts.view(1, 100, 10, 1, 3)
-
-    transformed_coords += e_shifts.unsqueeze(3)
+    transformed_coords += e_shifts
 
     atom_coords_normalized_to_target = normalize_coordinates_to_map_origin_torch(transformed_coords,
                                                                                  target_size_x_y_z_tensor,
@@ -863,8 +859,8 @@ def diff_fit(volume_list: list,
     e_quaternions = generate_random_quaternions(N_quaternions * N_shifts)
 
     e_shifts = np.tile(
-        sampled_coords.reshape(1, 1, N_shifts, 3),
-        (num_molecules, N_quaternions, 1, 1)
+        sampled_coords.reshape(1, 1, N_shifts, 1, 3),
+        (num_molecules, N_quaternions, 1, 1, 1)
     )
 
     e_quaternions = e_quaternions.reshape([N_quaternions, N_shifts, 4])
@@ -886,7 +882,7 @@ def diff_fit(volume_list: list,
     # [x, y, z, w, -x, -y, -z, occupied_density_sum]
 
     with torch.no_grad():
-        e_sqd_log[:, :, :, 0, 0:3] = e_shifts
+        e_sqd_log[:, :, :, 0, 0:3] = e_shifts.squeeze(-2)
         e_sqd_log[:, :, :, 0, 3:7] = e_quaternions
 
     log_idx = 0
@@ -935,7 +931,7 @@ def diff_fit(volume_list: list,
         if (epoch - 1) % log_every == (log_every - 1):
             with torch.no_grad():
                 log_idx += 1
-                e_sqd_log[:, :, :, log_idx, 0:3] = e_shifts
+                e_sqd_log[:, :, :, log_idx, 0:3] = e_shifts.squeeze(-2)
                 e_sqd_log[:, :, :, log_idx, 3:7] = e_quaternions
                 e_sqd_log[:, :, :, log_idx, 7] = first_layer_positive_density_sum
                 e_sqd_log[:, :, :, log_idx, 8:15] = metrics_table
@@ -1063,8 +1059,8 @@ def diff_atom_comp(target_vol_path: str,
     e_quaternions = generate_random_quaternions(N_quaternions * N_shifts)
 
     e_shifts = np.tile(
-        sampled_coords.reshape(1, 1, N_shifts, 3),
-        (num_molecules, N_quaternions, 1, 1)
+        sampled_coords.reshape(1, 1, N_shifts, 1, 3),
+        (num_molecules, N_quaternions, 1, 1, 1)
     )
 
     e_quaternions = e_quaternions.reshape([N_quaternions, N_shifts, 4])
@@ -1087,7 +1083,7 @@ def diff_atom_comp(target_vol_path: str,
     # [x, y, z, w, -x, -y, -z, occupied_density_sum]
 
     with torch.no_grad():
-        e_sqd_log[:, :, :, 0, 0:3] = e_shifts
+        e_sqd_log[:, :, :, 0, 0:3] = e_shifts.squeeze(-2)
         e_sqd_log[:, :, :, 0, 3:7] = e_quaternions
 
     log_idx = 0
@@ -1138,7 +1134,7 @@ def diff_atom_comp(target_vol_path: str,
         if (epoch - 1) % log_every == (log_every - 1):
             with torch.no_grad():
                 log_idx += 1
-                e_sqd_log[:, :, :, log_idx, 0:3] = e_shifts
+                e_sqd_log[:, :, :, log_idx, 0:3] = e_shifts.squeeze(-2)
                 e_sqd_log[:, :, :, log_idx, 3:7] = e_quaternions
                 e_sqd_log[:, :, :, log_idx, 7] = first_layer_positive_density_sum
                 e_sqd_log[:, :, :, log_idx, 8:15] = metrics_table
