@@ -878,7 +878,7 @@ def diff_fit(volume_list: list,
     # Training loop
     log_every = 10
 
-    e_sqd_log = torch.zeros([num_molecules, N_quaternions, N_shifts, int(n_iters / 10) + 2, 15], device=device)
+    e_sqd_log = torch.zeros([num_molecules, N_quaternions, N_shifts, int(n_iters / 10) + 2, 9], device=device)
     # [x, y, z, w, -x, -y, -z, occupied_density_sum]
 
     with torch.no_grad():
@@ -899,8 +899,8 @@ def diff_fit(volume_list: list,
         # Forward pass
 
         first_layer_positive_density_sum = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device)
+        in_contour_percentage = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device)
         occupied_density_sum = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device)
-        metrics_table = torch.zeros([num_molecules, N_quaternions, N_shifts, 7], device=device)
 
         for mol_idx in range(num_molecules):
             grid = transform_coords(atom_coords_torch_list[mol_idx],
@@ -913,8 +913,9 @@ def diff_fit(volume_list: list,
             occupied_density_sum[mol_idx] /= len(atom_coords_list[mol_idx])
 
             with torch.no_grad():
-                metrics_table[mol_idx] = calculate_metrics(render, elements_sim_density_list[mol_idx])
-                first_layer_positive_density_sum[mol_idx] = torch.sum(render * (render > 0), dim=-1).squeeze()
+                positive_mask = render > 0
+                in_contour_percentage[mol_idx] = positive_mask.float().mean(dim=-1)
+                first_layer_positive_density_sum[mol_idx] = torch.sum(render * positive_mask, dim=-1).squeeze()
 
         # loss
         loss = -torch.sum(occupied_density_sum)
@@ -932,7 +933,7 @@ def diff_fit(volume_list: list,
                 e_sqd_log[:, :, :, log_idx, 0:3] = e_shifts.squeeze(-2)
                 e_sqd_log[:, :, :, log_idx, 3:7] = e_quaternions
                 e_sqd_log[:, :, :, log_idx, 7] = first_layer_positive_density_sum
-                e_sqd_log[:, :, :, log_idx, 8:15] = metrics_table
+                e_sqd_log[:, :, :, log_idx, 8] = in_contour_percentage
 
                 if save_results:
                     with open(f"{out_dir}/log.log", "a") as log_file:
@@ -1077,7 +1078,7 @@ def diff_atom_comp(target_vol_path: str,
     # Training loop
     log_every = 10
 
-    e_sqd_log = torch.zeros([num_molecules, N_quaternions, N_shifts, int(n_iters / 10) + 2, 15], device=device)
+    e_sqd_log = torch.zeros([num_molecules, N_quaternions, N_shifts, int(n_iters / 10) + 2, 9], device=device)
     # [x, y, z, w, -x, -y, -z, occupied_density_sum]
 
     with torch.no_grad():
@@ -1099,8 +1100,8 @@ def diff_atom_comp(target_vol_path: str,
         # Forward pass
 
         first_layer_positive_density_sum = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device)
+        in_contour_percentage = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device)
         occupied_density_sum = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device)
-        metrics_table = torch.zeros([num_molecules, N_quaternions, N_shifts, 7], device=device)
 
         for mol_idx in range(num_molecules):
             # sampled_coords = atom_coords_torch_list[mol_idx][torch.randint(0, atom_coords_torch_list[mol_idx].shape[0], (500,), device=device)]
@@ -1114,8 +1115,9 @@ def diff_atom_comp(target_vol_path: str,
             occupied_density_sum[mol_idx] /= len(atom_coords_list[mol_idx])
 
             with torch.no_grad():
-                metrics_table[mol_idx] = calculate_metrics(render, elements_sim_density_list[mol_idx])
-                first_layer_positive_density_sum[mol_idx] = torch.sum(render * (render > 0), dim=-1).squeeze()
+                positive_mask = render > 0
+                in_contour_percentage[mol_idx] = positive_mask.float().mean(dim=-1)
+                first_layer_positive_density_sum[mol_idx] = torch.sum(render * positive_mask, dim=-1).squeeze()
 
         # loss
         loss = -torch.sum(occupied_density_sum)
@@ -1133,7 +1135,7 @@ def diff_atom_comp(target_vol_path: str,
                 e_sqd_log[:, :, :, log_idx, 0:3] = e_shifts.squeeze(-2)
                 e_sqd_log[:, :, :, log_idx, 3:7] = e_quaternions
                 e_sqd_log[:, :, :, log_idx, 7] = first_layer_positive_density_sum
-                e_sqd_log[:, :, :, log_idx, 8:15] = metrics_table
+                e_sqd_log[:, :, :, log_idx, 8] = in_contour_percentage
 
                 with open(f"{out_dir}/log.log", "a") as log_file:
                     log_file.write(f"Epoch: {epoch + 1:05d}, "
