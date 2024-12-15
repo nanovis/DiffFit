@@ -1202,29 +1202,27 @@ def parse_ints(arg):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-
     parser.add_argument('--target_vol', type=str,
                         help="target volume in .map or .mrc format")
     parser.add_argument('--target_surface_threshold', type=float, default=0.8)
     parser.add_argument('--min_cluster_size', type=int, default=100,
                         help="The minimum number of connected voxels that can be considered as a valid cluster")
-
     parser.add_argument('--structures_dir', type=str,
                         help="directory containing the structures to be fit")
-
     parser.add_argument('--out_dir', type=str, default="out",
                         help="Output directory")
     parser.add_argument('--out_dir_exist_ok', type=bool,
                         help="If True, output directory will be overwritten when existing")
-
     parser.add_argument('--N_shifts', type=int, default=10,
                         help="The number of random shift initializations")
-
     parser.add_argument('--N_quaternions', type=int, default=100,
                         help="The number of random rotation initializations")
-
     parser.add_argument('--negative_space_value', type=float, default=-0.5,
                         help="The value to set the negative space voxels to")
+    parser.add_argument('--n_iters', type=int, default=201,
+                        help="Number of iterations for optimization")
+    parser.add_argument('--learning_rate', type=float, default=0.01,
+                        help="Learning rate for the optimization process")
     parser.add_argument('--conv_loops', type=int, default=3,
                         help="Number of convolution loops")
     parser.add_argument('--conv_kernel_sizes', type=lambda s: [int(item) for item in s.split(',')] if s else [],
@@ -1235,7 +1233,6 @@ if __name__ == '__main__':
                         help="Comma-separated weights for the convolution, or empty for none")
     parser.add_argument('--device', type=str, default="cuda",
                         help="cpu or cuda")
-
     args = parser.parse_args()
 
     # ======= fitting and time it
@@ -1250,6 +1247,8 @@ if __name__ == '__main__':
                    N_shifts=args.N_shifts,
                    N_quaternions=args.N_quaternions,
                    negative_space_value=args.negative_space_value,
+                   learning_rate=args.learning_rate,
+                   n_iters=args.n_iters,
                    conv_loops=args.conv_loops,
                    conv_kernel_sizes=args.conv_kernel_sizes,
                    conv_weights=args.conv_weights,
