@@ -894,7 +894,7 @@ def diff_fit(volume_list: list,
 
     # Create the optimizer with different learning rates
     optimizer = torch.optim.Adam([
-        {'params': [e_shifts], 'lr': target_size.mean() * 0.01},
+        {'params': [e_shifts], 'lr': target_size.mean() * learning_rate},
         {'params': [e_quaternions], 'lr': learning_rate}
     ])
 
@@ -1095,7 +1095,7 @@ def diff_atom_comp(target_vol_path: str,
 
     # Create the optimizer with different learning rates
     optimizer = torch.optim.Adam([
-        {'params': [e_shifts], 'lr': target_size.mean() * 0.01},
+        {'params': [e_shifts], 'lr': target_size.mean() * learning_rate},
         {'params': [e_quaternions], 'lr': learning_rate}
     ])
 
