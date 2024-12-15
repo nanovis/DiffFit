@@ -175,10 +175,6 @@ class DiffFitSettings:
         self.clustering_angle_tolerance : float = 6.0
 
         self.clustering_in_contour_threshold: float = 0.2
-        self.clustering_correlation_threshold: float = 0.5
-
-        self.df_cid_threshold = 0.15
-
 
 class DiffFitTableView(QTableView):
     def __init__(self, parent=None):
@@ -353,9 +349,7 @@ class DiffFitTool(ToolInstance):
         self.dataset_folder.setText(self.settings.view_output_directory)
 
         # clustering
-        self.df_cid_threshold.setValue(self.settings.df_cid_threshold)
         self.clustering_in_contour_threshold.setValue(self.settings.clustering_in_contour_threshold)
-        self.clustering_correlation_threshold.setValue(self.settings.clustering_correlation_threshold)
         self.clustering_angle_tolerance.setValue(self.settings.clustering_angle_tolerance)
         self.clustering_shift_tolerance.setValue(self.settings.clustering_shift_tolerance)
         
@@ -390,9 +384,7 @@ class DiffFitTool(ToolInstance):
         self.settings.view_output_directory = self.dataset_folder.text()
 
         # clustering
-        self.settings.df_cid_threshold = self.df_cid_threshold.value()
         self.settings.clustering_in_contour_threshold = self.clustering_in_contour_threshold.value()
-        self.settings.clustering_correlation_threshold = self.clustering_correlation_threshold.value()
         self.settings.clustering_angle_tolerance = self.clustering_angle_tolerance.value()
         self.settings.clustering_shift_tolerance = self.clustering_shift_tolerance.value()
         
@@ -1018,17 +1010,6 @@ class DiffFitTool(ToolInstance):
         layout.addWidget(self.dataset_folder_select, row, 2)
         row = row + 1
 
-        df_cid_threshold_label = QLabel()
-        df_cid_threshold_label.setText("DF CID threshold:")
-        self.df_cid_threshold = QDoubleSpinBox()
-        self.df_cid_threshold.setMinimum(-1.0)
-        self.df_cid_threshold.setMaximum(1.0)
-        self.df_cid_threshold.setSingleStep(0.01)
-        self.df_cid_threshold.valueChanged.connect(lambda: self.store_settings())
-        layout.addWidget(df_cid_threshold_label, row, 0)
-        layout.addWidget(self.df_cid_threshold, row, 1, 1, 2)
-        row = row + 1
-
         clustering_in_contour_threshold_label = QLabel()
         clustering_in_contour_threshold_label.setText("In contour threshold:")
         self.clustering_in_contour_threshold = QDoubleSpinBox()
@@ -1040,17 +1021,6 @@ class DiffFitTool(ToolInstance):
         layout.addWidget(self.clustering_in_contour_threshold, row, 1, 1, 2)
         row = row + 1
 
-        clustering_correlation_threshold_label = QLabel()
-        clustering_correlation_threshold_label.setText("Correlation threshold:")
-        self.clustering_correlation_threshold = QDoubleSpinBox()
-        self.clustering_correlation_threshold.setMinimum(0.0)
-        self.clustering_correlation_threshold.setMaximum(1.0)
-        self.clustering_correlation_threshold.setSingleStep(0.1)
-        self.clustering_correlation_threshold.valueChanged.connect(lambda: self.store_settings())
-        layout.addWidget(clustering_correlation_threshold_label, row, 0)
-        layout.addWidget(self.clustering_correlation_threshold, row, 1, 1, 2)
-        row = row + 1
-        
         clustering_shift_tolerance_label = QLabel()
         clustering_shift_tolerance_label.setText("Clustering - Shift Tolerance:")
         self.clustering_shift_tolerance = QDoubleSpinBox()
