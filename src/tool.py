@@ -1671,7 +1671,6 @@ class DiffFitTool(ToolInstance):
         self.fit_mol_list = [mol]
 
         self.fit_vol = self._map_menu.value
-        vol_matrix = self.fit_vol.full_matrix()
 
         # Copy vol and make it clean after thresholding
         vol_copy = self.fit_vol.writable_copy()
@@ -1692,10 +1691,6 @@ class DiffFitTool(ToolInstance):
         mol.atoms.transform(transform)
         mol.position = Place()
         self.mol = mol
-
-        # Simulate a map for the mol
-        from chimerax.map.molmap import molecule_map
-        mol_vol = molecule_map(self.session, mol.atoms, self._single_fit_res.value(), grid_spacing=self.fit_vol.data.step[0])
 
         input_coords = None
         if self.fit_atom_mode == "Backbone":
@@ -1726,7 +1721,6 @@ class DiffFitTool(ToolInstance):
             10,
             [input_coords],
             self.mol.filename,
-            [(mol_vol.full_matrix(), mol_vol.data.step, mol_vol.data.origin)],
             N_shifts=self._single_fit_n_shifts.value(),
             N_quaternions=self._single_fit_n_quaternions.value(),
             save_results=_save_results,

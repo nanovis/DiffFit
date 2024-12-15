@@ -87,7 +87,6 @@ def dfit(session, mol, in_map,
     single_fit_timer_start = datetime.now()
 
     # Prepare mol and vol
-    vol_matrix = in_map.full_matrix()
 
     # Copy vol and make it clean after thresholding
     vol_copy = in_map.writable_copy()
@@ -108,11 +107,6 @@ def dfit(session, mol, in_map,
     transform = Place(origin=-mol_center)
     mol.atoms.transform(transform)
     mol.position = Place()
-
-    # Simulate a map for the mol
-    from chimerax.map.molmap import molecule_map
-    mol_vol = molecule_map(session, mol.atoms, sim_res,
-                           grid_spacing=in_map.data.step[0])
 
     input_coords = None
     if fit_atom_mode == "Backbone":
@@ -147,7 +141,6 @@ def dfit(session, mol, in_map,
         10,
         [input_coords],
         mol.filename,
-        [(mol_vol.full_matrix(), mol_vol.data.step, mol_vol.data.origin)],
         N_shifts=num_positions,
         N_quaternions=num_rotations,
         save_results=_save_results,
@@ -162,8 +155,6 @@ def dfit(session, mol, in_map,
         with open(f"{_out_dir}/log.log", "a") as log_file:
             log_file.write(f"-------\n"
                            f"DiffFit optimization time elapsed: {timer_stop - timer_start}\n")
-
-    mol_vol.delete()
 
     df._view_input_mode.setCurrentText("interactive")
     df._view_input_mode_changed()

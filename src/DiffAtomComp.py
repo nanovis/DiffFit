@@ -784,7 +784,6 @@ def diff_fit(volume_list: list,
              min_island_size: int,
              mol_coords: list,
              mol_path: str,
-             mol_sim_maps: list,
              N_shifts: int = 10,
              N_quaternions: int = 100,
              negative_space_value: float = -0.5,
@@ -837,10 +836,6 @@ def diff_fit(volume_list: list,
     atom_coords_list = mol_coords  # atom coords as [x, y, z]
     mol_num_atoms = [len(coords) for coords in atom_coords_list]
     num_molecules = len(atom_coords_list)
-
-    # read simulated map
-    sim_map_list = mol_sim_maps
-    elements_sim_density_list = sample_sim_map(atom_coords_list, sim_map_list, num_molecules, device)
 
     # ======= optimization
 
@@ -1029,10 +1024,6 @@ def diff_atom_comp(target_vol_path: str,
 
     atom_coords_list = read_all_files_to_atom_coords_list(structures_dir, fit_atom_mode)  # atom coords as [x, y, z]
     num_molecules = len(atom_coords_list)
-
-    # read simulated map
-    sim_map_list = mrc_folder_to_npy_list(structures_dir)
-    elements_sim_density_list = sample_sim_map(atom_coords_list, sim_map_list, num_molecules, device)
 
     # center the mol
     mol_centers = [np.mean(coords, axis=0) for coords in atom_coords_list]
