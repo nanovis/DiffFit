@@ -457,12 +457,12 @@ def normalize_coordinates_to_map_origin(coordinates, box_size, box_origin=(0.0, 
 
 def normalize_coordinates_to_map_origin_torch(coordinates, box_size_x_y_z_tensor, box_origin_tensor):
     # Normalize coordinates to [-1, 1]
-    coordinates = coordinates - box_origin_tensor
+    coordinates -= box_origin_tensor
+    coordinates *= 2
+    coordinates /= box_size_x_y_z_tensor
+    coordinates -= 1.0
 
-    normalized_coordinates = 2 * coordinates / box_size_x_y_z_tensor
-    normalized_coordinates -= 1.0
-
-    return normalized_coordinates
+    return coordinates
 
 
 def sample_sim_map(atom_coords_list, sim_map_list, num_molecules, device):
@@ -628,11 +628,11 @@ def transform_coords(atom_coords, e_quaternions, e_shifts, target_size_x_y_z_ten
     transformed_coords = torch.matmul(atom_coords, e_rotation_matrices)
     transformed_coords += e_shifts
 
-    atom_coords_normalized_to_target = normalize_coordinates_to_map_origin_torch(transformed_coords,
-                                                                                 target_size_x_y_z_tensor,
-                                                                                 target_origin_tensor)
+    transformed_coords = normalize_coordinates_to_map_origin_torch(transformed_coords,
+                                                                   target_size_x_y_z_tensor,
+                                                                   target_origin_tensor)
 
-    return atom_coords_normalized_to_target
+    return transformed_coords
 
 
 def conv_volume(volume, device, conv_loops, kernel_sizes,
