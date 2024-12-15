@@ -1112,7 +1112,8 @@ def diff_atom_comp(target_vol_path: str,
                                     target_size_x_y_z_tensor, target_origin_tensor, device)
             render = torch.nn.functional.grid_sample(target, grid, 'bilinear', 'border', align_corners=True)
 
-            metrics_table[mol_idx] = calculate_metrics(render, elements_sim_density_list[mol_idx])
+            with torch.no_grad():
+                metrics_table[mol_idx] = calculate_metrics(render, elements_sim_density_list[mol_idx])
 
             occupied_density_sum[mol_idx] = torch.sum(render, dim=-1).squeeze()
             first_layer_positive_density_sum[mol_idx] = torch.sum(render * (render > 0), dim=-1).squeeze()
