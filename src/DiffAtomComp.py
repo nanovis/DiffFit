@@ -1113,7 +1113,7 @@ def diff_atom_comp(target_vol_path: str,
             render = torch.nn.functional.grid_sample(target, grid, 'bilinear', 'border', align_corners=True)
             occupied_density_sum[mol_idx] = torch.sum(render, dim=-1).squeeze()
             add_conv_density(conv_loops, target_gaussian_conv_list, conv_weights, grid, occupied_density_sum[mol_idx])
-            # occupied_density_sum[mol_idx] /= len(atom_coords_list[mol_idx])
+            occupied_density_sum[mol_idx] /= len(atom_coords_list[mol_idx])
 
             with torch.no_grad():
                 metrics_table[mol_idx] = calculate_metrics(render, elements_sim_density_list[mol_idx])
