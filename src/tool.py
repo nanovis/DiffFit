@@ -1409,7 +1409,8 @@ class DiffFitTool(ToolInstance):
                      target_vol_path=None,
                      target_surface_threshold=None,
                      save_log=False,
-                     log_path=""):
+                     log_path="",
+                     max_clusters=1000):
         if e_sqd_log is None:
             return
 
@@ -1452,6 +1453,9 @@ class DiffFitTool(ToolInstance):
             self.session.logger.error("No result under these thresholds. Please decrease \"In contour threshold\" or \"Correlation threshold\" or rerun the fitting!")
             self.proxyModel = None
             return
+
+        # ======= Filter cluster by the density, keep maximum 1000 clusters
+        # self.e_sqd_clusters_ordered = self.e_sqd_clusters_ordered[:min(max_clusters, len(self.e_sqd_clusters_ordered)), :]
 
         # ======= Calculate Q-scores
 
