@@ -127,7 +127,8 @@ def cluster_and_sort_sqd_fast(e_sqd_log, shift_tolerance: float = 3.0, angle_tol
                               sort_column_idx: int = 7,
                               in_contour_threshold: float = 0.5,
                               save_log=False,
-                              log_path=""):
+                              log_path="",
+                              max_clusters=100):
     """
     Cluster the fitting results in sqd table by thresholding on shift and quaternion
     Return the sorted cluster representatives
@@ -200,6 +201,7 @@ def cluster_and_sort_sqd_fast(e_sqd_log, shift_tolerance: float = 3.0, angle_tol
 
     sqd_clusters = []
     for mol_idx in range(N_mol):
+        sqd_clusters_mol = []
         mol_shift = fit_res_filtered[mol_idx][:, :3]
         mol_q = fit_res_filtered[mol_idx][:, 3:7]
 
@@ -259,16 +261,25 @@ def cluster_and_sort_sqd_fast(e_sqd_log, shift_tolerance: float = 3.0, angle_tol
 
             # [mol_idx, max_idx (in e_sqd_log), iter_idx (giving the largest sort_column),
             #  cluster size, sort_metric]
-            sqd_clusters.append([mol_idx, max_idx, max_sort_column_metric_idx[mol_idx, max_idx],
-                                 counts[cluster_idx], fit_res_filtered[mol_idx][max_idx_in_filtered, sort_column_idx]])
+            sqd_clusters_mol.append([mol_idx, max_idx, max_sort_column_metric_idx[mol_idx, max_idx],
+                                     counts[cluster_idx],
+                                     fit_res_filtered[mol_idx][max_idx_in_filtered, sort_column_idx]])
+
+        # ======= Filter cluster by the density, keep max_clusters=100 clusters for each mol
+        sqd_clusters_mol = np.array(sqd_clusters_mol)
+        sqd_clusters_mol = sqd_clusters_mol[np.argsort(-sqd_clusters_mol[:, -1])]
+        sqd_clusters_mol = sqd_clusters_mol[:min(max_clusters, len(sqd_clusters_mol)), :]
+
+        sqd_clusters.append(sqd_clusters_mol)
+
+    sqd_clusters = np.vstack(sqd_clusters)
 
     if len(sqd_clusters) == 0:
         return None
 
-    sqd_clusters = np.array(sqd_clusters)
-    e_sqd_clusters_ordered = sqd_clusters[np.argsort(-sqd_clusters[:, -1])]
+    # e_sqd_clusters_ordered = sqd_clusters[np.argsort(-sqd_clusters[:, -1])]
 
-    return e_sqd_clusters_ordered
+    return sqd_clusters
 
 
 def get_grid3D(w, h, d, device):

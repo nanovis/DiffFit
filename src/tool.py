@@ -1410,7 +1410,7 @@ class DiffFitTool(ToolInstance):
                      target_surface_threshold=None,
                      save_log=False,
                      log_path="",
-                     max_clusters=1000):
+                     max_clusters=100):
         if e_sqd_log is None:
             return
 
@@ -1443,7 +1443,8 @@ class DiffFitTool(ToolInstance):
                                                                 self.settings.clustering_angle_tolerance,
                                                                 in_contour_threshold=self.settings.clustering_in_contour_threshold,
                                                                 save_log=save_log,
-                                                                log_path=log_path)
+                                                                log_path=log_path,
+                                                                max_clusters=max_clusters)
         if save_log:
             with open(log_path, "a") as log_file:
                 log_file.write(f"-------\n"
@@ -1454,8 +1455,6 @@ class DiffFitTool(ToolInstance):
             self.proxyModel = None
             return
 
-        # ======= Filter cluster by the density, keep maximum 1000 clusters
-        # self.e_sqd_clusters_ordered = self.e_sqd_clusters_ordered[:min(max_clusters, len(self.e_sqd_clusters_ordered)), :]
 
         # ======= Calculate Q-scores
 
