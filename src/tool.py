@@ -174,6 +174,7 @@ class DiffFitSettings:
         self.clustering_shift_tolerance : float = 3.0
         self.clustering_angle_tolerance : float = 6.0
 
+        self.max_clusters: float = 100
         self.clustering_in_contour_threshold: float = 0.2
 
 class DiffFitTableView(QTableView):
@@ -349,6 +350,7 @@ class DiffFitTool(ToolInstance):
         self.dataset_folder.setText(self.settings.view_output_directory)
 
         # clustering
+        self.max_clusters.setValue(self.settings.max_clusters)
         self.clustering_in_contour_threshold.setValue(self.settings.clustering_in_contour_threshold)
         self.clustering_angle_tolerance.setValue(self.settings.clustering_angle_tolerance)
         self.clustering_shift_tolerance.setValue(self.settings.clustering_shift_tolerance)
@@ -384,6 +386,7 @@ class DiffFitTool(ToolInstance):
         self.settings.view_output_directory = self.dataset_folder.text()
 
         # clustering
+        self.settings.max_clusters = self.max_clusters.value()
         self.settings.clustering_in_contour_threshold = self.clustering_in_contour_threshold.value()
         self.settings.clustering_angle_tolerance = self.clustering_angle_tolerance.value()
         self.settings.clustering_shift_tolerance = self.clustering_shift_tolerance.value()
@@ -1010,6 +1013,16 @@ class DiffFitTool(ToolInstance):
         layout.addWidget(self.dataset_folder_select, row, 2)
         row = row + 1
 
+        max_clusters_label = QLabel()
+        max_clusters_label.setText("# max clusters/mol:")
+        self.max_clusters = QSpinBox()
+        self.max_clusters.setMinimum(1)
+        self.max_clusters.setMaximum(100000)
+        self.max_clusters.valueChanged.connect(lambda: self.store_settings())
+        layout.addWidget(max_clusters_label, row, 0)
+        layout.addWidget(self.max_clusters, row, 1, 1, 2)
+        row = row + 1
+
         clustering_in_contour_threshold_label = QLabel()
         clustering_in_contour_threshold_label.setText("In contour threshold:")
         self.clustering_in_contour_threshold = QDoubleSpinBox()
@@ -1409,8 +1422,7 @@ class DiffFitTool(ToolInstance):
                      target_vol_path=None,
                      target_surface_threshold=None,
                      save_log=False,
-                     log_path="",
-                     max_clusters=100):
+                     log_path=""):
         if e_sqd_log is None:
             return
 
@@ -1444,7 +1456,7 @@ class DiffFitTool(ToolInstance):
                                                                 in_contour_threshold=self.settings.clustering_in_contour_threshold,
                                                                 save_log=save_log,
                                                                 log_path=log_path,
-                                                                max_clusters=max_clusters)
+                                                                max_clusters=self.settings.max_clusters)
         if save_log:
             with open(log_path, "a") as log_file:
                 log_file.write(f"-------\n"
