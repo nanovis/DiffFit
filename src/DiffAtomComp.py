@@ -28,33 +28,7 @@ from scipy.interpolate import interp1d
 # Ignore PDBConstructionWarning for unrecognized 'END' record
 warnings.filterwarnings("ignore", message="Ignoring unrecognized record 'END'", category=PDBConstructionWarning)
 
-from chimerax.geometry.bins import Binned_Transforms
-
-
-class DiffFit_Binned_Transforms(Binned_Transforms):
-    def __init__(self, angle, translation, center=(0, 0, 0), bfactor=2):
-        super().__init__(angle, translation, center, bfactor)
-
-    def one_in_cluster_transform(self, tf):
-
-        a, x, y, z = c = self.bin_point(tf)
-        clist = self.bins.close_objects(c, self.spacing)
-        if len(clist) == 0:
-            return None
-
-        itf = tf.inverse()
-        d2max = self.translation * self.translation
-        for ctf in clist:
-            cx, cy, cz = ctf * self.center
-            dx, dy, dz = x - cx, y - cy, z - cz
-            d2 = dx * dx + dy * dy + dz * dz
-            if d2 <= d2max:
-                dtf = ctf * itf
-                a = dtf.rotation_angle()
-                if a < self.angle:
-                    return ctf
-
-        return None
+from .DiffFit_bins import DiffFit_Binned_Transforms
 
 def interpolate_coords(coords, inter_folds, inter_kind='quadratic'):
     """Interpolate backbone coordinates."""
@@ -234,7 +208,7 @@ def cluster_and_sort_sqd_fast(e_sqd_log, shift_tolerance: float = 3.0, angle_tol
                 log_file.write(f"Convert to matrix time: {datetime.now() - timer_start}\n")
         timer_start = datetime.now()
 
-        b = DiffFit_Binned_Transforms(angle_tolerance * pi / 180, shift_tolerance, mol_center)
+        b = DiffFit_Binned_Transforms(angle_tolerance * pi / 180, shift_tolerance)
         mol_transform_label = []
         unique_id = 0
         T_ID_dict = {}
