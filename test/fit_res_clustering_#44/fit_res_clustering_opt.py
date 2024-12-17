@@ -1,36 +1,11 @@
 from scipy.spatial.transform import Rotation as R
-from chimerax.geometry.bins import Binned_Transforms
+from DiffFit_bins import DiffFit_Binned_Transforms
 from chimerax.geometry import Place
 import numpy as np
 from datetime import datetime
 from math import pi
 import math
 from sklearn.cluster import Birch
-
-class DiffFit_Binned_Transforms(Binned_Transforms):
-    def __init__(self, angle, translation, center=(0, 0, 0), bfactor=2):
-        super().__init__(angle, translation, center, bfactor)
-
-    def one_in_cluster_transform(self, tf):
-
-        a, x, y, z = c = self.bin_point(tf)
-        clist = self.bins.close_objects(c, self.spacing)
-        if len(clist) == 0:
-            return None
-
-        itf = tf.inverse()
-        d2max = self.translation * self.translation
-        for ctf in clist:
-            cx, cy, cz = ctf * self.center
-            dx, dy, dz = x - cx, y - cy, z - cz
-            d2 = dx * dx + dy * dy + dz * dz
-            if d2 <= d2max:
-                dtf = ctf * itf
-                a = dtf.rotation_angle()
-                if a < self.angle:
-                    return ctf
-
-        return None
 
 
 fit_res = np.load("fit_res_filtered.npz")
@@ -42,7 +17,7 @@ mol_shift = fit_res_filtered[:, :3]
 mol_q = fit_res_filtered[:, 3:7]
 
 Total_fits = len(mol_shift)
-# Total_fits = 10000 # to mimic other records in the reported table
+# Total_fits = 1000 # to mimic other records in the reported table
 
 print(f"Clustering {Total_fits} fits")
 timer_start = datetime.now()
@@ -66,26 +41,50 @@ timer_start = datetime.now()
 angle_tolerance = 6.0
 shift_tolerance = 3.0
 
-bfactor=2
+bfactor=1
 print(f"bfactor: {bfactor}")
 
 ChimeraX_clustering = True
 if ChimeraX_clustering:
-    b = DiffFit_Binned_Transforms(angle_tolerance * pi / 180, shift_tolerance)
+    b = DiffFit_Binned_Transforms(angle_tolerance * pi / 180, shift_tolerance, bfactor=bfactor)
     mol_transform_label = []
     unique_id = 0
     T_ID_dict = {}
-    for i in range(len(mol_shift)):
+    for i in range(Total_fits):
         ptf = T[i]
-        in_cluster = b.one_in_cluster_transform(ptf)
-        if in_cluster is None:
+        coord = [c / s for c, s in zip(b.bin_point(ptf), b.bins.bin_size)]
+        cbin = b.bins.close_bins(coord, (0, 0, 0, 0))[0]
+        close = None
+
+        if cbin in b.bins.bins:
+            # still need to check if there is a transform that is really close
+            itf = ptf.inverse()
+            for _, o in b.bins.bins[cbin]:
+                cx, cy, cz = o.translation()
+                px, py, pz = ptf.translation()
+                dx, dy, dz = px - cx, py - cy, pz - cz
+                d2 = dx * dx + dy * dy + dz * dz
+                if d2 <= b.d2max:
+                    dtf = o * itf
+                    a = dtf.rotation_angle()
+                    if a < b.angle:
+                        close = o
+                        break
+
+            # if reach here, means no close found
+            # ptf will then be added to the bin after two lines below
+
+        else:
+            close = b.one_in_cluster_transform(ptf)
+        if close is None:
             b.add_transform(ptf)
             mol_transform_label.append(unique_id)
             T_ID_dict[id(ptf)] = unique_id
             unique_id = unique_id + 1
         else:
-            mol_transform_label.append(T_ID_dict[id(in_cluster)])
-            T_ID_dict[id(ptf)] = T_ID_dict[id(in_cluster)]
+            mol_transform_label.append(T_ID_dict[id(close)])
+            T_ID_dict[id(ptf)] = T_ID_dict[id(close)]
+
 
     print(f"Total unique: {unique_id}")
 

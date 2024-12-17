@@ -1,0 +1,88 @@
+(.venv) C:\Users\luod\Desktop>python fit_res_clustering_benchmark_cProfile.py
+Clustering 250000 fits
+Convert to matrix time: 0:00:03.164542
+bfactor: 2
+Total unique: 5121
+ChimeraX bin clustering: 0:01:06.805515
+--- Profiling run 1 complete ---
+Clustering 250000 fits
+Convert to matrix time: 0:00:03.136092
+bfactor: 2
+Total unique: 5121
+ChimeraX bin clustering: 0:01:07.080520
+--- Profiling run 2 complete ---
+Clustering 250000 fits
+Convert to matrix time: 0:00:03.139829
+bfactor: 2
+Total unique: 5121
+ChimeraX bin clustering: 0:01:06.630398
+--- Profiling run 3 complete ---
+Clustering 250000 fits
+Convert to matrix time: 0:00:03.135473
+bfactor: 2
+Total unique: 5121
+ChimeraX bin clustering: 0:01:06.604802
+--- Profiling run 4 complete ---
+Clustering 250000 fits
+Convert to matrix time: 0:00:03.106663
+bfactor: 2
+Total unique: 5121
+ChimeraX bin clustering: 0:01:07.205234
+--- Profiling run 5 complete ---
+--- Aggregated Profile Results ---
+         460179083 function calls (456429043 primitive calls) in 350.821 seconds
+
+   Ordered by: internal time
+   List reduced from 281 to 50 due to restriction <50>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+ 43861005   60.173    0.000   76.137    0.000 C:\Users\luod\AppData\Local\ChimeraX-1.7.1-Dev\bin\Lib\site-packages\chimerax\geometry\bins.py:129(are_coordinates_close)
+  1250000   29.726    0.000  144.662    0.000 C:\Users\luod\AppData\Local\ChimeraX-1.7.1-Dev\bin\Lib\site-packages\chimerax\geometry\bins.py:103(close_objects)
+  1241750   28.893    0.000   38.650    0.000 C:\Users\luod\AppData\Local\ChimeraX-1.7.1-Dev\bin\Lib\site-packages\numpy\linalg\linalg.py:492(inv)
+  4212170   27.560    0.000   53.539    0.000 C:\Users\luod\AppData\Local\ChimeraX-1.7.1-Dev\bin\Lib\site-packages\chimerax\geometry\matrix.py:29(apply_matrix)
+ 18853512   21.296    0.000   30.213    0.000 <frozen importlib._bootstrap>:1209(_handle_fromlist)
+5000000/1250000   17.460    0.000   22.935    0.000 C:\Users\luod\AppData\Local\ChimeraX-1.7.1-Dev\bin\Lib\site-packages\chimerax\geometry\bins.py:139(outer_product)
+  1241750   15.218    0.000   62.630    0.000 C:\Users\luod\AppData\Local\ChimeraX-1.7.1-Dev\bin\Lib\site-packages\chimerax\geometry\matrix.py:131(invert_matrix)
+  1250000   14.609    0.000  329.518    0.000 C:\Users\luod\Desktop\fit_res_clustering_benchmark_cProfile.py:19(one_in_cluster_transform)
+  6264495   11.622    0.000   83.380    0.000 C:\Users\luod\AppData\Local\ChimeraX-1.7.1-Dev\bin\Lib\site-packages\chimerax\geometry\place.py:111(__mul__)
+ 91429685   11.104    0.000   11.104    0.000 {built-in method builtins.abs}
+  3327930   11.004    0.000   12.030    0.000 C:\Users\luod\AppData\Local\ChimeraX-1.7.1-Dev\bin\Lib\site-packages\chimerax\geometry\place.py:270(rotation_angle)
+        5    8.306    1.661  350.820   70.164 C:\Users\luod\Desktop\fit_res_clustering_benchmark_cProfile.py:41(main)
+  2052325    8.266    0.000    8.266    0.000 {built-in method chimerax.geometry._geometry.multiply_matrices}
+  1250000    7.039    0.000    8.928    0.000 C:\Users\luod\AppData\Local\ChimeraX-1.7.1-Dev\bin\Lib\site-packages\chimerax\geometry\bins.py:122(<listcomp>)
+  7945672    6.599    0.000    6.599    0.000 {built-in method numpy.array}
+ 49433847    6.162    0.000    6.162    0.000 {built-in method builtins.isinstance}
+ 55114762    6.071    0.000    6.071    0.000 {built-in method builtins.len}
+ 34744884    5.000    0.000    5.000    0.000 {built-in method builtins.hasattr}
+ 37515565    4.215    0.000    4.215    0.000 {method 'append' of 'list' objects}
+  2491752    4.060    0.000   12.765    0.000 C:\Users\luod\AppData\Local\ChimeraX-1.7.1-Dev\bin\Lib\site-packages\chimerax\geometry\place.py:71(__init__)
+  4212170    3.278    0.000    5.253    0.000 C:\Users\luod\AppData\Local\ChimeraX-1.7.1-Dev\bin\Lib\site-packages\numpy\core\fromnumeric.py:53(_wrapfunc)
+  1250000    3.179    0.000    3.179    0.000 {built-in method from_quat}
+  1250000    3.168    0.000   35.031    0.000 C:\Users\luod\AppData\Local\ChimeraX-1.7.1-Dev\bin\Lib\site-packages\chimerax\geometry\bins.py:119(close_bins)
+  1275605    2.679    0.000   27.130    0.000 C:\Users\luod\AppData\Local\ChimeraX-1.7.1-Dev\bin\Lib\site-packages\chimerax\geometry\bins.py:48(bin_point)
+  1241750    2.477    0.000    4.216    0.000 C:\Users\luod\AppData\Local\ChimeraX-1.7.1-Dev\bin\Lib\site-packages\numpy\linalg\linalg.py:159(_commonType)
+  4212170    2.463    0.000    7.716    0.000 C:\Users\luod\AppData\Local\ChimeraX-1.7.1-Dev\bin\Lib\site-packages\numpy\core\fromnumeric.py:588(transpose)
+  1241750    2.269    0.000   72.556    0.000 C:\Users\luod\AppData\Local\ChimeraX-1.7.1-Dev\bin\Lib\site-packages\chimerax\geometry\place.py:190(inverse)
+  2052325    2.177    0.000    3.350    0.000 C:\Users\luod\AppData\Local\ChimeraX-1.7.1-Dev\bin\Lib\site-packages\chimerax\geometry\place.py:619(_reuse_place)
+  1250000    2.077    0.000    2.077    0.000 {method 'as_matrix' of 'scipy.spatial.transform._rotation.Rotation' objects}
+ 10102420    1.911    0.000    1.911    0.000 {built-in method math.floor}
+  1250000    1.674    0.000    1.674    0.000 C:\Users\luod\AppData\Local\ChimeraX-1.7.1-Dev\bin\Lib\site-packages\chimerax\geometry\bins.py:105(<listcomp>)
+  2491750    1.612    0.000    1.612    0.000 {built-in method numpy.zeros}
+ 10040780    1.416    0.000    1.416    0.000 {built-in method builtins.id}
+  1241750    1.189    0.000    1.603    0.000 C:\Users\luod\AppData\Local\ChimeraX-1.7.1-Dev\bin\Lib\site-packages\numpy\linalg\linalg.py:135(_makearray)
+  4212170    1.183    0.000    1.183    0.000 {method 'transpose' of 'numpy.ndarray' objects}
+  5453920    1.155    0.000    1.155    0.000 C:\Users\luod\AppData\Local\ChimeraX-1.7.1-Dev\bin\Lib\site-packages\numpy\core\multiarray.py:741(dot)
+  3327930    1.026    0.000    1.026    0.000 {built-in method math.acos}
+  1250000    1.013    0.000    1.013    0.000 C:\Users\luod\AppData\Local\ChimeraX-1.7.1-Dev\bin\Lib\site-packages\chimerax\geometry\bins.py:106(<listcomp>)
+  5453938    0.985    0.000    0.985    0.000 {built-in method builtins.getattr}
+  1241750    0.907    0.000    0.907    0.000 C:\Users\luod\AppData\Local\ChimeraX-1.7.1-Dev\bin\Lib\site-packages\numpy\linalg\linalg.py:209(_assert_stacked_square)
+  2483500    0.903    0.000    1.221    0.000 C:\Users\luod\AppData\Local\ChimeraX-1.7.1-Dev\bin\Lib\site-packages\numpy\linalg\linalg.py:140(isComplexType)
+  4212170    0.781    0.000    0.781    0.000 C:\Users\luod\AppData\Local\ChimeraX-1.7.1-Dev\bin\Lib\site-packages\numpy\core\fromnumeric.py:584(_transpose_dispatcher)
+  1241750    0.780    0.000    0.780    0.000 {method 'astype' of 'numpy.ndarray' objects}
+  2052323    0.743    0.000    0.743    0.000 C:\Users\luod\AppData\Local\ChimeraX-1.7.1-Dev\bin\Lib\site-packages\chimerax\geometry\place.py:420(_reuse)
+  1241750    0.694    0.000    0.694    0.000 C:\Users\luod\AppData\Local\ChimeraX-1.7.1-Dev\bin\Lib\site-packages\numpy\linalg\linalg.py:203(_assert_stacked_2d)
+  1241750    0.667    0.000    0.667    0.000 C:\Users\luod\AppData\Local\ChimeraX-1.7.1-Dev\bin\Lib\site-packages\numpy\linalg\linalg.py:130(get_linalg_error_extobj)
+  1241750    0.664    0.000    0.871    0.000 C:\Users\luod\AppData\Local\ChimeraX-1.7.1-Dev\bin\Lib\site-packages\numpy\linalg\linalg.py:153(_realType)
+  1250000    0.601    0.000    0.601    0.000 C:\Users\luod\AppData\Local\ChimeraX-1.7.1-Dev\bin\Lib\site-packages\chimerax\geometry\bins.py:144(<listcomp>)
+  3725250    0.553    0.000    0.553    0.000 {built-in method builtins.issubclass}
+  2629133    0.429    0.000    0.429    0.000 {built-in method sys.getrefcount}
