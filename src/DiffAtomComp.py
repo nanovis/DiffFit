@@ -266,11 +266,12 @@ def cluster_and_sort_sqd_fast(e_sqd_log, shift_tolerance: float = 3.0, angle_tol
                                      fit_res_filtered[mol_idx][max_idx_in_filtered, sort_column_idx]])
 
         # ======= Filter cluster by the density, keep max_clusters=100 clusters for each mol
-        sqd_clusters_mol = np.array(sqd_clusters_mol)
-        sqd_clusters_mol = sqd_clusters_mol[np.argsort(-sqd_clusters_mol[:, -1])]
-        sqd_clusters_mol = sqd_clusters_mol[:min(max_clusters, len(sqd_clusters_mol)), :]
+        if len(sqd_clusters_mol) > 0:
+            sqd_clusters_mol = np.array(sqd_clusters_mol)
+            sqd_clusters_mol = sqd_clusters_mol[np.argsort(-sqd_clusters_mol[:, -1])]
+            sqd_clusters_mol = sqd_clusters_mol[:min(max_clusters, len(sqd_clusters_mol)), :]
 
-        sqd_clusters.append(sqd_clusters_mol)
+            sqd_clusters.append(sqd_clusters_mol)
 
     sqd_clusters = np.vstack(sqd_clusters)
 
