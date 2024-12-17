@@ -28,7 +28,6 @@ from scipy.interpolate import interp1d
 # Ignore PDBConstructionWarning for unrecognized 'END' record
 warnings.filterwarnings("ignore", message="Ignoring unrecognized record 'END'", category=PDBConstructionWarning)
 
-from .DiffFit_bins import DiffFit_Binned_Transforms
 
 def interpolate_coords(coords, inter_folds, inter_kind='quadratic'):
     """Interpolate backbone coordinates."""
@@ -128,6 +127,7 @@ def cluster_and_sort_sqd_fast(e_sqd_log, shift_tolerance: float = 3.0, angle_tol
     mol_center = np.array([0.0, 0.0, 0.0])
 
     from chimerax.geometry import Place
+    from .DiffFit_bins import DiffFit_Binned_Transforms
 
     N_mol, N_record, N_iter, N_metric = e_sqd_log.shape
 
