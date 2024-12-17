@@ -364,9 +364,8 @@ def loss_between_volumes(volume1, volume2):
     # return -torch.sum(volume1 * volume2)
 
 
-def numpy2tensor(np_array, device):
-    target = torch.tensor(np_array, device=device).float()
-    target = target.to(device)
+def numpy2tensor(np_array, device, precision: torch.dtype = torch.float32):
+    target = torch.tensor(np_array, device=device, dtype=precision)
     target_dim = target.shape
     target = target.unsqueeze(dim=0).unsqueeze(dim=0)
     return target, target_dim
@@ -960,7 +959,7 @@ def diff_atom_comp(target_vol_path: str,
                    target_surface_threshold: float,
                    min_cluster_size: float,  # not in use, use 100 as a placeholder
                    structures_dir: str,
-                   fit_atom_mode:str = "Backbone",
+                   fit_atom_mode: str = "Backbone",
                    Gaussian_mode:str = "Gaussian with negative (shrink)",
                    N_shifts: int = 10,
                    N_quaternions: int = 100,
@@ -972,7 +971,8 @@ def diff_atom_comp(target_vol_path: str,
                    conv_loops: int = 3,
                    conv_kernel_sizes: list = (5, 5, 5),
                    conv_weights: list = (1.0, 1.0, 1.0),
-                   device: str = "cuda"
+                   device: str = "cuda",
+                   precision: torch.dtype = torch.float32,
                    ):
     timer_start = datetime.now()
     # ======= load target volume to fit into
@@ -990,7 +990,7 @@ def diff_atom_comp(target_vol_path: str,
     sampled_coords = np.array([np.array(idx) * np.array(target_steps) for idx in sampled_indices])
     sampled_coords = sampled_coords[:, [2, 1, 0]] + target_origin  # convert to [x, y, z] and then shift
 
-    target_no_negative, target_dim = numpy2tensor(target_no_negative, device)
+    target_no_negative, target_dim = numpy2tensor(target_no_negative, device, precision)
     # target as [1, 1, z, y, x]
     # target_dim as [z, y, x]
 
@@ -1001,7 +1001,7 @@ def diff_atom_comp(target_vol_path: str,
     #         target_no_negative.squeeze().detach().cpu().numpy())
 
     # negative space in target volume
-    eligible_volume_tensor = torch.tensor(eligible_volume, device=device).unsqueeze_(0).unsqueeze_(0)
+    eligible_volume_tensor = torch.tensor(eligible_volume, device=device, dtype=torch.bool).unsqueeze_(0).unsqueeze_(0)
     target = target_no_negative.clone()
     target[~eligible_volume_tensor] = negative_space_value
     # target[~eligible_volume_tensor] = -target[eligible_volume_tensor].mean()
@@ -1038,20 +1038,20 @@ def diff_atom_comp(target_vol_path: str,
     e_quaternions = e_quaternions.reshape([N_quaternions, N_shifts, 4])
     e_quaternions = np.repeat(e_quaternions[np.newaxis, :, :, :], num_molecules, axis=0)
 
-    e_shifts = torch.tensor(e_shifts, device=device).float().detach().requires_grad_(True)
-    e_quaternions = torch.tensor(e_quaternions, device=device).float().detach().requires_grad_(True)
+    e_shifts = torch.tensor(e_shifts, device=device, dtype=precision).detach().requires_grad_(True)
+    e_quaternions = torch.tensor(e_quaternions, device=device, dtype=precision).detach().requires_grad_(True)
 
     # coordinates is in [x, y, z]
     # target_size is in [z, y, x]
     # make the conversion here
     target_size_x_y_z = [target_size[2], target_size[1], target_size[0]]
-    target_size_x_y_z_tensor = torch.tensor(target_size_x_y_z, device=device).float()
-    target_origin_tensor = torch.tensor(target_origin, device=device).float()
+    target_size_x_y_z_tensor = torch.tensor(target_size_x_y_z, device=device, dtype=precision)
+    target_origin_tensor = torch.tensor(target_origin, device=device, dtype=precision)
 
     # Training loop
     log_every = 10
 
-    e_sqd_log = torch.zeros([num_molecules, N_quaternions, N_shifts, int(n_iters / 10) + 2, 9], device=device)
+    e_sqd_log = torch.zeros([num_molecules, N_quaternions, N_shifts, int(n_iters / 10) + 2, 9], device=device, dtype=precision)
     # [x, y, z, w, -x, -y, -z, occupied_density_sum]
 
     with torch.no_grad():
@@ -1067,14 +1067,14 @@ def diff_atom_comp(target_vol_path: str,
         {'params': [e_quaternions], 'lr': learning_rate}
     ])
 
-    atom_coords_torch_list = [torch.tensor(atom_coords, device=device).float() for atom_coords in atom_coords_list]
+    atom_coords_torch_list = [torch.tensor(atom_coords, device=device, dtype=precision) for atom_coords in atom_coords_list]
 
     for epoch in range(n_iters):
         # Forward pass
 
-        first_layer_positive_density_sum = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device)
-        in_contour_percentage = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device)
-        occupied_density_sum = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device)
+        first_layer_positive_density_sum = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device, dtype=precision)
+        in_contour_percentage = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device, dtype=precision)
+        occupied_density_sum = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device, dtype=precision)
 
         for mol_idx in range(num_molecules):
             # sampled_coords = atom_coords_torch_list[mol_idx][torch.randint(0, atom_coords_torch_list[mol_idx].shape[0], (500,), device=device)]
@@ -1089,7 +1089,7 @@ def diff_atom_comp(target_vol_path: str,
 
             with torch.no_grad():
                 positive_mask = render > 0
-                in_contour_percentage[mol_idx] = positive_mask.float().mean(dim=-1)
+                in_contour_percentage[mol_idx] = positive_mask.to(precision).mean(dim=-1)
                 first_layer_positive_density_sum[mol_idx] = torch.sum(render * positive_mask, dim=-1).squeeze()
 
         # loss
