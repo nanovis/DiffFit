@@ -128,6 +128,7 @@ def cluster_and_sort_sqd_fast(e_sqd_log, shift_tolerance: float = 3.0, angle_tol
                               in_contour_threshold: float = 0.5,
                               save_log=False,
                               log_path="",
+                              max_fits=10000,
                               max_clusters=100):
     """
     Cluster the fitting results in sqd table by thresholding on shift and quaternion
@@ -191,8 +192,13 @@ def cluster_and_sort_sqd_fast(e_sqd_log, shift_tolerance: float = 3.0, angle_tol
         filtered_indices = np.where(in_contour_mask)  # Get the indices of the filtered rows
         filtered_array = sqd_highest_corr_np_mol[filtered_indices]
 
-        fit_res_filtered.append(filtered_array)
-        fit_res_filtered_indices.append(filtered_indices[0])
+        sorted_indices = np.argsort(filtered_array[:, sort_column_idx])[::-1]
+        top_indices = sorted_indices[:min(max_fits, len(filtered_array))]
+        filtered_array_top = filtered_array[top_indices]
+        filtered_indices_top = filtered_indices[0][top_indices]
+
+        fit_res_filtered.append(filtered_array_top)
+        fit_res_filtered_indices.append(filtered_indices_top)
 
     if save_log:
         with open(log_path, "a") as log_file:
