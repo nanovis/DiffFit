@@ -41,7 +41,26 @@ timer_start = datetime.now()
 angle_tolerance = 6.0
 shift_tolerance = 3.0
 
-bfactor=1
+
+def any_close_transform(b, tf):
+    '''Check the center bin first for a close transform to improve speed when most queries have a close transform.'''
+    bc = tuple(int(x / bs) for x, bs in zip(b.bin_point(tf), b.bins.bin_size))
+    if bc in b.bins.bins:
+        for c,btf in b.bins.bins[bc]:
+            dx, dy, dz = btf.translation() - ptf.translation()
+            
+            if (dx * dx + dy * dy + dz * dz <= b.d2max and
+                (tf.inverse()*btf).rotation_angle() < b.angle):
+                return btf
+
+            #  numpy takes 2-sec longer 
+            #  if (np.sum((btf.translation() - tf.translation())**2) <= b.d2max and
+            #     (tf.inverse()*btf).rotation_angle() < b.angle):
+            #     return btf
+    return b.one_in_cluster_transform(tf)
+
+
+bfactor=2
 print(f"bfactor: {bfactor}")
 
 ChimeraX_clustering = True
@@ -52,30 +71,7 @@ if ChimeraX_clustering:
     T_ID_dict = {}
     for i in range(Total_fits):
         ptf = T[i]
-        coord = [c / s for c, s in zip(b.bin_point(ptf), b.bins.bin_size)]
-        cbin = b.bins.close_bins(coord, (0, 0, 0, 0))[0]
-        close = None
-
-        if cbin in b.bins.bins:
-            # still need to check if there is a transform that is really close
-            itf = ptf.inverse()
-            for _, o in b.bins.bins[cbin]:
-                cx, cy, cz = o.translation()
-                px, py, pz = ptf.translation()
-                dx, dy, dz = px - cx, py - cy, pz - cz
-                d2 = dx * dx + dy * dy + dz * dz
-                if d2 <= b.d2max:
-                    dtf = o * itf
-                    a = dtf.rotation_angle()
-                    if a < b.angle:
-                        close = o
-                        break
-
-            # if reach here, means no close found
-            # ptf will then be added to the bin after two lines below
-
-        else:
-            close = b.one_in_cluster_transform(ptf)
+        close = any_close_transform(b, ptf)
         if close is None:
             b.add_transform(ptf)
             mol_transform_label.append(unique_id)
