@@ -46,11 +46,11 @@ def any_close_transform(b, tf):
     '''Check the center bin first for a close transform to improve speed when most queries have a close transform.'''
     bc = tuple(int(x / bs) for x, bs in zip(b.bin_point(tf), b.bins.bin_size))
     if bc in b.bins.bins:
+        itf = tf.inverse()
         for c,btf in b.bins.bins[bc]:
             dx, dy, dz = btf.translation() - ptf.translation()
-            
             if (dx * dx + dy * dy + dz * dz <= b.d2max and
-                (tf.inverse()*btf).rotation_angle() < b.angle):
+                (itf*btf).rotation_angle() < b.angle):
                 return btf
 
             #  numpy takes 2-sec longer 
