@@ -214,7 +214,7 @@ def cluster_and_sort_sqd_fast(e_sqd_log, shift_tolerance: float = 3.0, angle_tol
         T_ID_dict = {}
         for i in range(len(mol_shift)):
             ptf = T[i]
-            in_cluster = b.one_in_cluster_transform(ptf)
+            in_cluster = b.any_close_transform(ptf)
             if in_cluster is None:
                 b.add_transform(ptf)
                 mol_transform_label.append(unique_id)

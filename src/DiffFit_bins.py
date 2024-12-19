@@ -99,6 +99,21 @@ class DiffFit_Binned_Transforms:
 
         return None
 
+    # -------------------------------------------------------------------------
+    #
+    def any_close_transform(self, tf):
+        '''Check the center bin first for a close transform to improve speed when most queries have a close transform.'''
+        bc = tuple(int(x / bs) for x, bs in zip(self.bin_point(tf), self.bins.bin_size))
+        if bc in self.bins.bins:
+            itf = tf.inverse()
+            for c, btf in self.bins.bins[bc]:
+                dx, dy, dz = btf.translation() - tf.translation()
+                if (dx * dx + dy * dy + dz * dz <= self.d2max and
+                        (btf * itf).rotation_angle() < self.angle):
+                    return btf
+
+        return self.one_in_cluster_transform(tf)
+
 # -----------------------------------------------------------------------------
 # Bin objects in a grid for fast lookup of objects close to a given object.
 #
