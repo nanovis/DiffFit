@@ -50,7 +50,7 @@ def any_close_transform(b, tf):
         for c,btf in b.bins.bins[bc]:
             dx, dy, dz = btf.translation() - ptf.translation()
             if (dx * dx + dy * dy + dz * dz <= b.d2max and
-                (itf*btf).rotation_angle() < b.angle):
+                (btf * itf).rotation_angle() < b.angle):
                 return btf
 
             #  numpy takes 2-sec longer 
