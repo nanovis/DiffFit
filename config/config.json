@@ -1,0 +1,23 @@
+{
+    "target_volume": "D:\\GIT\\DiffFitStar\\demo\\5wvi\\6693_seg\\emd_6693_region_4208.mrc",
+    "folders": [
+        {
+            "path": "D:\\GIT\\DiffFitStar\\demo\\5wvi\\AF_input",
+            "include": ["*.cif", "P21243.cif"],
+            "exclude": ["test.cif"]
+        }
+    ],
+    "output_directory": "D:\\GIT\\DiffFitStar\\demo\\5wvi\\DF_config_out",
+    "gpu_device": "cuda:0",
+    "target_surface_threshold": 0.3,
+    "num_positions": 10,
+    "num_rotations": 100,
+    "fit_atom_mode": "Backbone",
+    "Gaussian_mode": "Gaussian with negative (shrink)",
+    "negative_space": -0.5,
+    "learning_rate": 0.01,
+    "n_iters": 101,
+    "conv_loops": 3,
+    "conv_kernel_sizes": [5, 5, 5],
+    "conv_weights": [1.0, 1.0, 1.0]
+}
