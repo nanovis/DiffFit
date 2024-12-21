@@ -578,7 +578,7 @@ def quaternion_to_matrix_batch(quaternions):
     return rotation_matrices
 
 
-def filter_volume(volume_np, threshold, min_island_size):
+def filter_volume(volume_np, threshold, min_island_size=None):
     # Step 1: Threshold the volume to create a binary mask
     binary_volume = volume_np > threshold
 
