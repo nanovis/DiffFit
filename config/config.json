@@ -10,7 +10,7 @@
     "output_directory": "D:\\GIT\\DiffFitStar\\demo\\5wvi\\DF_config_out",
     "gpu_device": "cuda:0",
     "target_surface_threshold": 0.3,
-    "num_positions": 10,
+    "num_positions": 30,
     "num_rotations": 100,
     "fit_atom_mode": "Backbone",
     "negative_space": -0.5,
