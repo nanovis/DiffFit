@@ -52,6 +52,11 @@ def process_volume(target_vol_path,
     # target as [1, 1, z, y, x]
     # target_dim as [z, y, x]
     target_size = np.array(list(map(operator.mul, target_dim, target_steps)))  # in [z, y, x]
+    # coordinates is in [x, y, z]
+    # target_size is in [z, y, x]
+    target_size_x_y_z = [target_size[2], target_size[1], target_size[0]]
+    target_size_x_y_z_tensor = torch.tensor(target_size_x_y_z, device=device, dtype=precision)
+    target_origin_tensor = torch.tensor(target_origin, device=device, dtype=precision)
 
     target_no_negative = linear_norm_tensor(target_no_negative)
     # negative space in target volume
@@ -67,7 +72,7 @@ def process_volume(target_vol_path,
     target_gaussian_conv_list = conv_volume(target_no_negative, device, conv_loops, conv_kernel_sizes,
                                             negative_space_value, kernel_type="Gaussian", mode=Gaussian_mode)
 
-    return target_gaussian_conv_list, target, target_no_negative, target_dim, target_size, target_origin, sampled_coords
+    return target_gaussian_conv_list, target, target_no_negative, target_size_x_y_z_tensor, target_origin_tensor, sampled_coords
 
 def prepare_atoms(structure_path, fit_atom_mode):
     """
@@ -86,8 +91,8 @@ def optimize_fitting(target,
                      target_gaussian_conv_list,
                      atom_coords_list,
                      sampled_coords,
-                     target_size,
-                     target_origin,
+                     target_size_x_y_z_tensor,
+                     target_origin_tensor,
                      N_quaternions,
                      N_shifts,
                      conv_loops,
@@ -115,11 +120,6 @@ def optimize_fitting(target,
     e_shifts = torch.tensor(e_shifts, device=device, dtype=precision).detach().requires_grad_(True)
     e_quaternions = torch.tensor(e_quaternions, device=device, dtype=precision).detach().requires_grad_(True)
 
-    # coordinates is in [x, y, z]
-    # target_size is in [z, y, x]
-    target_size_x_y_z = [target_size[2], target_size[1], target_size[0]]
-    target_size_x_y_z_tensor = torch.tensor(target_size_x_y_z, device=device, dtype=precision)
-    target_origin_tensor = torch.tensor(target_origin, device=device, dtype=precision)
 
     # Training loop
     log_every = 10
@@ -137,7 +137,7 @@ def optimize_fitting(target,
 
     # Create the optimizer with different learning rates
     optimizer = torch.optim.Adam([
-        {'params': [e_shifts], 'lr': target_size.mean() * learning_rate},
+        {'params': [e_shifts], 'lr': target_size_x_y_z_tensor.mean() * learning_rate},
         {'params': [e_quaternions], 'lr': learning_rate}
     ])
 
