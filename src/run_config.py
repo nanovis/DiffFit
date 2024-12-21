@@ -3,7 +3,8 @@ import json
 from pathlib import Path
 from difffit import (process_volume,
                      parse_precision,
-                     prepare_atoms)
+                     prepare_atoms,
+                     optimize_fitting)
 
 
 def get_filtered_files(folder_path, include_patterns, exclude_patterns):
@@ -75,25 +76,25 @@ def process_files(config_path):
                  mol_centers,
                  mol_num_atoms) = prepare_atoms(file_path, config.get("fit_atom_mode", "Backbone"))
 
-                # diff_atom_comp(
-                #     target_vol_path=str(volume_path),
-                #     target_surface_threshold=config.get("target_surface_threshold", 0.02),
-                #     min_cluster_size=config.get("min_cluster_size", 100),
-                #     structures_dir=str(file_path),
-                #     fit_atom_mode=config.get("fit_atom_mode", "Backbone"),
-                #     Gaussian_mode=config.get("Gaussian_mode", "Gaussian with negative (shrink)"),
-                #     N_shifts=config.get("num_positions", 10),
-                #     N_quaternions=config.get("num_rotations", 100),
-                #     negative_space_value=config.get("negative_space", -0.5),
-                #     learning_rate=config.get("learning_rate", 0.01),
-                #     n_iters=config.get("n_iters", 201),
-                #     out_dir=str(output_directory),
-                #     out_dir_exist_ok=True,
-                #     conv_loops=config.get("conv_loops", 3),
-                #     conv_kernel_sizes=config.get("conv_kernel_sizes", [5, 5, 5]),
-                #     conv_weights=config.get("conv_weights", [1.0, 1.0, 1.0]),
-                #     device=config.get("gpu_device", "cuda:0")
-                # )
+                e_sqd_log = optimize_fitting(
+                    target,
+                    target_gaussian_conv_list,
+                    atom_coords_list,
+                    sampled_coords,
+                    target_size,
+                    target_origin,
+                    config.get("num_rotations", 100),
+                    config.get("num_positions", 10),
+                    conv_loops=config.get("conv_loops", 3),
+                    conv_weights=config.get("conv_weights", [1.0, 1.0, 1.0]),
+                    num_molecules=1,
+                    n_iters=config.get("n_iters", 3),
+                    learning_rate=config.get("learning_rate", 0.01),
+                    device=config.get("gpu_device", "cuda:0"),
+                    precision=parse_precision(config.get("precision", "float32")),
+                    out_dir=out_sub_folder,
+                )
+
                 print(f"Completed processing {file_path}")
             except Exception as e:
                 print(f"Error processing {file_path}: {e}")
@@ -106,4 +107,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    from datetime import datetime
+    timer_start = datetime.now()
     process_files(args.config)
+    print(f"Time elapsed: {datetime.now() - timer_start}\n\n")
+

@@ -73,7 +73,7 @@ def prepare_atoms(structure_path, fit_atom_mode):
     """
     Read and prepare atom coordinates from files.
     """
-    atom_coords_list = read_file_and_get_coordinates(structure_path, fit_atom_mode)
+    atom_coords_list = [read_file_and_get_coordinates(structure_path, fit_atom_mode)]
     mol_centers = [np.mean(coords, axis=0) for coords in atom_coords_list]
     atom_coords_list = center_atom_coords_list(atom_coords_list, mol_centers)
 
@@ -81,12 +81,28 @@ def prepare_atoms(structure_path, fit_atom_mode):
 
     return atom_coords_list, mol_centers, mol_num_atoms
 
-def optimize_fitting(target, atom_coords_list, sampled_coords, target_size, target_origin, conv_loops, conv_kernel_sizes, conv_weights, num_molecules, n_iters, learning_rate, device, precision):
+
+def optimize_fitting(target,
+                     target_gaussian_conv_list,
+                     atom_coords_list,
+                     sampled_coords,
+                     target_size,
+                     target_origin,
+                     N_quaternions,
+                     N_shifts,
+                     conv_loops,
+                     conv_weights,
+                     num_molecules,
+                     n_iters,
+                     learning_rate,
+                     device,
+                     precision,
+                     out_dir,
+                     out_dir_exist_ok=True):
     """
     Perform optimization for fitting structures into the target volume.
     """
-    N_quaternions = 100  # Default value for quaternions
-    N_shifts = len(sampled_coords)
+    timer_start = datetime.now()
 
     e_quaternions = generate_random_quaternions(N_quaternions * N_shifts).reshape([N_quaternions, N_shifts, 4])
     e_quaternions = np.repeat(e_quaternions[np.newaxis, :, :, :], num_molecules, axis=0)
@@ -99,35 +115,52 @@ def optimize_fitting(target, atom_coords_list, sampled_coords, target_size, targ
     e_shifts = torch.tensor(e_shifts, device=device, dtype=precision).detach().requires_grad_(True)
     e_quaternions = torch.tensor(e_quaternions, device=device, dtype=precision).detach().requires_grad_(True)
 
+    # coordinates is in [x, y, z]
+    # target_size is in [z, y, x]
     target_size_x_y_z = [target_size[2], target_size[1], target_size[0]]
     target_size_x_y_z_tensor = torch.tensor(target_size_x_y_z, device=device, dtype=precision)
     target_origin_tensor = torch.tensor(target_origin, device=device, dtype=precision)
 
+    # Training loop
+    log_every = 10
+
+    e_sqd_log = torch.zeros([num_molecules, N_quaternions, N_shifts, int(n_iters / 10) + 2, 9], device=device,
+                            dtype=precision)
+    # [x, y, z, w, -x, -y, -z, occupied_density_sum]
+
+    with torch.no_grad():
+        e_sqd_log[:, :, :, 0, 0:3] = e_shifts.squeeze(-2)
+        e_sqd_log[:, :, :, 0, 3:7] = e_quaternions
+
+    log_idx = 0
+    os.makedirs(out_dir, exist_ok=out_dir_exist_ok)
+
+    # Create the optimizer with different learning rates
     optimizer = torch.optim.Adam([
         {'params': [e_shifts], 'lr': target_size.mean() * learning_rate},
         {'params': [e_quaternions], 'lr': learning_rate}
     ])
 
-    e_sqd_log = torch.zeros([num_molecules, N_quaternions, N_shifts, int(n_iters / 10) + 2, 9], device=device, dtype=precision)
-    with torch.no_grad():
-        e_sqd_log[:, :, :, 0, 0:3] = e_shifts.squeeze(-2)
-        e_sqd_log[:, :, :, 0, 3:7] = e_quaternions
-
-    atom_coords_torch_list = [torch.tensor(atom_coords, device=device, dtype=precision) for atom_coords in atom_coords_list]
+    atom_coords_torch_list = [torch.tensor(atom_coords, device=device, dtype=precision) for atom_coords in
+                              atom_coords_list]
 
     for epoch in range(n_iters):
-        first_layer_positive_density_sum = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device, dtype=precision)
+        # Forward pass
+
+        first_layer_positive_density_sum = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device,
+                                                       dtype=precision)
         in_contour_percentage = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device, dtype=precision)
         occupied_density_sum = torch.zeros([num_molecules, N_quaternions, N_shifts], device=device, dtype=precision)
 
         for mol_idx in range(num_molecules):
+            # sampled_coords = atom_coords_torch_list[mol_idx][torch.randint(0, atom_coords_torch_list[mol_idx].shape[0], (500,), device=device)]
             grid = transform_coords(atom_coords_torch_list[mol_idx],
-                                    e_quaternions[mol_idx:mol_idx+1],
-                                    e_shifts[mol_idx:mol_idx+1],
+                                    e_quaternions[mol_idx:mol_idx + 1],
+                                    e_shifts[mol_idx:mol_idx + 1],
                                     target_size_x_y_z_tensor, target_origin_tensor, device)
             render = torch.nn.functional.grid_sample(target, grid, 'bilinear', 'border', align_corners=True)
             occupied_density_sum[mol_idx] = torch.sum(render, dim=-1).squeeze()
-            add_conv_density(conv_loops, conv_volume(target, device, conv_loops, conv_kernel_sizes, -0.5), conv_weights, grid, occupied_density_sum[mol_idx])
+            add_conv_density(conv_loops, target_gaussian_conv_list, conv_weights, grid, occupied_density_sum[mol_idx])
             occupied_density_sum[mol_idx] /= len(atom_coords_list[mol_idx])
 
             with torch.no_grad():
@@ -135,12 +168,43 @@ def optimize_fitting(target, atom_coords_list, sampled_coords, target_size, targ
                 in_contour_percentage[mol_idx] = positive_mask.to(precision).mean(dim=-1)
                 first_layer_positive_density_sum[mol_idx] = torch.sum(render * positive_mask, dim=-1).squeeze()
 
+        # loss
         loss = -torch.sum(occupied_density_sum)
+        # gradients
         loss.backward()
+
+        # update weights
         optimizer.step()
         optimizer.zero_grad()
 
+        # log
+        if (epoch - 1) % log_every == (log_every - 1):
+            with torch.no_grad():
+                log_idx += 1
+                e_sqd_log[:, :, :, log_idx, 0:3] = e_shifts.squeeze(-2)
+                e_sqd_log[:, :, :, log_idx, 3:7] = e_quaternions
+                e_sqd_log[:, :, :, log_idx, 7] = first_layer_positive_density_sum
+                e_sqd_log[:, :, :, log_idx, 8] = in_contour_percentage
+
+                with open(f"{out_dir}/log.log", "a") as log_file:
+                    log_file.write(f"Epoch: {epoch + 1:05d}, "
+                                   f"loss = {loss:.4f}\n")
+
+    timer_stop = datetime.now()
+
+    with open(f"{out_dir}/log.log", "a") as log_file:
+        log_file.write(f"Time elapsed: {timer_stop - timer_start}\n\n")
+
+    # convert quaternion to ChimeraX, Houdini, scipy system and normalize it
+
+    e_sqd_ChimeraX_q = torch.cat([-e_sqd_log[..., 4:7], e_sqd_log[..., 3].unsqueeze(-1)], dim=-1)
+    e_sqd_log[:, :, :, :, 3:7] = e_sqd_ChimeraX_q
+
+    q_norms = torch.linalg.vector_norm(e_sqd_log[:, :, :, :, 3:7], dim=-1, keepdim=True)
+    e_sqd_log[:, :, :, :, 3:7] /= q_norms
+
     return e_sqd_log
+
 
 def save_results(out_dir, target_vol_path, target_surface_threshold, structures_dir, mol_num_atoms, e_sqd_log):
     """
@@ -155,6 +219,7 @@ def save_results(out_dir, target_vol_path, target_surface_threshold, structures_
                         mol_paths=mol_paths,
                         mol_num_atoms=mol_num_atoms,
                         opt_res=e_sqd_log.detach().cpu().numpy())
+
 
 def difffit(target_vol_path,
             target_surface_threshold,
