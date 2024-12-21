@@ -87,7 +87,7 @@ def prepare_atoms(structure_path, fit_atom_mode):
     return atom_coords_list, mol_centers, mol_num_atoms
 
 
-def initialize_quaternions_and_shifts(N_quaternions, N_shifts, num_molecules, sampled_coords, device, precision):
+def initialize_tensors(N_quaternions, N_shifts, num_molecules, sampled_coords, n_iters, device, precision):
     """
     Initialize quaternion and shift tensors for optimization.
 
@@ -95,6 +95,7 @@ def initialize_quaternions_and_shifts(N_quaternions, N_shifts, num_molecules, sa
     :param N_shifts: Number of sampled shifts.
     :param num_molecules: Number of molecules to process.
     :param sampled_coords: Coordinates sampled for shifts.
+    :param n_iters: The number of iterations.
     :param device: Device for tensor computation (e.g., 'cuda' or 'cpu').
     :param precision: Torch precision (e.g., torch.float32).
     :return: Initialized quaternion and shift tensors as torch Tensors.
@@ -109,7 +110,11 @@ def initialize_quaternions_and_shifts(N_quaternions, N_shifts, num_molecules, sa
     )
     e_shifts = torch.tensor(e_shifts, device=device, dtype=precision)
 
-    return e_quaternions, e_shifts
+    e_sqd_log = torch.zeros([num_molecules, N_quaternions, N_shifts, int(n_iters / 10) + 2, 9], device=device,
+                            dtype=precision)
+    # [x, y, z, w, -x, -y, -z, occupied_density_sum]
+
+    return e_quaternions, e_shifts, e_sqd_log
 
 
 def optimize_fitting(target,
@@ -118,6 +123,7 @@ def optimize_fitting(target,
                      sampled_coords,
                      e_quaternions,
                      e_shifts,
+                     e_sqd_log,
                      target_size_mean,
                      target_size_x_y_z_tensor,
                      target_origin_tensor,
@@ -142,10 +148,6 @@ def optimize_fitting(target,
 
     # Training loop
     log_every = 10
-
-    e_sqd_log = torch.zeros([num_molecules, N_quaternions, N_shifts, int(n_iters / 10) + 2, 9], device=device,
-                            dtype=precision)
-    # [x, y, z, w, -x, -y, -z, occupied_density_sum]
 
     with torch.no_grad():
         e_sqd_log[:, :, :, 0, 0:3] = e_shifts.squeeze(-2)
