@@ -1,6 +1,9 @@
 import os
 import json
 from pathlib import Path
+from difffit import (process_volume,
+                     parse_precision,
+                     prepare_atoms)
 
 
 def get_filtered_files(folder_path, include_patterns, exclude_patterns):
@@ -34,8 +37,24 @@ def process_files(config_path):
     with open(config_path, 'r') as config_file:
         config = json.load(config_file)
 
-    # Load the target volume once
-    volume_path = Path(config["target_volume"])
+    print(f"Processing volume: {Path(config['target_volume'])}")
+    (target_gaussian_conv_list,
+     target,
+     target_no_negative,
+     target_dim,
+     target_size,
+     target_origin,
+     sampled_coords) = process_volume(target_vol_path=Path(config["target_volume"]),
+                                      target_surface_threshold=config.get("target_surface_threshold", 0.02),
+                                      N_shifts=config.get("num_positions", 10),
+                                      negative_space_value=config.get("negative_space", -0.5),
+                                      conv_loops=config.get("conv_loops", 3),
+                                      conv_kernel_sizes=config.get("conv_kernel_sizes", [5, 5, 5]),
+                                      conv_weights=config.get("conv_weights", [1.0, 1.0, 1.0]),
+                                      Gaussian_mode=config.get("Gaussian_mode", "Gaussian with negative (shrink)"),
+                                      device=config.get("gpu_device", "cuda:0"),
+                                      precision=parse_precision(config.get("precision", "float32"))
+                                      )
 
     output_directory = Path(config["output_directory"])
 
@@ -51,6 +70,11 @@ def process_files(config_path):
                 print(f"Processing {file_path}")
                 out_sub_folder = Path(f"{output_directory}/{Path(file_path).stem}")
                 out_sub_folder.mkdir(parents=True, exist_ok=True)
+
+                (atom_coords_list,
+                 mol_centers,
+                 mol_num_atoms) = prepare_atoms(file_path, config.get("fit_atom_mode", "Backbone"))
+
                 # diff_atom_comp(
                 #     target_vol_path=str(volume_path),
                 #     target_surface_threshold=config.get("target_surface_threshold", 0.02),

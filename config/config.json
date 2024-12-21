@@ -13,11 +13,12 @@
     "num_positions": 10,
     "num_rotations": 100,
     "fit_atom_mode": "Backbone",
-    "Gaussian_mode": "Gaussian with negative (shrink)",
     "negative_space": -0.5,
     "learning_rate": 0.01,
     "n_iters": 101,
     "conv_loops": 3,
     "conv_kernel_sizes": [5, 5, 5],
-    "conv_weights": [1.0, 1.0, 1.0]
+    "conv_weights": [1.0, 1.0, 1.0],
+    "Gaussian_mode": "Gaussian with negative (shrink)",
+    "precision": "float32"
 }

@@ -4,34 +4,76 @@ import torch
 from datetime import datetime
 from pathlib import Path
 import operator
-from DiffAtomComp import mrc_to_npy, filter_volume, random_sample_indices, numpy2tensor, linear_norm_tensor, conv_volume, read_all_files_to_atom_coords_list, center_atom_coords_list, generate_random_quaternions, transform_coords, add_conv_density
+from DiffAtomComp import (mrc_to_npy,
+                          filter_volume,
+                          random_sample_indices,
+                          numpy2tensor,
+                          linear_norm_tensor,
+                          conv_volume,
+                          read_file_and_get_coordinates,
+                          center_atom_coords_list,
+                          generate_random_quaternions,
+                          transform_coords,
+                          add_conv_density)
 
-def process_volume(target_vol_path, target_surface_threshold, min_cluster_size, device, precision):
+
+def parse_precision(precision_str):
+    """
+    Parse precision string into torch.dtype.
+    """
+    precision_map = {
+        "float32": torch.float32,
+        "float64": torch.float64,
+        "float16": torch.float16
+    }
+    return precision_map.get(precision_str.lower(), torch.float32)
+
+def process_volume(target_vol_path,
+                   target_surface_threshold,
+                   N_shifts,
+                   negative_space_value,
+                   conv_loops,
+                   conv_kernel_sizes,
+                   conv_weights,
+                   Gaussian_mode,
+                   device,
+                   precision):
     """
     Load and process the target volume.
     """
     target_no_negative, target_steps, target_origin = mrc_to_npy(target_vol_path)
-    target_no_negative, eligible_volume, _ = filter_volume(target_no_negative, target_surface_threshold, min_cluster_size)
+    target_no_negative, eligible_volume, _ = filter_volume(target_no_negative, target_surface_threshold)
 
-    sampled_indices = random_sample_indices(eligible_volume, 10)  # Default 10 shifts as placeholder
+    sampled_indices = random_sample_indices(eligible_volume, N_shifts)
     sampled_coords = np.array([np.array(idx) * np.array(target_steps) for idx in sampled_indices])
     sampled_coords = sampled_coords[:, [2, 1, 0]] + target_origin  # Convert to [x, y, z] and shift
 
     target_no_negative, target_dim = numpy2tensor(target_no_negative, device, precision)
-    target_size = np.array(list(map(operator.mul, target_dim, target_steps)))
+    # target as [1, 1, z, y, x]
+    # target_dim as [z, y, x]
+    target_size = np.array(list(map(operator.mul, target_dim, target_steps)))  # in [z, y, x]
 
     target_no_negative = linear_norm_tensor(target_no_negative)
+    # negative space in target volume
     eligible_volume_tensor = torch.tensor(eligible_volume, device=device, dtype=torch.bool).unsqueeze_(0).unsqueeze_(0)
     target = target_no_negative.clone()
-    target[~eligible_volume_tensor] = -0.5  # Placeholder for negative space value
+    target[~eligible_volume_tensor] = negative_space_value  # Placeholder for negative space value
 
-    return target, target_no_negative, target_dim, target_size, target_origin, sampled_coords
+    # ======= create convoluted target volumes
 
-def prepare_atoms(structures_dir, fit_atom_mode):
+    if len(conv_weights) != conv_loops:
+        raise ValueError("Length of conv_weights does not match conv_loops! ")
+
+    target_gaussian_conv_list = conv_volume(target_no_negative, device, conv_loops, conv_kernel_sizes,
+                                            negative_space_value, kernel_type="Gaussian", mode=Gaussian_mode)
+
+    return target_gaussian_conv_list, target, target_no_negative, target_dim, target_size, target_origin, sampled_coords
+
+def prepare_atoms(structure_path, fit_atom_mode):
     """
     Read and prepare atom coordinates from files.
     """
-    atom_coords_list = read_all_files_to_atom_coords_list(structures_dir, fit_atom_mode)
+    atom_coords_list = read_file_and_get_coordinates(structure_path, fit_atom_mode)
     mol_centers = [np.mean(coords, axis=0) for coords in atom_coords_list]
     atom_coords_list = center_atom_coords_list(atom_coords_list, mol_centers)
 
@@ -116,7 +158,6 @@ def save_results(out_dir, target_vol_path, target_surface_threshold, structures_
 
 def difffit(target_vol_path,
             target_surface_threshold,
-            min_cluster_size,
             structures_dir,
             fit_atom_mode="Backbone",
             Gaussian_mode="Gaussian with negative (shrink)",
@@ -138,7 +179,7 @@ def difffit(target_vol_path,
     timer_start = datetime.now()
 
     target, target_no_negative, target_dim, target_size, target_origin, sampled_coords = process_volume(
-        target_vol_path, target_surface_threshold, min_cluster_size, device, precision)
+        target_vol_path, target_surface_threshold, device, precision)
 
     atom_coords_list, mol_centers, mol_num_atoms = prepare_atoms(structures_dir, fit_atom_mode)
 
