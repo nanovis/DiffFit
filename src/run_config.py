@@ -1,6 +1,7 @@
 import os
 import json
 from pathlib import Path
+import numpy as np
 from difffit import (process_volume,
                      parse_precision,
                      prepare_atoms,
@@ -46,7 +47,7 @@ def process_files(config_path):
      target_size,
      target_origin,
      sampled_coords) = process_volume(target_vol_path=Path(config["target_volume"]),
-                                      target_surface_threshold=config.get("target_surface_threshold", 0.02),
+                                      target_surface_threshold=config.get("target_surface_threshold"),
                                       N_shifts=config.get("num_positions", 10),
                                       negative_space_value=config.get("negative_space", -0.5),
                                       conv_loops=config.get("conv_loops", 3),
@@ -59,22 +60,21 @@ def process_files(config_path):
 
     output_directory = Path(config["output_directory"])
 
-    for folder in config["folders"]:
+    for folder in config["structure_folders"]:
         folder_path = Path(folder["path"])
         include_patterns = folder.get("include", [])
         exclude_patterns = folder.get("exclude", [])
 
         filtered_files = get_filtered_files(folder_path, include_patterns, exclude_patterns)
 
-        for file_path in sorted(filtered_files):
+        for structure_path in sorted(filtered_files):
             try:
-                print(f"Processing {file_path}")
-                out_sub_folder = Path(f"{output_directory}/{Path(file_path).stem}")
+                out_sub_folder = Path(f"{output_directory}/{Path(structure_path).stem}")
                 out_sub_folder.mkdir(parents=True, exist_ok=True)
 
                 (atom_coords_list,
                  mol_centers,
-                 mol_num_atoms) = prepare_atoms(file_path, config.get("fit_atom_mode", "Backbone"))
+                 mol_num_atoms) = prepare_atoms(structure_path, config.get("fit_atom_mode", "Backbone"))
 
                 e_sqd_log = optimize_fitting(
                     target,
@@ -95,9 +95,16 @@ def process_files(config_path):
                     out_dir=out_sub_folder,
                 )
 
-                print(f"Completed processing {file_path}")
+                print(f"Completed processing {structure_path}")
+
+                np.savez_compressed(f"{out_sub_folder}/fit_res.npz",
+                                    target_vol_path=config['target_volume'],
+                                    target_surface_threshold=config.get("target_surface_threshold"),
+                                    mol_paths=[str(structure_path)],
+                                    mol_num_atoms=mol_num_atoms,
+                                    opt_res=e_sqd_log.detach().cpu().numpy())
             except Exception as e:
-                print(f"Error processing {file_path}: {e}")
+                print(f"Error processing {structure_path}: {e}")
 
 if __name__ == "__main__":
     import argparse
