@@ -87,10 +87,37 @@ def prepare_atoms(structure_path, fit_atom_mode):
     return atom_coords_list, mol_centers, mol_num_atoms
 
 
+def initialize_quaternions_and_shifts(N_quaternions, N_shifts, num_molecules, sampled_coords, device, precision):
+    """
+    Initialize quaternion and shift tensors for optimization.
+
+    :param N_quaternions: Number of quaternion rotations.
+    :param N_shifts: Number of sampled shifts.
+    :param num_molecules: Number of molecules to process.
+    :param sampled_coords: Coordinates sampled for shifts.
+    :param device: Device for tensor computation (e.g., 'cuda' or 'cpu').
+    :param precision: Torch precision (e.g., torch.float32).
+    :return: Initialized quaternion and shift tensors as torch Tensors.
+    """
+    e_quaternions = generate_random_quaternions(N_quaternions * N_shifts).reshape([N_quaternions, N_shifts, 4])
+    e_quaternions = np.repeat(e_quaternions[np.newaxis, :, :, :], num_molecules, axis=0)
+    e_quaternions = torch.tensor(e_quaternions, device=device, dtype=precision)
+
+    e_shifts = np.tile(
+        sampled_coords.reshape(1, 1, N_shifts, 1, 3),
+        (num_molecules, N_quaternions, 1, 1, 1)
+    )
+    e_shifts = torch.tensor(e_shifts, device=device, dtype=precision)
+
+    return e_quaternions, e_shifts
+
+
 def optimize_fitting(target,
                      target_gaussian_conv_list,
                      atom_coords_list,
                      sampled_coords,
+                     e_quaternions,
+                     e_shifts,
                      target_size_mean,
                      target_size_x_y_z_tensor,
                      target_origin_tensor,
@@ -110,17 +137,8 @@ def optimize_fitting(target,
     """
     timer_start = datetime.now()
 
-    e_quaternions = generate_random_quaternions(N_quaternions * N_shifts).reshape([N_quaternions, N_shifts, 4])
-    e_quaternions = np.repeat(e_quaternions[np.newaxis, :, :, :], num_molecules, axis=0)
-
-    e_shifts = np.tile(
-        sampled_coords.reshape(1, 1, N_shifts, 1, 3),
-        (num_molecules, N_quaternions, 1, 1, 1)
-    )
-
-    e_shifts = torch.tensor(e_shifts, device=device, dtype=precision).detach().requires_grad_(True)
-    e_quaternions = torch.tensor(e_quaternions, device=device, dtype=precision).detach().requires_grad_(True)
-
+    e_shifts = e_shifts.detach().clone().requires_grad_(True)
+    e_quaternions = e_quaternions.detach().clone().requires_grad_(True)
 
     # Training loop
     log_every = 10

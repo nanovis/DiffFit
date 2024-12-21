@@ -5,6 +5,7 @@ import numpy as np
 from difffit import (process_volume,
                      parse_precision,
                      prepare_atoms,
+                     initialize_quaternions_and_shifts,
                      optimize_fitting)
 
 
@@ -58,6 +59,15 @@ def process_files(config_path):
                                       precision=parse_precision(config.get("precision", "float32"))
                                       )
 
+    e_quaternions, e_shifts = initialize_quaternions_and_shifts(
+        N_quaternions=config.get("num_rotations", 100),
+        N_shifts=config.get("num_positions", 30),
+        num_molecules=1,
+        sampled_coords=sampled_coords,
+        device=config.get("gpu_device", "cuda:0"),
+        precision=parse_precision(config.get("precision", "float32"))
+    )
+
     output_directory = Path(config["output_directory"])
 
     for folder in config["structure_folders"]:
@@ -81,6 +91,8 @@ def process_files(config_path):
                     target_gaussian_conv_list,
                     atom_coords_list,
                     sampled_coords,
+                    e_quaternions,
+                    e_shifts,
                     target_size_mean,
                     target_size_x_y_z_tensor,
                     target_origin_tensor,
