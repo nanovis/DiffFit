@@ -72,7 +72,7 @@ def process_volume(target_vol_path,
     target_gaussian_conv_list = conv_volume(target_no_negative, device, conv_loops, conv_kernel_sizes,
                                             negative_space_value, kernel_type="Gaussian", mode=Gaussian_mode)
 
-    return target_gaussian_conv_list, target, target_no_negative, target_size_x_y_z_tensor, target_origin_tensor, sampled_coords
+    return target_gaussian_conv_list, target, target_no_negative, target_size.mean(), target_size_x_y_z_tensor, target_origin_tensor, sampled_coords
 
 def prepare_atoms(structure_path, fit_atom_mode):
     """
@@ -91,6 +91,7 @@ def optimize_fitting(target,
                      target_gaussian_conv_list,
                      atom_coords_list,
                      sampled_coords,
+                     target_size_mean,
                      target_size_x_y_z_tensor,
                      target_origin_tensor,
                      N_quaternions,
@@ -137,7 +138,7 @@ def optimize_fitting(target,
 
     # Create the optimizer with different learning rates
     optimizer = torch.optim.Adam([
-        {'params': [e_shifts], 'lr': target_size_x_y_z_tensor.mean() * learning_rate},
+        {'params': [e_shifts], 'lr': target_size_mean * learning_rate},
         {'params': [e_quaternions], 'lr': learning_rate}
     ])
 
