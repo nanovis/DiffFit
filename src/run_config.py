@@ -6,7 +6,8 @@ from difffit import (process_volume,
                      parse_precision,
                      prepare_atoms,
                      initialize_tensors,
-                     optimize_fitting)
+                     optimize_fitting,
+                     cluster_and_sort_sqd_fast)
 
 
 def get_filtered_files(folder_path, include_patterns, exclude_patterns):
@@ -112,12 +113,23 @@ def process_files(config_path):
 
                 print(f"Completed processing {structure_path}")
 
+                e_sqd_log_np = e_sqd_log.detach().cpu().numpy()
                 np.savez_compressed(f"{out_sub_folder}/fit_res.npz",
                                     target_vol_path=config['target_volume'],
                                     target_surface_threshold=config.get("target_surface_threshold"),
                                     mol_paths=[str(structure_path)],
                                     mol_num_atoms=mol_num_atoms,
-                                    opt_res=e_sqd_log.detach().cpu().numpy())
+                                    opt_res=e_sqd_log_np)
+
+                N_mol, N_quat, N_shift, N_iter, N_metric = e_sqd_log_np.shape
+                e_sqd_log_np = e_sqd_log_np.reshape([N_mol, N_quat * N_shift, N_iter, N_metric])
+                e_sqd_clusters_ordered = cluster_and_sort_sqd_fast(e_sqd_log_np,
+                                                                   config.get("clustering_shift_tolerance", 3.0),
+                                                                   config.get("clustering_angle_tolerance", 6.0),
+                                                                   in_contour_threshold=config.get("clustering_in_contour_threshold", 0.2),
+                                                                   max_fits=config.get("max_fits", 10000),
+                                                                   max_clusters=config.get("max_clusters", 100)
+                                                                   )
             except Exception as e:
                 print(f"Error processing {structure_path}: {e}")
 

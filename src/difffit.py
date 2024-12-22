@@ -16,6 +16,9 @@ from DiffAtomComp import (mrc_to_npy,
                           transform_coords,
                           add_conv_density)
 
+from scipy.spatial.transform import Rotation as R
+from math import pi
+
 
 def parse_precision(precision_str):
     """
@@ -228,3 +231,167 @@ def optimize_fitting(target,
 
     return e_sqd_log
 
+
+def cluster_and_sort_sqd_fast(e_sqd_log, shift_tolerance: float = 3.0, angle_tolerance: float = 6.0,
+                              sort_column_idx: int = 7,
+                              in_contour_threshold: float = 0.5,
+                              save_log=False,
+                              log_path="",
+                              max_fits=10000,
+                              max_clusters=100):
+    """
+    Cluster the fitting results in sqd table by thresholding on shift and quaternion
+    Return the sorted cluster representatives
+
+    How it works briefly:
+    1. From all iterations, get the iteration with the highest correlation, or the metric at the sort_column_idx
+    2. For each molecule:
+        2.1. cluster the shift using half shift_tolerance as radius in Birch clustering algorithm
+        2.2. convert the quaternion by applying to [0, 1, 0] and [1, 0, 0] to form 6 dim coords
+        2.3. cluster the 6 dim coords using half secant calculated from half angle_tolerance as radius in Birch clustering algorithm
+        2.4. combine two clusters to form unique clusters
+        2.5. select a representative from each cluster as the one with the highest correlation, or the metric at the sort_column_idx
+        2.5. record [mol_idx, max_idx, iter_idx, cluster size, correlation] for each cluster's representative
+    3. sort the cluster table in descending order by correlation, or the metric at the sort_column_idx
+
+    @param e_sqd_log: fitting results in sqd table
+    @param shift_tolerance: shift tolerance in Angstrom
+    @param angle_tolerance: angle tolerance in degrees
+    @param sort_column_idx: the column to sort, 9-th column is the correlation
+    @return: cluster representative table sorted in descending order
+    """
+    from chimerax.geometry import Place
+    from DiffFit_bins import DiffFit_Binned_Transforms
+
+    N_mol, N_record, N_iter, N_metric = e_sqd_log.shape
+
+    sort_column_metric = e_sqd_log[:, :, 1:22, sort_column_idx]  # remove the 0 iteration, which is before optimization
+    max_sort_column_metric_idx = np.argmax(sort_column_metric, axis=-1) + 1  # add back 0 iteration
+
+    # Generate meshgrid for the dimensions you're not indexing through
+    dims_0, dims_1 = np.meshgrid(
+        np.arange(e_sqd_log.shape[0]),
+        np.arange(e_sqd_log.shape[1]),
+        indexing='ij'
+    )
+
+    # Use the generated meshgrid and max_sort_column_metric_idx to index into e_sqd_log
+    sqd_highest_corr_np = e_sqd_log[dims_0, dims_1, max_sort_column_metric_idx]
+
+    timer_start = datetime.now()
+    if save_log:
+        with open(log_path, "a") as log_file:
+            log_file.write(f"DiffFit fit_res filtering starts: {timer_start}\n")
+
+    fit_res_filtered = []
+    fit_res_filtered_indices = []
+    in_contour_col_idx = 8
+
+    for mol_idx in range(N_mol):
+        sqd_highest_corr_np_mol = sqd_highest_corr_np[mol_idx]
+
+        # Fetch the columns of interest
+        in_contour_percentage_column = sqd_highest_corr_np_mol[:, in_contour_col_idx]
+
+        # Create masks for the filtering conditions
+        in_contour_mask = in_contour_percentage_column >= in_contour_threshold
+
+        # Apply the mask to filter the original array and also retrieve the indices
+        filtered_indices = np.where(in_contour_mask)  # Get the indices of the filtered rows
+        filtered_array = sqd_highest_corr_np_mol[filtered_indices]
+
+        sorted_indices = np.argsort(filtered_array[:, sort_column_idx])[::-1]
+        top_indices = sorted_indices[:min(max_fits, len(filtered_array))]
+        filtered_array_top = filtered_array[top_indices]
+        filtered_indices_top = filtered_indices[0][top_indices]
+
+        fit_res_filtered.append(filtered_array_top)
+        fit_res_filtered_indices.append(filtered_indices_top)
+
+    if save_log:
+        with open(log_path, "a") as log_file:
+            log_file.write(f"DiffFit fit_res filtering time elapsed: {datetime.now() - timer_start}\n"
+                           f"-------\n")
+
+    sqd_clusters = []
+    for mol_idx in range(N_mol):
+        sqd_clusters_mol = []
+        mol_shift = fit_res_filtered[mol_idx][:, :3]
+        mol_q = fit_res_filtered[mol_idx][:, 3:7]
+
+        if save_log:
+            with open(log_path, "a") as log_file:
+                log_file.write(f"Clustering {len(mol_shift)} fits for mol_idx: {mol_idx}\n")
+        timer_start = datetime.now()
+
+        T = []
+        for i in range(len(mol_shift)):
+            shift = mol_shift[i]
+            quat = mol_q[i]
+            R_matrix = R.from_quat(quat).as_matrix()
+
+            T_matrix = np.zeros([3, 4])
+            T_matrix[:, :3] = R_matrix
+            T_matrix[:, 3] = shift
+
+            transformation = Place(matrix=T_matrix)
+            T.append(transformation)
+
+        if save_log:
+            with open(log_path, "a") as log_file:
+                log_file.write(f"Convert to matrix time: {datetime.now() - timer_start}\n")
+        timer_start = datetime.now()
+
+        b = DiffFit_Binned_Transforms(angle_tolerance * pi / 180, shift_tolerance)
+        mol_transform_label = []
+        unique_id = 0
+        T_ID_dict = {}
+        for i in range(len(mol_shift)):
+            ptf = T[i]
+            in_cluster = b.any_close_transform(ptf)
+            if in_cluster is None:
+                b.add_transform(ptf)
+                mol_transform_label.append(unique_id)
+                T_ID_dict[id(ptf)] = unique_id
+                unique_id = unique_id + 1
+            else:
+                mol_transform_label.append(T_ID_dict[id(in_cluster)])
+                T_ID_dict[id(ptf)] = T_ID_dict[id(in_cluster)]
+
+            if save_log and (i + 1) % 10000 == 0:
+                with open(log_path, "a") as log_file:
+                    log_file.write(f"Clustered {i+1} fits: {datetime.now()}\n")
+
+        if save_log:
+            with open(log_path, "a") as log_file:
+                log_file.write(f"ChimeraX bin clustering: {datetime.now() - timer_start}\n")
+
+        unique_labels, indices, counts = np.unique(mol_transform_label, axis=0, return_inverse=True, return_counts=True)
+
+        for cluster_idx in range(len(unique_labels)):
+            sqd_idx = np.argwhere(indices == cluster_idx).reshape([-1])
+            max_idx_in_filtered = sqd_idx[np.argsort(-fit_res_filtered[mol_idx][sqd_idx, sort_column_idx])[0]]
+            max_idx = fit_res_filtered_indices[mol_idx][max_idx_in_filtered]
+
+            # [mol_idx, max_idx (in e_sqd_log), iter_idx (giving the largest sort_column),
+            #  cluster size, sort_metric]
+            sqd_clusters_mol.append([mol_idx, max_idx, max_sort_column_metric_idx[mol_idx, max_idx],
+                                     counts[cluster_idx],
+                                     fit_res_filtered[mol_idx][max_idx_in_filtered, sort_column_idx]])
+
+        # ======= Filter cluster by the density, keep max_clusters=100 clusters for each mol
+        if len(sqd_clusters_mol) > 0:
+            sqd_clusters_mol = np.array(sqd_clusters_mol)
+            sqd_clusters_mol = sqd_clusters_mol[np.argsort(-sqd_clusters_mol[:, -1])]
+            sqd_clusters_mol = sqd_clusters_mol[:min(max_clusters, len(sqd_clusters_mol)), :]
+
+            sqd_clusters.append(sqd_clusters_mol)
+
+    sqd_clusters = np.vstack(sqd_clusters)
+
+    if len(sqd_clusters) == 0:
+        return None
+
+    # e_sqd_clusters_ordered = sqd_clusters[np.argsort(-sqd_clusters[:, -1])]
+
+    return sqd_clusters
