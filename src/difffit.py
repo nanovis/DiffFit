@@ -28,6 +28,7 @@ def parse_precision(precision_str):
     }
     return precision_map.get(precision_str.lower(), torch.float32)
 
+
 def process_volume(target_vol_path,
                    target_surface_threshold,
                    N_shifts,
@@ -73,6 +74,7 @@ def process_volume(target_vol_path,
                                             negative_space_value, kernel_type="Gaussian", mode=Gaussian_mode)
 
     return target_gaussian_conv_list, target, target_no_negative, target_size.mean(), target_size_x_y_z_tensor, target_origin_tensor, sampled_coords
+
 
 def prepare_atoms(structure_path, fit_atom_mode):
     """
@@ -226,56 +228,3 @@ def optimize_fitting(target,
 
     return e_sqd_log
 
-
-def save_results(out_dir, target_vol_path, target_surface_threshold, structures_dir, mol_num_atoms, e_sqd_log):
-    """
-    Save the results to the output directory.
-    """
-    mol_paths = [str(Path(structures_dir) / file) for file in sorted(os.listdir(structures_dir)) if file.endswith(('.pdb', '.cif'))]
-
-    os.makedirs(out_dir, exist_ok=True)
-    np.savez_compressed(f"{out_dir}/fit_res.npz",
-                        target_vol_path=target_vol_path,
-                        target_surface_threshold=target_surface_threshold,
-                        mol_paths=mol_paths,
-                        mol_num_atoms=mol_num_atoms,
-                        opt_res=e_sqd_log.detach().cpu().numpy())
-
-
-def difffit(target_vol_path,
-            target_surface_threshold,
-            structures_dir,
-            fit_atom_mode="Backbone",
-            Gaussian_mode="Gaussian with negative (shrink)",
-            N_shifts=10,
-            N_quaternions=100,
-            negative_space_value=-0.5,
-            learning_rate=0.01,
-            n_iters=101,
-            out_dir="out",
-            out_dir_exist_ok=True,
-            conv_loops=3,
-            conv_kernel_sizes=(5, 5, 5),
-            conv_weights=(1.0, 1.0, 1.0),
-            device="cuda",
-            precision=torch.float32):
-    """
-    Main function to fit structures to the target volume.
-    """
-    timer_start = datetime.now()
-
-    target, target_no_negative, target_dim, target_size, target_origin, sampled_coords = process_volume(
-        target_vol_path, target_surface_threshold, device, precision)
-
-    atom_coords_list, mol_centers, mol_num_atoms = prepare_atoms(structures_dir, fit_atom_mode)
-
-    e_sqd_log = optimize_fitting(target,
-                                 atom_coords_list, sampled_coords, target_size, target_origin,
-                                 conv_loops, conv_kernel_sizes, conv_weights,
-                                 len(atom_coords_list), n_iters, learning_rate,
-                                 device, precision)
-
-    save_results(out_dir, target_vol_path, target_surface_threshold, structures_dir, mol_num_atoms, e_sqd_log)
-
-    print(f"Time elapsed: {datetime.now() - timer_start}")
-    return target_vol_path, target_surface_threshold, structures_dir, mol_num_atoms, e_sqd_log
