@@ -7,7 +7,8 @@ from difffit import (process_volume,
                      prepare_atoms,
                      initialize_tensors,
                      optimize_fitting,
-                     cluster_and_sort_sqd_fast)
+                     cluster_and_sort_sqd_fast,
+                     prepare_q_scores)
 
 
 def get_filtered_files(folder_path, include_patterns, exclude_patterns):
@@ -80,7 +81,7 @@ def process_files(config_path):
         filtered_files = get_filtered_files(folder_path, include_patterns, exclude_patterns)
 
         for structure_path in sorted(filtered_files):
-            try:
+            if True:
                 out_sub_folder = Path(f"{output_directory}/{Path(structure_path).stem}")
                 out_sub_folder.mkdir(parents=True, exist_ok=True)
 
@@ -130,8 +131,17 @@ def process_files(config_path):
                                                                    max_fits=config.get("max_fits", 10000),
                                                                    max_clusters=config.get("max_clusters", 100)
                                                                    )
-            except Exception as e:
-                print(f"Error processing {structure_path}: {e}")
+
+                prepare_q_scores(structure_path,
+                                 None,
+                                 e_sqd_clusters_ordered,
+                                 e_sqd_log_np,
+                                 device=config.get("gpu_device", "cuda:0"),
+                                 save_log=False,
+                                 log_path=None)
+
+            # except Exception as e:
+            #     print(f"Error processing {structure_path}: {e}")
 
 if __name__ == "__main__":
     import argparse

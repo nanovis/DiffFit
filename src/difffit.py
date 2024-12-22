@@ -395,3 +395,58 @@ def cluster_and_sort_sqd_fast(e_sqd_log, shift_tolerance: float = 3.0, angle_tol
     # e_sqd_clusters_ordered = sqd_clusters[np.argsort(-sqd_clusters[:, -1])]
 
     return sqd_clusters
+
+
+def prepare_q_scores(mol_path, vol_matrix, e_sqd_clusters_ordered, e_sqd_log, device, save_log=False, log_path=None):
+    """
+    Prepare Q-scores for the given molecular paths and volume.
+
+    :param mol_path: List of molecule file paths.
+    :param vol_matrix: Target volume matrix.
+    :param e_sqd_clusters_ordered: Clustered fitting results.
+    :param e_sqd_log: Fitting log data.
+    :param device: Device for computation (e.g., 'cuda' or 'cpu').
+    :param save_log: Whether to save logs.
+    :param log_path: Path to save logs.
+    :return: Q-scores as a NumPy array.
+    """
+    import numpy as np
+    import os
+    import torch
+    from pathlib import Path
+    from datetime import datetime
+
+    timer_start = datetime.now()
+
+    q_shells_ext = "centered_q_shells.full.npz"
+    q_shell_coords_torch_list = []
+    q_shell_radii_np_list = []
+
+    mol_basename = Path(mol_path).stem
+    mol_folder = os.path.dirname(mol_path)
+    q_shells_filepath = os.path.join(mol_folder, f"{mol_basename}.{q_shells_ext}")
+    q_shells_np = np.load(q_shells_filepath)
+    q_shell_coords = q_shells_np['q_shell_coords']
+    q_shell_radii = q_shells_np['radii']
+
+    q_shell_coords = torch.tensor(q_shell_coords, device=device).float().reshape([-1, 3])
+    q_shell_coords_torch_list.append(q_shell_coords)
+    q_shell_radii_np_list.append(q_shell_radii)
+
+    # Save log if enabled
+    if save_log and log_path:
+        with open(log_path, "a") as log_file:
+            log_file.write(f"Q-scores prep time elapsed: {datetime.now() - timer_start}\n"
+                           f"-------\n")
+
+    # Calculate Q-scores
+    # q_scores_np = q_scores_for_clusters(q_shell_coords_torch_list,
+    #                                     q_shell_radii_np_list,
+    #                                     vol,
+    #                                     e_sqd_clusters_ordered,
+    #                                     e_sqd_log,
+    #                                     device=device,
+    #                                     save_log=save_log,
+    #                                     log_path=log_path)
+
+    # return q_scores_np
